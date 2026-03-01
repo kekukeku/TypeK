@@ -35,7 +35,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 | 能力領域 | FR 數量 | 架構意涵 |
 |----------|---------|---------|
-| 語音觸發與錄音 | 5 | 需跨平台全域熱鍵抽象層（rdev），Hold/Toggle 雙模式狀態機 |
+| 語音觸發與錄音 | 5 | 需跨平台全域熱鍵（OS-native API），Hold/Toggle 雙模式狀態機 |
 | AI 文字整理 | 5 | Groq LLM 整合層，prompt 管理，上下文注入（剪貼簿+詞彙），字數門檻分支邏輯 |
 | 文字輸出 | 3 | 剪貼簿操作 + 鍵盤模擬跨平台封裝，貼上後鍵盤監控（品質衡量） |
 | 歷史記錄與統計 | 6 | SQLite 資料層，聚合查詢（Dashboard 統計），全文搜尋 |
@@ -64,7 +64,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 | 元件 | 現狀 | V2 動作 |
 |------|------|---------|
-| `fn_key_listener.rs` | CGEventTap（僅 macOS） | 完全重寫 → rdev 跨平台 |
+| `fn_key_listener.rs` | CGEventTap（僅 macOS） | 擴展重寫 → OS-native 雙平台（macOS CGEventTap + Windows SetWindowsHookExW） |
 | `clipboard_paste.rs` | arboard + enigo（已跨平台） | 保留，擴展貼上後監控 |
 | `lib.rs` | 單視窗設定 + System Tray | 擴展支援雙視窗 |
 | `recorder.ts` | MediaRecorder 錄音 | 保留 |
@@ -85,7 +85,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 ### Cross-Cutting Concerns Identified
 
-1. **跨平台行為抽象** — rdev crate 在 macOS/Windows 的事件模型差異（鍵碼對應、權限需求、事件觸發頻率）需要統一的抽象層
+1. **跨平台行為抽象** — OS 原生鍵盤 API（macOS CGEventTap / Windows SetWindowsHookExW）的事件模型差異（鍵碼對應、權限需求、事件觸發頻率）需要統一的抽象層
 2. **雙視窗狀態同步** — HUD Window 和 Main Window 需共享應用程式狀態（錄音狀態、設定變更、歷史更新），Tauri Events 或 Pinia 跨視窗同步是關鍵決策點
 3. **API 錯誤降級** — Groq API 的 timeout/失敗需要一致的降級策略：Whisper 失敗 → 顯示錯誤；LLM 超時 → 跳過 AI 直接貼上原始文字
 4. **安全金鑰儲存** — API Key 不能明文存放，需整合 OS 原生 credential store（macOS Keychain / Windows Credential Manager）
@@ -111,7 +111,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 | 建構工具 | Vite | 6.4.1 | ✅ 已採用 |
 | 套件管理 | pnpm | — | ✅ 已採用 |
 | 剪貼簿 | arboard | 3.6.1 | ✅ 已採用 |
-| 鍵盤模擬 | enigo | 0.2 | ✅ 已採用 |
+| ~~鍵盤模擬~~ | ~~enigo~~ | ~~0.2~~ | ❌ 已移除（零使用死依賴） |
 | HTTP 請求 | tauri-plugin-http | 2.x | ✅ 已採用 |
 | macOS 視窗 | objc + core-graphics | 0.2 / 0.24 | ✅ 已採用 |
 | Windows 視窗 | windows crate | 0.61 | ✅ 已採用 |
@@ -122,7 +122,6 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 | 依賴 | 版本 | 用途 | Cargo feature |
 |------|------|------|-------------|
-| `rdev` | 0.5.3 | 跨平台全域鍵盤監聽（取代 CGEventTap） | — |
 | `tauri-plugin-sql` | 2.3.1 | SQLite 資料庫（歷史記錄 + 詞彙字典） | `sqlite` |
 | `tauri-plugin-autostart` | 2.5.1 | 開機自啟動 | — |
 | `tauri-plugin-updater` | ~2.2.0 | 自動更新 | — |
@@ -161,7 +160,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 - 元件在 `src/components/`
 - 型別定義在 `src/types/`
 
-**Note：** V2 不需要專案初始化 — 基於現有 POC 結構擴展。第一個實作 Story 應是新增 rdev + SQLite 基礎架構。
+**Note：** V2 不需要專案初始化 — 基於現有 POC 結構擴展。第一個實作 Story 應是新增 SQLite 基礎架構 + 擴展 OS-native 熱鍵監聽。
 
 ## Core Architectural Decisions
 
@@ -398,7 +397,7 @@ src/
 src-tauri/src/
 ├── plugins/
 │   ├── mod.rs
-│   ├── hotkey_listener.rs   # rdev 跨平台熱鍵（重寫）
+│   ├── hotkey_listener.rs   # OS-native 跨平台熱鍵（擴展重寫）
 │   ├── clipboard_paste.rs   # 剪貼簿操作（現有，擴展）
 │   └── keyboard_monitor.rs  # 貼上後鍵盤監控（新增）
 ├── lib.rs                   # App 設定（現有，擴展雙視窗）
@@ -563,7 +562,7 @@ sayit/
 │   ├── src/
 │   │   ├── plugins/
 │   │   │   ├── mod.rs                 # Plugin 統一匯出 [現有，擴展]
-│   │   │   ├── hotkey_listener.rs     # rdev 跨平台全域熱鍵 [重寫]
+│   │   │   ├── hotkey_listener.rs     # OS-native 跨平台全域熱鍵 [擴展重寫]
 │   │   │   ├── clipboard_paste.rs     # arboard + enigo 剪貼簿操作 [現有，擴展]
 │   │   │   └── keyboard_monitor.rs    # 貼上後鍵盤監控 [新增]
 │   │   ├── lib.rs                     # App 配置 + 雙視窗 + Tray [現有，擴展]
@@ -641,7 +640,7 @@ sayit/
 ```
 User presses hotkey (Fn/右Alt)
     │
-    ↓ rdev event
+    ↓ OS-native event (CGEventTap / WH_KEYBOARD_LL)
 hotkey_listener.rs ──→ Tauri Event: hotkey:pressed
     │
     ↓
@@ -725,7 +724,7 @@ pnpm tauri build  # 1. Vite 打包前端 → dist/
 **Decision Compatibility：**
 - Tauri v2.10.x 與所有 Tauri plugins（sql 2.3.1, autostart 2.5.1, updater ~2.2.0, store ~2.x）版本相容
 - Vue 3.5.29 + Pinia 3.x + Vue Router 5.0.3 生態相容
-- rdev 0.5.3 + arboard 3.6.1 + enigo 0.2 為獨立 Rust crates，無衝突
+- arboard 3.6.1 為獨立 Rust crate，無衝突（enigo 已移除，rdev 改用 OS-native API 取代）
 - 前端直接呼叫 Groq API 的決策與 CSP 白名單一致
 - tauri-plugin-store 加密儲存與 SQLite 資料層分離，職責清晰
 
@@ -746,7 +745,7 @@ pnpm tauri build  # 1. Vite 打包前端 → dist/
 
 | FR | 需求 | 架構支援 |
 |----|------|---------|
-| FR1-5 | 語音觸發與錄音 | hotkey_listener.rs (rdev) + recorder.ts + useVoiceFlow.ts |
+| FR1-5 | 語音觸發與錄音 | hotkey_listener.rs (OS-native) + recorder.ts + useVoiceFlow.ts |
 | FR6-7 | 語音轉文字 | transcriber.ts (Groq Whisper API + 詞彙 prompt 注入) |
 | FR8-12 | AI 文字整理 | enhancer.ts (Groq LLM) + useSettingsStore (prompt) + 詞彙/剪貼簿上下文注入 |
 | FR13-15 | 文字輸出 | clipboard_paste.rs (arboard + enigo) + keyboard_monitor.rs |
@@ -836,6 +835,6 @@ pnpm tauri build  # 1. Vite 打包前端 → dist/
 - 所有架構相關問題參照本文件
 
 **First Implementation Priority：**
-1. 新增 rdev + SQLite 基礎架構（Layer 0）
+1. 新增 SQLite 基礎架構 + 擴展 OS-native 熱鍵（Layer 0）
 2. 建立 Pinia stores + 雙視窗架構
 3. 依 PRD 建議開發順序推進

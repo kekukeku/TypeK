@@ -36,7 +36,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 | tauri-plugin-shell | 2.x | Shell 操作 |
 | tauri-plugin-http | 2.x | HTTP 請求 |
 | arboard | 3.x | 跨平台剪貼簿操作 |
-| enigo | 0.2 | 跨平台鍵盤模擬 |
+| ~~enigo~~ | ~~0.2~~ | ~~跨平台鍵盤模擬~~ — 已移除（零使用死依賴） |
 | serde / serde_json | 1.x | 序列化 |
 | thiserror | 2.x | 錯誤型別定義 |
 | objc + core-graphics + core-foundation | macOS only | macOS 視窗控制 |
@@ -44,7 +44,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 ### V2 Planned Dependencies (尚未安裝)
 
-- Rust: rdev 0.5.3, tauri-plugin-sql (sqlite), tauri-plugin-autostart, tauri-plugin-updater, tauri-plugin-store
+- Rust: tauri-plugin-sql (sqlite), tauri-plugin-autostart, tauri-plugin-updater, tauri-plugin-store（rdev 已取消，改用 OS-native API）
 - JS: vue-router 5.x, pinia 3.x, 對應 tauri plugin 前端 bindings
 
 ### External APIs
@@ -119,7 +119,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 | Composable 檔案 | camelCase + use 前綴 | `useHudState.ts`, `useVoiceFlow.ts` |
 | Service/Lib 檔案 | camelCase | `recorder.ts`, `transcriber.ts` |
 | Pinia Store 檔案 | camelCase + use 前綴 | `useSettingsStore.ts` |
-| Rust 模組檔案 | snake_case | `clipboard_paste.rs`, `fn_key_listener.rs` |
+| Rust 模組檔案 | snake_case | `clipboard_paste.rs`, `hotkey_listener.rs` |
 | 資料夾 | kebab-case | `src-tauri/`, `components/` |
 | TS 變數/函式 | camelCase | `startRecording()`, `enhancedText` |
 | TS 型別/介面 | PascalCase + 後綴 | `TranscriptionRecord`, `SettingsDto` |
@@ -209,7 +209,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 - **CSP 硬限制** — `connect-src 'self' https://api.groq.com`，新增外部 API 必須更新 `tauri.conf.json`
 - **API Key 不出本地** — 只在本機 tauri-plugin-store 中，不上傳、不寫入日誌
-- **macOS 權限** — Accessibility 權限是 Fn key 監聽的前提，`fn_key_listener.rs` 會檢查
+- **macOS 權限** — Accessibility 權限是全域熱鍵監聽的前提，`hotkey_listener.rs`（CGEventTap）會檢查
 
 #### 效能注意事項
 

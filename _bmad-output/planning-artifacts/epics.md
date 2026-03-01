@@ -107,7 +107,7 @@ This document provides the complete epic and story breakdown for SayIt, decompos
 ### Additional Requirements
 
 **來自架構文件：**
-- Brownfield 專案：基於已完成 POC 擴展，不需專案初始化。第一個實作 Story 應新增 rdev + SQLite 基礎架構
+- Brownfield 專案：基於已完成 POC 擴展，不需專案初始化。第一個實作 Story 應新增 SQLite 基礎架構 + 擴展 OS-native 熱鍵監聽
 - 雙視窗架構：HUD Window（App.vue）+ Main Window（MainApp.vue），需在 tauri.conf.json 定義
 - Tauri Events 跨視窗同步：使用 `emitTo(windowLabel, event, payload)` 跨視窗廣播關鍵狀態變更
 - 前端直接 SQL：tauri-plugin-sql 前端直接執行 SQL，資料存取邏輯集中在 Pinia stores 的 actions 中
@@ -116,7 +116,7 @@ This document provides the complete epic and story breakdown for SayIt, decompos
 - 錯誤處理模式：Service 層拋出有意義錯誤 → Store 層 catch + 降級 + 使用者提示
 - SQLite Schema：transcriptions / vocabulary / schema_version 三張表，WAL 模式
 - 自動更新：tauri-plugin-updater + 自訂 endpoint（靜態 JSON + 檔案託管）
-- V2 新依賴（Rust）：rdev 0.5.3, tauri-plugin-sql 2.3.1, tauri-plugin-autostart 2.5.1, tauri-plugin-updater ~2.2.0, tauri-plugin-store ~2.x
+- V2 新依賴（Rust）：tauri-plugin-sql 2.3.1, tauri-plugin-autostart 2.5.1, tauri-plugin-updater ~2.2.0, tauri-plugin-store ~2.x（rdev 已取消，改用 OS-native API；enigo 已移除）
 - V2 新依賴（JS）：vue-router 5.0.3, pinia 3.x, @tauri-apps/plugin-sql, @tauri-apps/plugin-autostart, @tauri-apps/plugin-updater, @tauri-apps/plugin-store
 - 命名規範：Rust snake_case / TS camelCase / Vue PascalCase / SQLite snake_case / Tauri Events {domain}:{action} kebab-case
 - 專案結構：lib/（純邏輯）→ stores/（狀態管理）→ composables/（Vue 邏輯）→ views/（頁面）→ components/（元件），依賴方向單向
@@ -124,7 +124,7 @@ This document provides the complete epic and story breakdown for SayIt, decompos
 
 **來自 POC 規格書：**
 - 現有 POC 元件可沿用：recorder.ts、transcriber.ts、clipboard_paste.rs、NotchHud.vue、useHudState.ts、useVoiceFlow.ts
-- 現有 POC 元件需重寫：fn_key_listener.rs（CGEventTap → rdev 跨平台）
+- 現有 POC 元件需擴展重寫：fn_key_listener.rs → hotkey_listener.rs（CGEventTap 擴展多鍵 + Windows SetWindowsHookExW）
 - 現有 POC 元件需擴展：NotchHud.vue（3態→6態）、useVoiceFlow.ts（新增 AI 整理步驟）、transcriber.ts（詞彙注入）
 
 ### FR Coverage Map
@@ -169,7 +169,7 @@ This document provides the complete epic and story breakdown for SayIt, decompos
 ## Epic List
 
 ### Epic 1: 跨平台語音輸入基礎
-使用者在 macOS 和 Windows 上按住可配置的熱鍵，說話後文字自動貼入游標位置，HUD 顯示即時狀態回饋。包含 V2 基礎架構建設（rdev、SQLite、Pinia、雙視窗、tauri-plugin-store）及 Onboarding 體驗（API Key 輸入、權限引導）。
+使用者在 macOS 和 Windows 上按住可配置的熱鍵，說話後文字自動貼入游標位置，HUD 顯示即時狀態回饋。包含 V2 基礎架構建設（OS-native 熱鍵、SQLite、Pinia、雙視窗、tauri-plugin-store）及 Onboarding 體驗（API Key 輸入、權限引導）。
 **FRs covered:** FR1, FR2, FR3, FR4, FR5, FR6, FR13, FR14, FR26, FR27, FR28, FR31, FR32, FR35, FR36
 
 ### Epic 2: AI 文字智慧整理
@@ -197,7 +197,7 @@ This document provides the complete epic and story breakdown for SayIt, decompos
 
 ## Epic 1: 跨平台語音輸入基礎
 
-使用者在 macOS 和 Windows 上按住可配置的熱鍵，說話後文字自動貼入游標位置，HUD 顯示即時狀態回饋。包含 V2 基礎架構建設（rdev、SQLite、Pinia、雙視窗、tauri-plugin-store）及 Onboarding 體驗（API Key 輸入、權限引導）。
+使用者在 macOS 和 Windows 上按住可配置的熱鍵，說話後文字自動貼入游標位置，HUD 顯示即時狀態回饋。包含 V2 基礎架構建設（OS-native 熱鍵、SQLite、Pinia、雙視窗、tauri-plugin-store）及 Onboarding 體驗（API Key 輸入、權限引導）。
 
 ### Story 1.1: V2 基礎架構與雙視窗設置
 
@@ -208,7 +208,7 @@ So that 後續所有功能開發都能在穩定的架構基礎上進行。
 **Acceptance Criteria:**
 
 **Given** 現有 POC 專案結構
-**When** 安裝所有 V2 新增的 Rust 依賴（rdev 0.5.3, tauri-plugin-sql 2.3.1, tauri-plugin-autostart 2.5.1, tauri-plugin-updater ~2.2.0, tauri-plugin-store ~2.x）
+**When** 安裝所有 V2 新增的 Rust 依賴（tauri-plugin-sql 2.3.1, tauri-plugin-autostart 2.5.1, tauri-plugin-updater ~2.2.0, tauri-plugin-store ~2.x）
 **Then** Cargo.toml 包含所有新依賴且 `cargo check` 通過
 **And** tauri.conf.json 中的 plugins 區塊正確註冊所有新 plugin
 
@@ -246,7 +246,7 @@ So that 後續所有功能開發都能在穩定的架構基礎上進行。
 **And** Re-export Tauri `listen` 為 `listenToEvent`，保留原始 Tauri API 簽名
 **And** 定義事件常數，命名遵循 {domain}:{action} kebab-case 規範
 
-### Story 1.2: rdev 跨平台全域熱鍵系統
+### Story 1.2: 跨平台全域熱鍵系統（OS-native）
 
 As a 使用者,
 I want 透過可配置的全域熱鍵觸發語音錄音，在 macOS 和 Windows 上都能使用,
@@ -254,19 +254,19 @@ So that 我不需要切換到 App 視窗就能隨時啟動語音輸入。
 
 **Acceptance Criteria:**
 
-**Given** rdev crate 已安裝
-**When** 重寫 hotkey_listener.rs 使用 rdev 替代 CGEventTap
+**Given** OS 原生 API 可用（macOS CGEventTap / Windows SetWindowsHookExW）
+**When** 重寫 hotkey_listener.rs 使用 OS 原生 API（擴展現有 CGEventTap + 新增 Windows WH_KEYBOARD_LL）
 **Then** 在 macOS 上可監聽 Fn、Option、Control、Command、Shift 鍵事件
 **And** 在 Windows 上可監聽右 Alt、左 Alt、Control、Shift 鍵事件
 **And** 預設觸發鍵：macOS 為 Fn，Windows 為右 Alt
 
-**Given** hotkey_listener.rs 使用 rdev 實作
+**Given** hotkey_listener.rs 使用 OS 原生 API 實作
 **When** 使用者在 Hold 模式下按住觸發鍵
 **Then** 系統發送 `hotkey:pressed` Tauri Event 至 WebView
 **And** 使用者放開觸發鍵時發送 `hotkey:released` Tauri Event
 **And** 事件 payload 包含 `{ mode: 'hold', action: 'start' | 'stop' }`
 
-**Given** hotkey_listener.rs 使用 rdev 實作
+**Given** hotkey_listener.rs 使用 OS 原生 API 實作
 **When** 使用者在 Toggle 模式下按一下觸發鍵
 **Then** 系統發送 `hotkey:toggled` Tauri Event，payload 為 `{ mode: 'toggle', action: 'start' }`
 **And** 再次按一下觸發鍵時發送 `{ mode: 'toggle', action: 'stop' }`
@@ -508,7 +508,7 @@ So that 我能透過統計數據了解 AI 整理的輸出品質趨勢。
 **Acceptance Criteria:**
 
 **Given** 文字已成功貼入游標位置
-**When** 新增 keyboard_monitor.rs 模組（使用 rdev）
+**When** 新增 keyboard_monitor.rs 模組（使用 OS-native API）
 **Then** 模組在貼上完成後開始監聽鍵盤事件
 **And** 監聽時間窗口為 5 秒
 
