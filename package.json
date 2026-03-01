@@ -7,7 +7,12 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
@@ -16,12 +21,18 @@
     "vue": "^3.5"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.3.0",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4",
     "@tauri-apps/cli": "^2",
     "@vitejs/plugin-vue": "^5",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^28.1.0",
     "tailwindcss": "^4",
     "typescript": "^5.7",
     "vite": "^6",
+    "vitest": "^4.0.18",
     "vue-tsc": "^2"
   },
   "pnpm": {
