@@ -8,13 +8,13 @@ inputDocuments:
   - _bmad-output/planning-artifacts/epics.md
 workflowStatus: in-progress
 date: 2026-03-01
-project: whisper-poc
+project: sayit
 ---
 
 # Implementation Readiness Assessment Report
 
 **Date:** 2026-03-01
-**Project:** whisper-poc
+**Project:** SayIt
 
 ## Document Inventory
 
@@ -311,10 +311,10 @@ No forward dependencies within or across epics.
 
 本次評估共檢查了 3 份核心文件（PRD、Architecture、Epics），涵蓋 36 個 FR、19 個 NFR、5 個 Epic、15 個 Story。發現 0 個 Critical 問題、1 個已接受的 Major 例外、3 個 Minor 關注點、1 個低風險 Warning。
 
-**結論：** whisper-poc 的規劃文件品質良好，需求追蹤完整，架構決策明確。專案已準備好進入實作階段。
+**結論：** SayIt 的規劃文件品質良好，需求追蹤完整，架構決策明確。專案已準備好進入實作階段。
 
 ---
 
 **Assessment Date:** 2026-03-01
 **Assessor:** BMAD Implementation Readiness Workflow
-**Project:** whisper-poc (NoWayLM Voice)
+**Project:** SayIt

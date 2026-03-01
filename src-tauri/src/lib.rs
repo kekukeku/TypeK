@@ -111,12 +111,12 @@ pub fn run() {
             plugins::clipboard_paste::paste_text
         ])
         .setup(|app| {
-            let quit_item = MenuItem::with_id(app, "quit", "Quit NoWayLM Voice", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Quit SayIt", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&quit_item])?;
 
             TrayIconBuilder::new()
                 .menu(&menu)
-                .tooltip("NoWayLM Voice")
+                .tooltip("SayIt")
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "quit" => {
                         app.exit(0);

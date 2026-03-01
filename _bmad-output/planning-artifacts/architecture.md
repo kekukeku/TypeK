@@ -10,13 +10,13 @@ stepsCompleted:
   - 8
 inputDocuments:
   - prd.md
-  - product-brief-whisper-poc-2026-02-28.md
+  - product-brief-sayit-2026-02-28.md
   - voice-transcription-poc-spec.md
 workflowType: 'architecture'
 lastStep: 8
 status: 'complete'
 completedAt: '2026-03-01'
-project_name: 'whisper-poc'
+project_name: 'sayit'
 user_name: 'Jackle'
 date: '2026-02-28'
 ---
@@ -507,7 +507,7 @@ async function processTranscription() {
 ### Complete Project Directory Structure
 
 ```
-whisper-poc/
+sayit/
 ├── .github/
 │   └── workflows/
 │       └── build.yml                  # CI: 型別檢查 + 建構測試

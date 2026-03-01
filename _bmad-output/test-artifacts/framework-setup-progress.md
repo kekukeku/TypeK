@@ -34,7 +34,7 @@ lastSaved: '2026-03-01'
 
 ### Project Context
 
-- **類型**: Tauri v2 桌面語音轉錄 App (whisper-poc)
+- **類型**: Tauri v2 桌面語音轉錄 App (SayIt)
 - **前端框架**: Vue 3 Composition API
 - **建構工具**: Vite 6.4.1
 - **CSS**: Tailwind CSS 4.2.1
@@ -141,7 +141,7 @@ tests/
 
 ### Completion Summary
 
-**Framework Setup COMPLETE** for whisper-poc (Tauri v2 Fullstack App)
+**Framework Setup COMPLETE** for SayIt (Tauri v2 Fullstack App)
 
 | 類別 | 數量 |
 |------|------|

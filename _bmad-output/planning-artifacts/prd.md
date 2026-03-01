@@ -17,7 +17,7 @@ stepsCompleted:
 workflowStatus: complete
 completedAt: 2026-02-28
 inputDocuments:
-  - product-brief-whisper-poc-2026-02-28.md
+  - product-brief-sayit-2026-02-28.md
   - voice-transcription-poc-spec.md
 documentCounts:
   briefs: 1
@@ -32,16 +32,16 @@ classification:
 workflowType: 'prd'
 ---
 
-# Product Requirements Document - whisper-poc
+# Product Requirements Document - SayIt
 
 **Author:** Jackle
 **Date:** 2026-02-28
 
 ## Executive Summary
 
-NoWayLM Voice 是一款跨平台桌面語音輸入工具，解決知識工作者「思考速度遠超打字速度」的核心瓶頸。使用者在任何應用程式中按住快捷鍵說話，放開後語音經 Groq Whisper API 轉錄，再由 Groq LLM 自動將口語轉為通順的繁體中文書面語（去除贅詞、重組句構、修正標點），直接貼入游標位置。
+SayIt 是一款跨平台桌面語音輸入工具，解決知識工作者「思考速度遠超打字速度」的核心瓶頸。使用者在任何應用程式中按住快捷鍵說話，放開後語音經 Groq Whisper API 轉錄，再由 Groq LLM 自動將口語轉為通順的繁體中文書面語（去除贅詞、重組句構、修正標點），直接貼入游標位置。
 
-現有方案要麼輸出品質不足以直接使用（macOS 內建聽寫無 AI 後處理），要麼設定繁複（VoiceInk 需管理 12+ AI 提供商與本地模型），要麼需付費訂閱（Typeless）。NoWayLM Voice 的目標是提供一個安裝後只需設定 API Key 即可使用的工具，讓語音輸入成為文字輸入的自然延伸。
+現有方案要麼輸出品質不足以直接使用（macOS 內建聽寫無 AI 後處理），要麼設定繁複（VoiceInk 需管理 12+ AI 提供商與本地模型），要麼需付費訂閱（Typeless）。SayIt 的目標是提供一個安裝後只需設定 API Key 即可使用的工具，讓語音輸入成為文字輸入的自然延伸。
 
 本專案基於已完成的 POC（Fn 鍵監聽 → 錄音 → Whisper 轉錄 → 剪貼簿貼上）進行功能擴展，新增 AI 文字整理、跨平台熱鍵系統、自訂詞彙字典、歷史記錄與 Dashboard UI。主要使用者為開發者與知識工作者，中期目標推廣至公司內部非技術角色。
 
@@ -256,7 +256,7 @@ Layer 2 — UI 層（依賴 Layer 0 + 1）
 
 ### Project-Type Overview
 
-NoWayLM Voice 是一款常駐 System Tray 的跨平台桌面應用，使用 Tauri v2 框架。應用程式需要深度整合作業系統層功能（全域熱鍵、剪貼簿、鍵盤模擬），同時維持輕量的資源佔用。雙視窗架構：HUD Overlay（狀態顯示）+ Main Window（Dashboard / 設定）。
+SayIt 是一款常駐 System Tray 的跨平台桌面應用，使用 Tauri v2 框架。應用程式需要深度整合作業系統層功能（全域熱鍵、剪貼簿、鍵盤模擬），同時維持輕量的資源佔用。雙視窗架構：HUD Overlay（狀態顯示）+ Main Window（Dashboard / 設定）。
 
 ### Technical Architecture Considerations
 

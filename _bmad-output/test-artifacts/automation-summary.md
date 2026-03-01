@@ -38,7 +38,7 @@ inputDocuments:
   - _bmad/tea/testarch/knowledge/playwright-cli.md
 ---
 
-# Automation Summary — whisper-poc
+# Automation Summary — SayIt
 
 ## Step 1: Preflight & Context Loading
 

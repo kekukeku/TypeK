@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicedoc/resources/main/tauri-conf-v2.json",
-  "productName": "NoWayLM Voice",
+  "productName": "SayIt",
   "version": "0.1.0",
-  "identifier": "com.nowayllm.voice",
+  "identifier": "com.sayit.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -15,7 +15,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "NoWayLM Voice",
+        "title": "SayIt",
         "width": 400,
         "height": 100,
         "x": null,
@@ -32,7 +32,7 @@
       },
       {
         "label": "main-window",
-        "title": "NoWayLM Voice - Dashboard",
+        "title": "SayIt - Dashboard",
         "url": "main-window.html",
         "width": 960,
         "height": 680,
@@ -47,7 +47,7 @@
     "trayIcon": {
       "iconPath": "icons/icon.png",
       "iconAsTemplate": false,
-      "tooltip": "NoWayLM Voice"
+      "tooltip": "SayIt"
     },
     "security": {
       "csp": "default-src 'self'; connect-src 'self' https://api.groq.com; style-src 'self' 'unsafe-inline'; script-src 'self'"

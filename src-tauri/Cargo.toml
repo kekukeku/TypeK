@@ -1,10 +1,10 @@
 [package]
-name = "whisper-poc"
+name = "sayit"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "whisper_poc_lib"
+name = "sayit_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

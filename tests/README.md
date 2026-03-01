@@ -1,4 +1,4 @@
-# Test Suite — whisper-poc
+# Test Suite — SayIt
 
 ## Setup
 

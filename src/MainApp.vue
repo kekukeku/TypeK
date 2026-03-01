@@ -14,7 +14,7 @@ const navItems = [
     <!-- Sidebar -->
     <nav class="flex w-56 flex-col border-r border-zinc-800 bg-zinc-900">
       <div class="flex h-14 items-center gap-2 border-b border-zinc-800 px-4">
-        <span class="text-lg font-semibold">NoWayLM Voice</span>
+        <span class="text-lg font-semibold">SayIt</span>
       </div>
       <div class="flex flex-1 flex-col gap-1 p-2">
         <RouterLink

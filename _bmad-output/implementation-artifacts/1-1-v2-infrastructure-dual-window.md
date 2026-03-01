@@ -67,7 +67,7 @@ So that 後續所有功能開發都能在穩定的架構基礎上進行。
   - [x] 5.2 在 tauri.conf.json app.windows 新增第二個視窗定義 label: "main-window"
   - [x] 5.3 在 vite.config.ts 的 build.rollupOptions.input 新增 main-window.html 入口
   - [x] 5.4 HUD Window（label: "main"）維持現有配置不變
-  - [x] 5.5 Main Window 配置：visible: false（預設隱藏，由 Tray 開啟）、decorations: true、resizable: true、width: 960、height: 680、title: "NoWayLM Voice - Dashboard"（與 HUD 區分）
+  - [x] 5.5 Main Window 配置：visible: false（預設隱藏，由 Tray 開啟）、decorations: true、resizable: true、width: 960、height: 680、title: "SayIt - Dashboard"（與 HUD 區分）
 
 - [x] Task 6: Main Window 入口與路由 (AC: #6)
   - [x] 6.1 建立 src/main-window.ts — `import './style.css'` + `await initializeDatabase()` + createApp(MainApp) + use(pinia) + use(router) + mount('#app')。注意：必須 import style.css 否則無 Tailwind 樣式；必須在 mount 前呼叫 initializeDatabase() 確保 SQLite 就緒
@@ -175,7 +175,7 @@ INSERT OR IGNORE INTO schema_version (version) VALUES (1);
 **Main Window (label: "main-window")** — 新增：
 - 標準視窗、960×680px、預設隱藏
 - 載入 main-window.html → main-window.ts → MainApp.vue
-- 配置：`{ visible: false, decorations: true, resizable: true, center: true, title: "NoWayLM Voice - Dashboard" }`
+- 配置：`{ visible: false, decorations: true, resizable: true, center: true, title: "SayIt - Dashboard" }`
 
 **Vite 多入口配置：**
 ```typescript
@@ -193,7 +193,7 @@ build: {
 ```json
 {
   "label": "main-window",
-  "title": "NoWayLM Voice - Dashboard",
+  "title": "SayIt - Dashboard",
   "url": "main-window.html",
   "width": 960,
   "height": 680,

@@ -9,15 +9,15 @@ completedAt: 2026-03-01
 inputDocuments:
   - prd.md
   - architecture.md
-  - product-brief-whisper-poc-2026-02-28.md
+  - product-brief-SayIt-2026-02-28.md
   - voice-transcription-poc-spec.md
 ---
 
-# whisper-poc - Epic Breakdown
+# SayIt - Epic Breakdown
 
 ## Overview
 
-This document provides the complete epic and story breakdown for whisper-poc, decomposing the requirements from the PRD, UX Design if it exists, and Architecture requirements into implementable stories.
+This document provides the complete epic and story breakdown for SayIt, decomposing the requirements from the PRD, UX Design if it exists, and Architecture requirements into implementable stories.
 
 ## Requirements Inventory
 

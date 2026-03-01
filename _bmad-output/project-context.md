@@ -1,5 +1,5 @@
 ---
-project_name: 'whisper-poc'
+project_name: 'sayit'
 user_name: 'Jackle'
 date: '2026-03-01'
 sections_completed: ['technology_stack', 'language_rules', 'framework_rules', 'testing_rules', 'code_quality', 'workflow_rules', 'critical_rules']
