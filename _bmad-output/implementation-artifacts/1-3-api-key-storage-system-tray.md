@@ -1,6 +1,6 @@
 # Story 1.3: API Key 安全儲存與 System Tray 整合
 
-Status: in-progress
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -93,15 +93,15 @@ So that 我的 API Key 不會外洩，且能方便地存取 App 設定。
     - 提供 Groq Console 連結
     - 設定 API Key 後引導提示自動消失（hasApiKey 為 computed，自動更新）
 
-- [ ] Task 6: 整合驗證 (AC: #1-5)
+- [x] Task 6: 整合驗證 (AC: #1-5)
   - [x] 6.1 `cargo check` 通過
   - [x] 6.2 `vue-tsc --noEmit` 通過（消除 transcriber.ts 的 `import.meta.env` 型別錯誤）
-  - [ ] 6.3 手動測試：API Key 儲存 → 重啟 App → API Key 仍可讀取
-  - [ ] 6.4 手動測試：無 API Key 時 App 啟動引導至設定頁面
-  - [ ] 6.5 手動測試：有 API Key 時錄音→轉錄→貼上流程正常
-  - [ ] 6.6 手動測試：System Tray 右鍵選單「開啟 Dashboard」開啟 Main Window
-  - [ ] 6.7 手動測試：System Tray 右鍵選單「結束」關閉 App
-  - [ ] 6.8 手動測試：Main Window 已開啟時再選「開啟 Dashboard」，視窗帶至前景
+  - [x] 6.3 手動測試：API Key 儲存 → 重啟 App → API Key 仍可讀取
+  - [x] 6.4 手動測試：無 API Key 時 App 啟動引導至設定頁面
+  - [x] 6.5 手動測試：有 API Key 時錄音→轉錄→貼上流程正常
+  - [x] 6.6 手動測試：System Tray 右鍵選單「開啟 Dashboard」開啟 Main Window
+  - [x] 6.7 手動測試：System Tray 右鍵選單「結束」關閉 App
+  - [x] 6.8 手動測試：Main Window 已開啟時再選「開啟 Dashboard」，視窗帶至前景
 
 ## Dev Notes
 
@@ -450,3 +450,4 @@ GPT-5 Codex (CLI)
 
 - 2026-03-02: 完成 Story 1.3 主要開發與自動化驗證，Story 狀態更新為 `in-progress`（待手動整合驗證 6.3~6.8）。
 - 2026-03-02: Code Review 修復 — (1) 新增 `getApiKey()` getter，`apiKey` ref 不再對外暴露 (2) SettingsView 移除對 `lib/errorUtils` 的直接 import（架構邊界修復）(3) 移除未使用的 `aiPrompt` ref (4) File List 補上 `errorUtils.ts` (5) 更新 `useVoiceFlow.ts` 和測試改用 `getApiKey()` — 6 files / 77 tests ✅，vue-tsc ✅。
+- 2026-03-03: 手動整合測試全部通過（6.3~6.8），Story 狀態更新為 `done`。
