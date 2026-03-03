@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { PhysicalPosition } from "@tauri-apps/api/dpi";
+import { LogicalPosition } from "@tauri-apps/api/dpi";
 import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { Window, getCurrentWindow } from "@tauri-apps/api/window";
 import { defineStore } from "pinia";
@@ -192,7 +192,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
       if (position.monitorKey !== lastMonitorKey) {
         lastMonitorKey = position.monitorKey;
         await getAppWindow().setPosition(
-          new PhysicalPosition(position.x, position.y),
+          new LogicalPosition(position.x, position.y),
         );
       }
     } catch (err) {

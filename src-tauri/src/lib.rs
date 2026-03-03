@@ -158,12 +158,16 @@ fn get_cursor_position() -> (f64, f64) {
     (point.x as f64, point.y as f64)
 }
 
-/// `get_hud_target_position` 回傳給前端的定位資訊
+/// `get_hud_target_position` 回傳給前端的定位資訊（logical 座標）
+///
+/// 使用 logical 座標而非 physical，以繞過 tao `set_outer_position` 在
+/// cross-DPI 環境下使用錯誤 scale_factor 轉換的 bug：
+/// tao 用視窗「當前」螢幕的 sf 而非「目標」螢幕的 sf 來除。
 #[derive(serde::Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct HudTargetPosition {
-    x: i32,
-    y: i32,
+    x: f64,
+    y: f64,
     monitor_key: String,
 }
 
@@ -188,7 +192,8 @@ pub struct MonitorInfo {
 ///        除以各自的 scale_factor 轉為 logical 後比對
 /// Windows: 游標座標與 monitor physical position 在同一座標系統，直接比對
 ///
-/// 若無螢幕匹配，fallback 到 index 0；空陣列回傳 None
+/// 若無螢幕精確匹配，fallback 到距離游標最近的螢幕（防禦 rounding 間隙）；
+/// 空陣列回傳 None
 pub fn find_monitor_for_cursor(
     cursor_x: f64,
     cursor_y: f64,
@@ -198,6 +203,9 @@ pub fn find_monitor_for_cursor(
     if monitors.is_empty() {
         return None;
     }
+
+    let mut closest_idx = 0;
+    let mut min_distance_sq = f64::MAX;
 
     for (i, monitor) in monitors.iter().enumerate() {
         let (left, top, right, bottom) = if is_macos {
@@ -220,13 +228,23 @@ pub fn find_monitor_for_cursor(
         if cursor_x >= left && cursor_x < right && cursor_y >= top && cursor_y < bottom {
             return Some(i);
         }
+
+        // 計算游標到螢幕中心的距離（用於 fallback）
+        let center_x = (left + right) / 2.0;
+        let center_y = (top + bottom) / 2.0;
+        let dist_sq = (cursor_x - center_x).powi(2) + (cursor_y - center_y).powi(2);
+        if dist_sq < min_distance_sq {
+            min_distance_sq = dist_sq;
+            closest_idx = i;
+        }
     }
-    // fallback to first monitor
-    Some(0)
+    // fallback: 找距離游標最近的螢幕中心，而非固定 index 0
+    Some(closest_idx)
 }
 
 /// 計算視窗水平置中位置（像素座標）
 /// 回傳 x 座標（已乘以 scale_factor），用於 PhysicalPosition
+/// 僅供 `setup()` 啟動時定位使用（同螢幕 sf 正確）
 pub fn calculate_centered_window_x(
     screen_width_physical: u32,
     scale_factor: f64,
@@ -237,14 +255,28 @@ pub fn calculate_centered_window_x(
     (x_logical * scale_factor) as i32
 }
 
-/// 取得 HUD 應定位到的目標螢幕座標
+/// 計算視窗水平置中的 logical x 偏移量
+/// 供多螢幕定位使用，搭配 LogicalPosition 繞過 tao cross-DPI bug
+pub fn calculate_centered_window_x_logical(
+    screen_width_physical: u32,
+    scale_factor: f64,
+    window_width_logical: f64,
+) -> f64 {
+    let screen_width_logical = screen_width_physical as f64 / scale_factor;
+    (screen_width_logical - window_width_logical) / 2.0
+}
+
+/// 取得 HUD 應定位到的目標螢幕 logical 座標
 ///
 /// 流程：
-/// 1. 取得游標座標
+/// 1. 取得游標座標（macOS: logical points / Windows: virtual screen）
 /// 2. 列舉所有螢幕
 /// 3. 找到游標所在螢幕
-/// 4. 計算該螢幕頂部水平置中位置
-/// 5. 回傳 PhysicalPosition + monitor key
+/// 4. 計算該螢幕頂部水平置中的 logical 座標
+/// 5. 回傳 LogicalPosition + monitor key
+///
+/// 使用 logical 座標而非 physical，以繞過 tao `set_outer_position` 在
+/// cross-DPI 環境下用「當前螢幕 sf」而非「目標螢幕 sf」轉換的 bug。
 #[command]
 fn get_hud_target_position(app: tauri::AppHandle) -> Result<HudTargetPosition, String> {
     let (cursor_x, cursor_y) = get_cursor_position();
@@ -267,20 +299,51 @@ fn get_hud_target_position(app: tauri::AppHandle) -> Result<HudTargetPosition, S
         .collect();
 
     let is_macos = cfg!(target_os = "macos");
+
+    eprintln!("[hud-tracking] cursor=({:.1}, {:.1}), is_macos={}", cursor_x, cursor_y, is_macos);
+    for (i, mi) in monitor_infos.iter().enumerate() {
+        let sf = mi.scale_factor;
+        let (l, t, r, b) = if is_macos {
+            let l = mi.position_x as f64 / sf;
+            let t = mi.position_y as f64 / sf;
+            (l, t, l + mi.width as f64 / sf, t + mi.height as f64 / sf)
+        } else {
+            let l = mi.position_x as f64;
+            let t = mi.position_y as f64;
+            (l, t, l + mi.width as f64, t + mi.height as f64)
+        };
+        eprintln!(
+            "[hud-tracking]   monitor[{}]: physical=({},{}) {}x{} sf={:.1} → logical=({:.1},{:.1})-({:.1},{:.1})",
+            i, mi.position_x, mi.position_y, mi.width, mi.height, sf, l, t, r, b
+        );
+    }
+
     // safe to unwrap: monitors is non-empty, so find_monitor_for_cursor always returns Some
     let idx = find_monitor_for_cursor(cursor_x, cursor_y, &monitor_infos, is_macos)
         .expect("monitors is non-empty");
 
-    let monitor = &monitors[idx];
-    let centered_x = calculate_centered_window_x(
-        monitor.size().width,
-        monitor.scale_factor(),
+    let matched_monitor = &monitor_infos[idx];
+    let sf = matched_monitor.scale_factor;
+
+    // 還原螢幕的 logical origin（macOS: physical / sf = NSScreen points）
+    let monitor_logical_x = matched_monitor.position_x as f64 / sf;
+    let monitor_logical_y = matched_monitor.position_y as f64 / sf;
+
+    // 計算 HUD 在目標螢幕上的 logical 置中偏移
+    let centered_x_logical = calculate_centered_window_x_logical(
+        matched_monitor.width,
+        sf,
         HUD_WINDOW_WIDTH_LOGICAL,
     );
 
-    let hud_x = monitor.position().x + centered_x;
-    let hud_y = monitor.position().y;
-    let monitor_key = format!("{},{}", monitor.position().x, monitor.position().y);
+    let hud_x = monitor_logical_x + centered_x_logical;
+    let hud_y = monitor_logical_y;
+    let monitor_key = format!("{},{}", matched_monitor.position_x, matched_monitor.position_y);
+
+    eprintln!(
+        "[hud-tracking] matched=[{}] → hud logical=({:.1}, {:.1}), key={}",
+        idx, hud_x, hud_y, monitor_key
+    );
 
     Ok(HudTargetPosition {
         x: hud_x,
@@ -536,5 +599,96 @@ mod tests {
         // 空螢幕列表 → None
         let monitors: Vec<MonitorInfo> = vec![];
         assert_eq!(find_monitor_for_cursor(960.0, 540.0, &monitors, false), None);
+    }
+
+    // ============================================================
+    // portrait 螢幕 + mixed-DPI 測試
+    // ============================================================
+
+    #[test]
+    fn test_find_monitor_three_screens_with_portrait_macos() {
+        // 三螢幕: 左(1x landscape) + 中(2x Retina) + 右(1x portrait)
+        // macOS: Tauri physical position = NSScreen_origin * 各自 sf
+        //
+        // 中 Retina: NSScreen origin (0,0), sf=2.0 → physical (0,0), size 2880x1800
+        //   logical bounds: [0, 1440) x [0, 900)
+        // 左: NSScreen origin (-1920,0), sf=1.0 → physical (-1920,0), size 1920x1080
+        //   logical bounds: [-1920, 0) x [0, 1080)
+        // 右 portrait: NSScreen origin (1440,0), sf=1.0 → physical (1440,0), size 1080x1920
+        //   logical bounds: [1440, 2520) x [0, 1920)
+        let monitors = vec![
+            make_monitor(-1920, 0, 1920, 1080, 1.0),  // 左
+            make_monitor(0, 0, 2880, 1800, 2.0),       // 中 Retina
+            make_monitor(1440, 0, 1080, 1920, 1.0),    // 右 portrait
+        ];
+        // 游標在左螢幕
+        assert_eq!(find_monitor_for_cursor(-960.0, 540.0, &monitors, true), Some(0));
+        // 游標在中間 Retina 螢幕
+        assert_eq!(find_monitor_for_cursor(720.0, 450.0, &monitors, true), Some(1));
+        // 游標在右 portrait 螢幕（中央）
+        assert_eq!(find_monitor_for_cursor(1980.0, 960.0, &monitors, true), Some(2));
+        // 游標在右 portrait 螢幕下半部（超出 landscape 高度範圍）
+        assert_eq!(find_monitor_for_cursor(1500.0, 1500.0, &monitors, true), Some(2));
+    }
+
+    #[test]
+    fn test_find_monitor_portrait_bottom_aligned_macos() {
+        // 中(2x Retina) + 右(1x portrait, 底部對齊)
+        // 中 Retina: logical size 1440x900, origin (0,0)
+        // 右 portrait: logical size 1080x1920
+        //   底部對齊時: portrait top 在中螢幕 top 上方
+        //   NSScreen origin y = 900 - 1920 = -1020
+        //   physical position = (1440 * 1.0, -1020 * 1.0) = (1440, -1020)
+        let monitors = vec![
+            make_monitor(0, 0, 2880, 1800, 2.0),          // 中 Retina
+            make_monitor(1440, -1020, 1080, 1920, 1.0),    // 右 portrait
+        ];
+        // 游標在右 portrait 上半部（y 為負值）
+        assert_eq!(find_monitor_for_cursor(1980.0, -500.0, &monitors, true), Some(1));
+        // 游標在右 portrait 下半部
+        assert_eq!(find_monitor_for_cursor(1980.0, 800.0, &monitors, true), Some(1));
+        // 游標在中 Retina
+        assert_eq!(find_monitor_for_cursor(720.0, 450.0, &monitors, true), Some(0));
+    }
+
+    #[test]
+    fn test_find_monitor_closest_fallback() {
+        // 游標落在兩螢幕間的 rounding 間隙 → fallback 到最近螢幕
+        let monitors = vec![
+            make_monitor(0, 0, 1920, 1080, 1.0),
+            make_monitor(3840, 0, 1920, 1080, 1.0),  // 隔了一段距離
+        ];
+        // 游標在兩螢幕之間但靠近右螢幕
+        assert_eq!(find_monitor_for_cursor(3500.0, 540.0, &monitors, false), Some(1));
+        // 游標在兩螢幕之間但靠近左螢幕
+        assert_eq!(find_monitor_for_cursor(2000.0, 540.0, &monitors, false), Some(0));
+    }
+
+    // ============================================================
+    // calculate_centered_window_x_logical 測試
+    // ============================================================
+
+    #[test]
+    fn test_centered_window_x_logical_portrait() {
+        // portrait 螢幕: physical width=1080, scale=1.0
+        // logical width = 1080, 置中偏移 = (1080 - 400) / 2 = 340
+        let x = calculate_centered_window_x_logical(1080, 1.0, 400.0);
+        assert!((x - 340.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_centered_window_x_logical_retina() {
+        // Retina: physical=2880, scale=2.0 → logical=1440
+        // 置中偏移 = (1440 - 400) / 2 = 520
+        let x = calculate_centered_window_x_logical(2880, 2.0, 400.0);
+        assert!((x - 520.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_centered_window_x_logical_standard_1080p() {
+        // 1080p: physical=1920, scale=1.0 → logical=1920
+        // 置中偏移 = (1920 - 400) / 2 = 760
+        let x = calculate_centered_window_x_logical(1920, 1.0, 400.0);
+        assert!((x - 760.0).abs() < 0.001);
     }
 }
