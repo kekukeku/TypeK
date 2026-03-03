@@ -20,4 +20,6 @@ export interface SettingsDto {
   hotkeyConfig: HotkeyConfig | null;
   hasApiKey: boolean;
   aiPrompt: string;
+  isEnhancementThresholdEnabled: boolean;
+  enhancementThresholdCharCount: number;
 }

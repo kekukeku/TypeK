@@ -11,6 +11,9 @@ import type { SettingsUpdatedPayload } from "../types/events";
 
 const STORE_NAME = "settings.json";
 
+export const DEFAULT_ENHANCEMENT_THRESHOLD_ENABLED = true;
+export const DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT = 10;
+
 function getDefaultTriggerKey(): TriggerKey {
   const isMac = navigator.userAgent.includes("Mac");
   return isMac ? "fn" : "rightAlt";
@@ -25,6 +28,12 @@ export const useSettingsStore = defineStore("settings", () => {
   const hasApiKey = computed(() => apiKey.value !== "");
   const aiPrompt = ref<string>(DEFAULT_SYSTEM_PROMPT);
   const isAutoStartEnabled = ref(false);
+  const isEnhancementThresholdEnabled = ref(
+    DEFAULT_ENHANCEMENT_THRESHOLD_ENABLED,
+  );
+  const enhancementThresholdCharCount = ref(
+    DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT,
+  );
   let isLoaded = false;
 
   function getApiKey(): string {
@@ -63,6 +72,18 @@ export const useSettingsStore = defineStore("settings", () => {
       const savedPrompt = await store.get<string>("aiPrompt");
       aiPrompt.value = savedPrompt?.trim() || DEFAULT_SYSTEM_PROMPT;
 
+      const savedThresholdEnabled = await store.get<boolean>(
+        "enhancementThresholdEnabled",
+      );
+      isEnhancementThresholdEnabled.value =
+        savedThresholdEnabled ?? DEFAULT_ENHANCEMENT_THRESHOLD_ENABLED;
+
+      const savedThresholdCharCount = await store.get<number>(
+        "enhancementThresholdCharCount",
+      );
+      enhancementThresholdCharCount.value =
+        savedThresholdCharCount ?? DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT;
+
       // Sync saved (or default) config to Rust on startup
       await syncHotkeyConfigToRust(key, mode);
       isLoaded = true;
@@ -78,6 +99,10 @@ export const useSettingsStore = defineStore("settings", () => {
       // Fallback to platform defaults
       const key = getDefaultTriggerKey();
       hotkeyConfig.value = { triggerKey: key, triggerMode: "hold" };
+      isEnhancementThresholdEnabled.value =
+        DEFAULT_ENHANCEMENT_THRESHOLD_ENABLED;
+      enhancementThresholdCharCount.value =
+        DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT;
     }
   }
 
@@ -207,6 +232,61 @@ export const useSettingsStore = defineStore("settings", () => {
     }
   }
 
+  async function saveEnhancementThreshold(enabled: boolean, charCount: number) {
+    const validatedCharCount =
+      !Number.isInteger(charCount) || charCount < 1
+        ? DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT
+        : charCount;
+
+    try {
+      const store = await load(STORE_NAME);
+      await store.set("enhancementThresholdEnabled", enabled);
+      await store.set("enhancementThresholdCharCount", validatedCharCount);
+      await store.save();
+
+      isEnhancementThresholdEnabled.value = enabled;
+      enhancementThresholdCharCount.value = validatedCharCount;
+
+      // Broadcast settings change to all windows
+      const payload: SettingsUpdatedPayload = {
+        key: "enhancementThreshold",
+        value: { enabled, charCount: validatedCharCount },
+      };
+      await emitEvent(SETTINGS_UPDATED, payload);
+
+      console.log(
+        `[useSettingsStore] Enhancement threshold saved: enabled=${enabled}, charCount=${validatedCharCount}`,
+      );
+    } catch (err) {
+      console.error(
+        "[useSettingsStore] saveEnhancementThreshold failed:",
+        extractErrorMessage(err),
+      );
+      throw err;
+    }
+  }
+
+  async function refreshEnhancementThreshold() {
+    try {
+      const store = await load(STORE_NAME);
+      const savedEnabled = await store.get<boolean>(
+        "enhancementThresholdEnabled",
+      );
+      const savedCharCount = await store.get<number>(
+        "enhancementThresholdCharCount",
+      );
+      isEnhancementThresholdEnabled.value =
+        savedEnabled ?? DEFAULT_ENHANCEMENT_THRESHOLD_ENABLED;
+      enhancementThresholdCharCount.value =
+        savedCharCount ?? DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT;
+    } catch (err) {
+      console.error(
+        "[useSettingsStore] refreshEnhancementThreshold failed:",
+        extractErrorMessage(err),
+      );
+    }
+  }
+
   async function loadAutoStartStatus() {
     try {
       const { isEnabled } = await import("@tauri-apps/plugin-autostart");
@@ -268,6 +348,8 @@ export const useSettingsStore = defineStore("settings", () => {
     hasApiKey,
     aiPrompt,
     isAutoStartEnabled,
+    isEnhancementThresholdEnabled,
+    enhancementThresholdCharCount,
     getApiKey,
     getAiPrompt,
     saveAiPrompt,
@@ -277,6 +359,8 @@ export const useSettingsStore = defineStore("settings", () => {
     saveHotkeyConfig,
     saveApiKey,
     deleteApiKey,
+    saveEnhancementThreshold,
+    refreshEnhancementThreshold,
     loadAutoStartStatus,
     toggleAutoStart,
     initializeAutoStart,

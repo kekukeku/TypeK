@@ -308,4 +308,135 @@ describe("useSettingsStore", () => {
       );
     });
   });
+
+  // ==========================================================================
+  // saveEnhancementThreshold
+  // ==========================================================================
+
+  describe("saveEnhancementThreshold", () => {
+    it("[P0] 應持久化 enabled 和 charCount 到 store", async () => {
+      const { useSettingsStore } = await import(
+        "../../src/stores/useSettingsStore"
+      );
+      const store = useSettingsStore();
+
+      await store.saveEnhancementThreshold(false, 20);
+
+      expect(mockStoreSet).toHaveBeenCalledWith(
+        "enhancementThresholdEnabled",
+        false,
+      );
+      expect(mockStoreSet).toHaveBeenCalledWith(
+        "enhancementThresholdCharCount",
+        20,
+      );
+      expect(mockStoreSave).toHaveBeenCalled();
+    });
+
+    it("[P0] 應更新 reactive refs", async () => {
+      const { useSettingsStore } = await import(
+        "../../src/stores/useSettingsStore"
+      );
+      const store = useSettingsStore();
+
+      await store.saveEnhancementThreshold(false, 25);
+
+      expect(store.isEnhancementThresholdEnabled).toBe(false);
+      expect(store.enhancementThresholdCharCount).toBe(25);
+    });
+
+    it("[P0] 應發送 SETTINGS_UPDATED 事件廣播", async () => {
+      const { useSettingsStore } = await import(
+        "../../src/stores/useSettingsStore"
+      );
+      const store = useSettingsStore();
+
+      await store.saveEnhancementThreshold(true, 15);
+
+      expect(mockEmit).toHaveBeenCalledWith("settings:updated", {
+        key: "enhancementThreshold",
+        value: { enabled: true, charCount: 15 },
+      });
+    });
+
+    it("[P1] charCount < 1 應 fallback 到預設值", async () => {
+      const { useSettingsStore, DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT } =
+        await import("../../src/stores/useSettingsStore");
+      const store = useSettingsStore();
+
+      await store.saveEnhancementThreshold(true, 0);
+
+      expect(store.enhancementThresholdCharCount).toBe(
+        DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT,
+      );
+      expect(mockStoreSet).toHaveBeenCalledWith(
+        "enhancementThresholdCharCount",
+        DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT,
+      );
+    });
+
+    it("[P1] 非整數 charCount 應 fallback 到預設值", async () => {
+      const { useSettingsStore, DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT } =
+        await import("../../src/stores/useSettingsStore");
+      const store = useSettingsStore();
+
+      await store.saveEnhancementThreshold(true, 3.5);
+
+      expect(store.enhancementThresholdCharCount).toBe(
+        DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT,
+      );
+    });
+
+    it("[P1] store 儲存失敗時應拋出錯誤", async () => {
+      mockStoreSave.mockRejectedValueOnce(new Error("disk full"));
+
+      const { useSettingsStore } = await import(
+        "../../src/stores/useSettingsStore"
+      );
+      const store = useSettingsStore();
+
+      await expect(store.saveEnhancementThreshold(true, 10)).rejects.toThrow(
+        "disk full",
+      );
+    });
+  });
+
+  // ==========================================================================
+  // refreshEnhancementThreshold
+  // ==========================================================================
+
+  describe("refreshEnhancementThreshold", () => {
+    it("[P0] 應從 store 重新讀取 threshold 值", async () => {
+      mockStoreData.set("enhancementThresholdEnabled", false);
+      mockStoreData.set("enhancementThresholdCharCount", 50);
+
+      const { useSettingsStore } = await import(
+        "../../src/stores/useSettingsStore"
+      );
+      const store = useSettingsStore();
+
+      await store.refreshEnhancementThreshold();
+
+      expect(store.isEnhancementThresholdEnabled).toBe(false);
+      expect(store.enhancementThresholdCharCount).toBe(50);
+    });
+
+    it("[P1] store 無值時應使用預設值", async () => {
+      const {
+        useSettingsStore,
+        DEFAULT_ENHANCEMENT_THRESHOLD_ENABLED,
+        DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT,
+      } = await import("../../src/stores/useSettingsStore");
+      const store = useSettingsStore();
+
+      await store.refreshEnhancementThreshold();
+
+      expect(store.isEnhancementThresholdEnabled).toBe(
+        DEFAULT_ENHANCEMENT_THRESHOLD_ENABLED,
+      );
+      expect(store.enhancementThresholdCharCount).toBe(
+        DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT,
+      );
+    });
+  });
 });

@@ -36,11 +36,12 @@ onMounted(async () => {
     }
   }
 
-  // 監聽設定變更（Main Window 刪除 API Key 時同步）
+  // 監聽設定變更（Main Window 設定異動時同步到 HUD Window）
   unlistenSettingsUpdated = await listenToEvent(
     SETTINGS_UPDATED,
     () => {
       void settingsStore.refreshApiKey();
+      void settingsStore.refreshEnhancementThreshold();
     },
   );
 

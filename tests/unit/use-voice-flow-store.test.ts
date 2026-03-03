@@ -76,6 +76,8 @@ const {
       apiKey: "test-api-key-123",
       aiPrompt: "自訂 prompt 內容",
       triggerMode: "hold" as string,
+      isEnhancementThresholdEnabled: true,
+      enhancementThresholdCharCount: 10,
     },
     mockVocabularyState: {
       termList: [] as Array<{ id: string; term: string; createdAt: string }>,
@@ -135,7 +137,14 @@ vi.mock("../../src/stores/useSettingsStore", () => ({
     getApiKey: () => mockSettingsState.apiKey,
     getAiPrompt: () => mockSettingsState.aiPrompt,
     refreshApiKey: vi.fn().mockResolvedValue(undefined),
+    refreshEnhancementThreshold: vi.fn().mockResolvedValue(undefined),
     triggerMode: mockSettingsState.triggerMode,
+    get isEnhancementThresholdEnabled() {
+      return mockSettingsState.isEnhancementThresholdEnabled;
+    },
+    get enhancementThresholdCharCount() {
+      return mockSettingsState.enhancementThresholdCharCount;
+    },
   }),
 }));
 
@@ -197,6 +206,8 @@ describe("useVoiceFlowStore", () => {
     mockSettingsState.apiKey = "test-api-key-123";
     mockSettingsState.aiPrompt = "自訂 prompt 內容";
     mockSettingsState.triggerMode = "hold";
+    mockSettingsState.isEnhancementThresholdEnabled = true;
+    mockSettingsState.enhancementThresholdCharCount = 10;
     mockVocabularyState.termList = [];
     mockAddTranscription.mockClear().mockResolvedValue(undefined);
     mockAddApiUsage.mockClear().mockResolvedValue(undefined);
@@ -809,6 +820,37 @@ describe("useVoiceFlowStore", () => {
       });
 
       expect(mockEnhanceText).not.toHaveBeenCalled();
+    });
+
+    it("[P0] 門檻停用時，短文字仍走 AI 整理", async () => {
+      mockSettingsState.isEnhancementThresholdEnabled = false;
+      const shortText = "短文字";
+      mockTranscribeAudio.mockResolvedValueOnce({
+        rawText: shortText,
+        transcriptionDurationMs: 200,
+        noSpeechProbability: 0.01,
+      });
+      mockEnhanceText.mockResolvedValueOnce({
+        text: "AI 整理過的短文字",
+        usage: null,
+      });
+
+      const store = useVoiceFlowStore();
+      await store.initialize();
+
+      triggerHotkeyEvent("hotkey:pressed");
+      await vi.waitFor(() => {
+        expect(mockStartRecording).toHaveBeenCalledTimes(1);
+      });
+
+      triggerHotkeyEvent("hotkey:released");
+      await vi.waitFor(() => {
+        expect(mockInvoke).toHaveBeenCalledWith("paste_text", {
+          text: "AI 整理過的短文字",
+        });
+      });
+
+      expect(mockEnhanceText).toHaveBeenCalledTimes(1);
     });
 
     // ========================================================================

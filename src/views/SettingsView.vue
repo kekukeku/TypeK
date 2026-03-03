@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import { useSettingsStore } from "../stores/useSettingsStore";
+import {
+  useSettingsStore,
+  DEFAULT_ENHANCEMENT_THRESHOLD_ENABLED,
+  DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT,
+} from "../stores/useSettingsStore";
 import { extractErrorMessage } from "../lib/errorUtils";
 import { useFeedbackMessage } from "../composables/useFeedbackMessage";
 import type { TriggerKey } from "../types/settings";
@@ -163,6 +167,41 @@ async function handleResetPrompt() {
   }
 }
 
+// ── AI 整理門檻 ──────────────────────────────────────────────
+const thresholdEnabled = ref(DEFAULT_ENHANCEMENT_THRESHOLD_ENABLED);
+const thresholdCharCount = ref(DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT);
+const enhancementThresholdFeedback = useFeedbackMessage();
+
+async function handleToggleEnhancementThreshold() {
+  thresholdEnabled.value = !thresholdEnabled.value;
+  try {
+    await settingsStore.saveEnhancementThreshold(
+      thresholdEnabled.value,
+      thresholdCharCount.value,
+    );
+    enhancementThresholdFeedback.show(
+      "success",
+      thresholdEnabled.value ? "已啟用短文字門檻" : "已停用短文字門檻",
+    );
+  } catch (err) {
+    thresholdEnabled.value = !thresholdEnabled.value;
+    enhancementThresholdFeedback.show("error", extractErrorMessage(err));
+  }
+}
+
+async function handleSaveThresholdCharCount() {
+  try {
+    await settingsStore.saveEnhancementThreshold(
+      thresholdEnabled.value,
+      thresholdCharCount.value,
+    );
+    thresholdCharCount.value = settingsStore.enhancementThresholdCharCount;
+    enhancementThresholdFeedback.show("success", "門檻字數已儲存");
+  } catch (err) {
+    enhancementThresholdFeedback.show("error", extractErrorMessage(err));
+  }
+}
+
 // ── 應用程式 ────────────────────────────────────────────────
 const autoStartFeedback = useFeedbackMessage();
 const isTogglingAutoStart = ref(false);
@@ -187,6 +226,8 @@ onMounted(async () => {
   if (settingsStore.hasApiKey) {
     apiKeyInput.value = settingsStore.getApiKey();
   }
+  thresholdEnabled.value = settingsStore.isEnhancementThresholdEnabled;
+  thresholdCharCount.value = settingsStore.enhancementThresholdCharCount;
   await settingsStore.loadAutoStartStatus();
 });
 
@@ -194,6 +235,7 @@ onBeforeUnmount(() => {
   hotkeyFeedback.clearTimer();
   apiKeyFeedback.clearTimer();
   promptFeedback.clearTimer();
+  enhancementThresholdFeedback.clearTimer();
   autoStartFeedback.clearTimer();
   clearTimeout(deleteConfirmTimeoutId);
   clearTimeout(resetPromptConfirmTimeoutId);
@@ -430,6 +472,66 @@ onBeforeUnmount(() => {
           "
         >
           {{ promptFeedback.message.value }}
+        </p>
+      </transition>
+
+    </section>
+
+    <!-- 短文字門檻 -->
+    <section class="mt-6 rounded-xl border border-zinc-700 bg-zinc-900 p-5">
+      <h2 class="text-lg font-semibold text-white">短文字門檻</h2>
+      <p class="mt-2 text-sm text-zinc-400">
+        啟用後，低於指定字數的轉錄文字將跳過 AI 整理，直接貼上原文。停用則每次都做 AI 整理。
+      </p>
+
+      <div class="mt-4 flex items-center justify-between">
+        <p class="text-sm text-white">
+          {{ thresholdEnabled ? '已啟用' : '已停用' }}
+        </p>
+        <button
+          type="button"
+          class="relative h-6 w-11 shrink-0 rounded-full transition"
+          :class="thresholdEnabled ? 'bg-blue-600' : 'bg-zinc-600'"
+          @click="handleToggleEnhancementThreshold"
+        >
+          <span
+            class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform"
+            :class="thresholdEnabled ? 'translate-x-5' : 'translate-x-0'"
+          />
+        </button>
+      </div>
+
+      <div v-if="thresholdEnabled" class="mt-3 flex items-center gap-3">
+        <label for="threshold-char-count" class="text-sm text-zinc-300">
+          門檻字數
+        </label>
+        <input
+          id="threshold-char-count"
+          v-model.number="thresholdCharCount"
+          type="number"
+          min="1"
+          class="w-24 rounded-lg border border-zinc-600 bg-zinc-800 px-3 py-1.5 text-sm text-white outline-none transition focus:border-blue-500"
+        />
+        <button
+          type="button"
+          class="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-500"
+          @click="handleSaveThresholdCharCount"
+        >
+          儲存
+        </button>
+      </div>
+
+      <transition name="feedback-fade">
+        <p
+          v-if="enhancementThresholdFeedback.message.value !== ''"
+          class="mt-3 text-sm"
+          :class="
+            enhancementThresholdFeedback.type.value === 'success'
+              ? 'text-green-400'
+              : 'text-red-400'
+          "
+        >
+          {{ enhancementThresholdFeedback.message.value }}
         </p>
       </transition>
     </section>

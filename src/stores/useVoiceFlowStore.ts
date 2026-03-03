@@ -92,7 +92,6 @@ function isSilenceOrHallucination(
 const RECORDING_MESSAGE = "錄音中...";
 const TRANSCRIBING_MESSAGE = "轉錄中...";
 const PASTE_SUCCESS_MESSAGE = "已貼上 ✓";
-const ENHANCEMENT_CHAR_THRESHOLD = 10;
 const ENHANCING_MESSAGE = "整理中...";
 const PASTE_SUCCESS_UNENHANCED_MESSAGE = "已貼上（未整理）";
 
@@ -496,7 +495,10 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
         return;
       }
 
-      if (result.rawText.length >= ENHANCEMENT_CHAR_THRESHOLD) {
+      if (
+        !settingsStore.isEnhancementThresholdEnabled ||
+        result.rawText.length >= settingsStore.enhancementThresholdCharCount
+      ) {
         transitionTo("enhancing", ENHANCING_MESSAGE);
         const enhancementStartTime = performance.now();
 
