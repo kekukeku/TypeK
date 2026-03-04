@@ -10,6 +10,7 @@ vi.mock("@tauri-apps/plugin-http", () => ({
 }));
 
 const TEST_API_KEY = "test-api-key-123";
+const MOCK_AUDIO_DATA = "x".repeat(2000);
 
 describe("transcriber.ts", () => {
   beforeEach(() => {
@@ -28,7 +29,7 @@ describe("transcriber.ts", () => {
   describe("API key validation", () => {
     it("[P0] should throw if API key is whitespace-only", async () => {
       const { transcribeAudio } = await import("../../src/lib/transcriber");
-      const audioBlob = new Blob(["audio-data"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
 
       await expect(transcribeAudio(audioBlob, "  ")).rejects.toThrow(
         API_KEY_MISSING_ERROR,
@@ -37,7 +38,7 @@ describe("transcriber.ts", () => {
 
     it("[P0] should throw if API key is empty string", async () => {
       const { transcribeAudio } = await import("../../src/lib/transcriber");
-      const audioBlob = new Blob(["audio-data"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
 
       await expect(transcribeAudio(audioBlob, "")).rejects.toThrow(
         API_KEY_MISSING_ERROR,
@@ -64,7 +65,7 @@ describe("transcriber.ts", () => {
       "[P0] should map $mimeType to $expectedFilename",
       async ({ mimeType, expectedFilename }) => {
         // Given: a blob with specific mime type
-        const audioBlob = new Blob(["audio"], { type: mimeType });
+        const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: mimeType });
         mockFetch.mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue({
@@ -94,7 +95,7 @@ describe("transcriber.ts", () => {
   describe("FormData construction", () => {
     it("[P0] should send correct FormData fields to Groq API", async () => {
       // Given: a valid audio blob
-      const audioBlob = new Blob(["audio-data"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
       mockFetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
@@ -119,7 +120,7 @@ describe("transcriber.ts", () => {
 
     it("[P0] should send Authorization header with Bearer token", async () => {
       // Given: API key is set
-      const audioBlob = new Blob(["audio"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
       mockFetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
@@ -140,7 +141,7 @@ describe("transcriber.ts", () => {
 
     it("[P0] should POST to the correct Groq API URL", async () => {
       // Given: valid input
-      const audioBlob = new Blob(["audio"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
       mockFetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
@@ -170,7 +171,7 @@ describe("transcriber.ts", () => {
   describe("HTTP error handling", () => {
     it("[P0] should throw with status and body on non-ok response", async () => {
       // Given: API returns 401 Unauthorized
-      const audioBlob = new Blob(["audio"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
       mockFetch.mockResolvedValue({
         ok: false,
         status: 401,
@@ -187,7 +188,7 @@ describe("transcriber.ts", () => {
 
     it("[P0] should throw with status 500 on server error", async () => {
       // Given: API returns 500 Internal Server Error
-      const audioBlob = new Blob(["audio"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
       mockFetch.mockResolvedValue({
         ok: false,
         status: 500,
@@ -204,7 +205,7 @@ describe("transcriber.ts", () => {
 
     it("[P0] should propagate network/fetch errors", async () => {
       // Given: fetch itself throws (network failure)
-      const audioBlob = new Blob(["audio"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
       mockFetch.mockRejectedValue(new Error("Network request failed"));
 
       const { transcribeAudio } = await import("../../src/lib/transcriber");
@@ -223,7 +224,7 @@ describe("transcriber.ts", () => {
   describe("response parsing", () => {
     it("[P0] should return trimmed text, transcription duration, and noSpeechProbability", async () => {
       // Given: API returns verbose_json with whitespace in text
-      const audioBlob = new Blob(["audio"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
       mockFetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
@@ -248,7 +249,7 @@ describe("transcriber.ts", () => {
 
     it("[P0] should return empty string when API returns only whitespace text", async () => {
       // Given: API returns verbose_json with whitespace-only text
-      const audioBlob = new Blob(["audio"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
       mockFetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
@@ -269,7 +270,7 @@ describe("transcriber.ts", () => {
 
     it("[P0] should return max no_speech_prob across multiple segments", async () => {
       // Given: API returns verbose_json with multiple segments
-      const audioBlob = new Blob(["audio"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
       mockFetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
@@ -293,7 +294,7 @@ describe("transcriber.ts", () => {
 
     it("[P0] should return noSpeechProbability=1.0 when segments array is empty", async () => {
       // Given: API returns verbose_json with no segments
-      const audioBlob = new Blob(["audio"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
       mockFetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
@@ -313,7 +314,7 @@ describe("transcriber.ts", () => {
 
     it("[P0] normal speech should return noSpeechProbability close to 0", async () => {
       // Given: API returns verbose_json for normal speech
-      const audioBlob = new Blob(["audio"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
       mockFetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
@@ -339,7 +340,7 @@ describe("transcriber.ts", () => {
 
   describe("vocabulary prompt injection", () => {
     it("[P0] should format vocabulary as Whisper prompt and append to FormData", async () => {
-      const audioBlob = new Blob(["audio"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
       mockFetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
@@ -364,7 +365,7 @@ describe("transcriber.ts", () => {
     });
 
     it("[P0] should not append prompt field when vocabulary is undefined", async () => {
-      const audioBlob = new Blob(["audio"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
       mockFetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
@@ -383,7 +384,7 @@ describe("transcriber.ts", () => {
     });
 
     it("[P0] should not append prompt field when vocabulary is empty array", async () => {
-      const audioBlob = new Blob(["audio"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
       mockFetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
@@ -402,7 +403,7 @@ describe("transcriber.ts", () => {
     });
 
     it("[P0] should truncate vocabulary to MAX_WHISPER_PROMPT_TERMS (50)", async () => {
-      const audioBlob = new Blob(["audio"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
       mockFetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
@@ -475,7 +476,7 @@ describe("transcriber.ts", () => {
       perfNowSpy.mockReturnValueOnce(1000); // startTime
       perfNowSpy.mockReturnValueOnce(2500); // endTime (after response.json())
 
-      const audioBlob = new Blob(["audio"], { type: "audio/webm" });
+      const audioBlob = new Blob([MOCK_AUDIO_DATA], { type: "audio/webm" });
       mockFetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({

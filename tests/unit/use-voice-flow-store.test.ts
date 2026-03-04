@@ -54,7 +54,7 @@ const {
     mockStartRecording: vi.fn(),
     mockStopRecording: vi
       .fn()
-      .mockResolvedValue(new Blob(["audio"], { type: "audio/webm" })),
+      .mockResolvedValue(new Blob(["x".repeat(2000)], { type: "audio/webm" })),
     mockTranscribeAudio: vi.fn().mockResolvedValue({
       rawText: "測試轉錄",
       transcriptionDurationMs: 320,
@@ -190,7 +190,14 @@ function createDeferredPromise<T>() {
 }
 
 describe("useVoiceFlowStore", () => {
+  let performanceNowCounter = 0;
+
   beforeEach(() => {
+    performanceNowCounter = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => {
+      performanceNowCounter += 500;
+      return performanceNowCounter;
+    });
     setActivePinia(createPinia());
     listenerCallbackMap.clear();
     unlistenFunctionList.length = 0;
@@ -201,7 +208,7 @@ describe("useVoiceFlowStore", () => {
     mockStartRecording.mockClear();
     mockStopRecording
       .mockClear()
-      .mockResolvedValue(new Blob(["audio"], { type: "audio/webm" }));
+      .mockResolvedValue(new Blob(["x".repeat(2000)], { type: "audio/webm" }));
     mockTranscribeAudio.mockClear().mockResolvedValue({
       rawText: "測試轉錄",
       transcriptionDurationMs: 320,

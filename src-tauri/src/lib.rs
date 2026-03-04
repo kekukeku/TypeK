@@ -300,24 +300,6 @@ fn get_hud_target_position(app: tauri::AppHandle) -> Result<HudTargetPosition, S
 
     let is_macos = cfg!(target_os = "macos");
 
-    eprintln!("[hud-tracking] cursor=({:.1}, {:.1}), is_macos={}", cursor_x, cursor_y, is_macos);
-    for (i, mi) in monitor_infos.iter().enumerate() {
-        let sf = mi.scale_factor;
-        let (l, t, r, b) = if is_macos {
-            let l = mi.position_x as f64 / sf;
-            let t = mi.position_y as f64 / sf;
-            (l, t, l + mi.width as f64 / sf, t + mi.height as f64 / sf)
-        } else {
-            let l = mi.position_x as f64;
-            let t = mi.position_y as f64;
-            (l, t, l + mi.width as f64, t + mi.height as f64)
-        };
-        eprintln!(
-            "[hud-tracking]   monitor[{}]: physical=({},{}) {}x{} sf={:.1} → logical=({:.1},{:.1})-({:.1},{:.1})",
-            i, mi.position_x, mi.position_y, mi.width, mi.height, sf, l, t, r, b
-        );
-    }
-
     // safe to unwrap: monitors is non-empty, so find_monitor_for_cursor always returns Some
     let idx = find_monitor_for_cursor(cursor_x, cursor_y, &monitor_infos, is_macos)
         .expect("monitors is non-empty");
@@ -339,11 +321,6 @@ fn get_hud_target_position(app: tauri::AppHandle) -> Result<HudTargetPosition, S
     let hud_x = monitor_logical_x + centered_x_logical;
     let hud_y = monitor_logical_y;
     let monitor_key = format!("{},{}", matched_monitor.position_x, matched_monitor.position_y);
-
-    eprintln!(
-        "[hud-tracking] matched=[{}] → hud logical=({:.1}, {:.1}), key={}",
-        idx, hud_x, hud_y, monitor_key
-    );
 
     Ok(HudTargetPosition {
         x: hud_x,

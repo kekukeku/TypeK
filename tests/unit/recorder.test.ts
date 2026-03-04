@@ -253,12 +253,11 @@ describe("recorder.ts", () => {
 
       // When: start a second recording with no data
       startRecording();
-      // Immediately stop, producing empty blob
-      const blob2Promise = stopRecording();
 
-      // Then: second blob should only contain what was pushed in this session (nothing)
-      const blob2 = await blob2Promise;
-      expect(blob2.size).toBe(0);
+      // Then: stopping with no data should reject with empty recording error
+      await expect(stopRecording()).rejects.toThrow(
+        "錄音資料為空，未擷取到任何音訊",
+      );
     });
   });
 

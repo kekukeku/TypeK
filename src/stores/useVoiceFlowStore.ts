@@ -193,10 +193,8 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
           new LogicalPosition(position.x, position.y),
         );
       }
-    } catch (err) {
-      writeErrorLog(
-        `useVoiceFlowStore: repositionHudToCurrentMonitor failed: ${extractErrorMessage(err)}`,
-      );
+    } catch {
+      // 螢幕監控重定位失敗為低優先級，不 log 避免洗版
     } finally {
       isRepositioning = false;
     }
@@ -460,9 +458,19 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     analyserHandle.value = null;
 
     try {
-      transitionTo("transcribing", TRANSCRIBING_MESSAGE);
       const audioBlob = await stopRecording();
       const recordingDurationMs = performance.now() - recordingStartTime;
+
+      const MINIMUM_RECORDING_DURATION_MS = 300;
+      if (recordingDurationMs < MINIMUM_RECORDING_DURATION_MS) {
+        failRecordingFlow(
+          "錄音時間太短",
+          `useVoiceFlowStore: recording too short (${Math.round(recordingDurationMs)}ms)`,
+        );
+        return;
+      }
+
+      transitionTo("transcribing", TRANSCRIBING_MESSAGE);
       const settingsStore = useSettingsStore();
       let apiKey = settingsStore.getApiKey();
 
@@ -491,6 +499,8 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
         hasVocabulary ? vocabularyTermList : undefined,
         settingsStore.selectedWhisperModelId,
       );
+
+      writeInfoLog(`轉錄原文: "${result.rawText}"`);
 
       if (
         isSilenceOrHallucination(result.rawText, result.noSpeechProbability)
@@ -530,6 +540,8 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
             enhancementDurationMs,
             wasEnhanced: true,
           });
+
+          writeInfoLog(`AI 整理: "${enhanceResult.text}"`);
 
           await completePasteFlow({
             text: enhanceResult.text,

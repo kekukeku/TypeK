@@ -3,10 +3,11 @@
 export type LlmModelId =
   | "llama-3.1-8b-instant"
   | "llama-3.3-70b-versatile"
-  | "llama-4-scout-17b-16e-instruct"
-  | "llama-4-maverick-17b-128e-instruct"
-  | "qwen-qwq-32b"
-  | "gpt-oss-120b";
+  | "meta-llama/llama-4-scout-17b-16e-instruct"
+  | "meta-llama/llama-4-maverick-17b-128e-instruct"
+  | "qwen/qwen3-32b"
+  | "openai/gpt-oss-120b"
+  | "openai/gpt-oss-20b";
 
 export interface LlmModelConfig {
   id: LlmModelId;
@@ -37,13 +38,23 @@ export interface WhisperModelConfig {
 export const DEFAULT_LLM_MODEL_ID: LlmModelId = "llama-3.3-70b-versatile";
 export const DEFAULT_WHISPER_MODEL_ID: WhisperModelId = "whisper-large-v3";
 
+// ── 已下架模型 ID 映射（舊 → 新，用於自動遷移）──────────
+
+export const DECOMMISSIONED_MODEL_MAP: Record<string, LlmModelId> = {
+  "qwen-qwq-32b": "qwen/qwen3-32b",
+  "gpt-oss-120b": "openai/gpt-oss-120b",
+  "llama-4-scout-17b-16e-instruct": "meta-llama/llama-4-scout-17b-16e-instruct",
+  "llama-4-maverick-17b-128e-instruct":
+    "meta-llama/llama-4-maverick-17b-128e-instruct",
+};
+
 // ── 模型清單（Groq 2026-03 價格）─────────────────────────
 
 export const LLM_MODEL_LIST: LlmModelConfig[] = [
   {
     id: "llama-3.3-70b-versatile",
     displayName: "Llama 3.3 70B Versatile",
-    speedTps: 394,
+    speedTps: 280,
     inputCostPerMillion: 0.59,
     outputCostPerMillion: 0.79,
     freeQuotaRpd: 1_000,
@@ -51,7 +62,7 @@ export const LLM_MODEL_LIST: LlmModelConfig[] = [
     isDefault: true,
   },
   {
-    id: "gpt-oss-120b",
+    id: "openai/gpt-oss-120b",
     displayName: "GPT OSS 120B",
     speedTps: 500,
     inputCostPerMillion: 0.15,
@@ -61,9 +72,19 @@ export const LLM_MODEL_LIST: LlmModelConfig[] = [
     isDefault: false,
   },
   {
-    id: "llama-4-scout-17b-16e-instruct",
+    id: "openai/gpt-oss-20b",
+    displayName: "GPT OSS 20B",
+    speedTps: 1_000,
+    inputCostPerMillion: 0.075,
+    outputCostPerMillion: 0.3,
+    freeQuotaRpd: 1_000,
+    freeQuotaTpd: 200_000,
+    isDefault: false,
+  },
+  {
+    id: "meta-llama/llama-4-scout-17b-16e-instruct",
     displayName: "Llama 4 Scout 17B",
-    speedTps: 594,
+    speedTps: 750,
     inputCostPerMillion: 0.11,
     outputCostPerMillion: 0.34,
     freeQuotaRpd: 1_000,
@@ -71,7 +92,7 @@ export const LLM_MODEL_LIST: LlmModelConfig[] = [
     isDefault: false,
   },
   {
-    id: "llama-4-maverick-17b-128e-instruct",
+    id: "meta-llama/llama-4-maverick-17b-128e-instruct",
     displayName: "Llama 4 Maverick 17B",
     speedTps: 562,
     inputCostPerMillion: 0.2,
@@ -81,9 +102,9 @@ export const LLM_MODEL_LIST: LlmModelConfig[] = [
     isDefault: false,
   },
   {
-    id: "qwen-qwq-32b",
-    displayName: "Qwen QwQ 32B",
-    speedTps: 662,
+    id: "qwen/qwen3-32b",
+    displayName: "Qwen3 32B",
+    speedTps: 400,
     inputCostPerMillion: 0.29,
     outputCostPerMillion: 0.59,
     freeQuotaRpd: 1_000,
@@ -93,7 +114,7 @@ export const LLM_MODEL_LIST: LlmModelConfig[] = [
   {
     id: "llama-3.1-8b-instant",
     displayName: "Llama 3.1 8B Instant",
-    speedTps: 840,
+    speedTps: 560,
     inputCostPerMillion: 0.05,
     outputCostPerMillion: 0.08,
     freeQuotaRpd: 14_400,
@@ -134,11 +155,16 @@ export function findWhisperModelConfig(
 }
 
 /**
- * 安全取得 LLM 模型 ID：若 savedId 不在 registry 則 fallback 到預設。
- * 處理舊版升級（null）和模型下架的情境。
+ * 安全取得 LLM 模型 ID：若 savedId 不在 registry 則嘗試自動遷移，
+ * 遷移失敗則 fallback 到預設。處理舊版升級（null）和模型下架的情境。
  */
 export function getEffectiveLlmModelId(savedId: string | null): LlmModelId {
   if (savedId && findLlmModelConfig(savedId)) return savedId as LlmModelId;
+
+  if (savedId && savedId in DECOMMISSIONED_MODEL_MAP) {
+    return DECOMMISSIONED_MODEL_MAP[savedId];
+  }
+
   return DEFAULT_LLM_MODEL_ID;
 }
 

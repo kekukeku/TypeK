@@ -87,6 +87,14 @@ function parseUsage(usage?: GroqChatUsage): ChatUsageData | null {
   };
 }
 
+/**
+ * 移除 reasoning model（如 Qwen3）回應中的 <think>...</think> 區塊，
+ * 只保留最終輸出內容。
+ */
+export function stripReasoningTags(text: string): string {
+  return text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+}
+
 export async function enhanceText(
   rawText: string,
   apiKey: string,
@@ -126,7 +134,15 @@ export async function enhanceText(
   );
 
   if (!response.ok) {
-    throw new Error(`AI 整理失敗：${response.status}`);
+    let errorBody = "";
+    try {
+      errorBody = await response.text();
+    } catch {
+      // ignore
+    }
+    throw new Error(
+      `AI 整理失敗：${response.status} ${response.statusText} — ${errorBody}`,
+    );
   }
 
   const data = (await response.json()) as GroqChatResponse;
@@ -136,10 +152,11 @@ export async function enhanceText(
     return { text: rawText, usage };
   }
 
-  const enhancedContent = data.choices[0].message.content?.trim();
-  if (!enhancedContent) {
+  const rawContent = data.choices[0].message.content?.trim();
+  if (!rawContent) {
     return { text: rawText, usage };
   }
 
-  return { text: enhancedContent, usage };
+  const enhancedContent = stripReasoningTags(rawContent);
+  return { text: enhancedContent || rawText, usage };
 }

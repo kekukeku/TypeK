@@ -45,6 +45,11 @@ export async function transcribeAudio(
     throw new Error(API_KEY_MISSING_ERROR);
   }
 
+  const MINIMUM_AUDIO_BLOB_SIZE = 1000;
+  if (audioBlob.size < MINIMUM_AUDIO_BLOB_SIZE) {
+    throw new Error(`音訊資料太小 (${audioBlob.size} bytes)，可能未成功錄製`);
+  }
+
   const startTime = performance.now();
 
   const extension = getFileExtensionFromMime(audioBlob.type);

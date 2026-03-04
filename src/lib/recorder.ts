@@ -112,6 +112,10 @@ export function stopRecording(): Promise<Blob> {
       const mimeType = mediaRecorder?.mimeType || "audio/webm";
       const audioBlob = new Blob(audioChunkList, { type: mimeType });
       audioChunkList = [];
+      if (audioBlob.size === 0) {
+        reject(new Error("錄音資料為空，未擷取到任何音訊"));
+        return;
+      }
       resolve(audioBlob);
     };
 

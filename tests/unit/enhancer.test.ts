@@ -360,6 +360,36 @@ describe("enhancer.ts", () => {
     });
   });
 
+  describe("stripReasoningTags", () => {
+    it("[P0] 應移除 <think> 標籤及其內容", async () => {
+      const { stripReasoningTags } = await import("../../src/lib/enhancer");
+      const input = "<think>\n這是思考過程\n</think>\n整理後的文字";
+      expect(stripReasoningTags(input)).toBe("整理後的文字");
+    });
+
+    it("[P0] 無 <think> 標籤時應原樣回傳", async () => {
+      const { stripReasoningTags } = await import("../../src/lib/enhancer");
+      expect(stripReasoningTags("純文字內容")).toBe("純文字內容");
+    });
+
+    it("[P1] 應處理多個 <think> 區塊", async () => {
+      const { stripReasoningTags } = await import("../../src/lib/enhancer");
+      const input = "<think>思考1</think>結果1<think>思考2</think>結果2";
+      expect(stripReasoningTags(input)).toBe("結果1結果2");
+    });
+
+    it("[P0] reasoning model 回應應只保留最終輸出", async () => {
+      mockFetch.mockResolvedValueOnce(
+        createSuccessResponse(
+          "<think>\n分析語意...\n確認修正方向\n</think>\n這是整理後的書面文字",
+        ),
+      );
+      const { enhanceText } = await import("../../src/lib/enhancer");
+      const result = await enhanceText("口語轉錄", TEST_API_KEY);
+      expect(result.text).toBe("這是整理後的書面文字");
+    });
+  });
+
   describe("Timeout 處理", () => {
     it("[P0] 超過 5 秒應拋出逾時錯誤", async () => {
       vi.useFakeTimers();
