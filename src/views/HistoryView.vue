@@ -154,7 +154,7 @@ onBeforeUnmount(() => {
                   </span>
                   <Badge
                     v-if="record.wasEnhanced"
-                    class="bg-purple-500/20 text-purple-400 border-0 text-[11px]"
+                    class="bg-emerald-500/20 text-emerald-400 border-0 text-[11px]"
                   >
                     AI 整理
                   </Badge>
@@ -191,7 +191,7 @@ onBeforeUnmount(() => {
             >
               <!-- 整理後文字 -->
               <div v-if="record.wasEnhanced && record.processedText">
-                <p class="text-xs font-medium text-purple-400 mb-1">整理後文字</p>
+                <p class="text-xs font-medium text-emerald-400 mb-1">整理後文字</p>
                 <p class="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
                   {{ record.processedText }}
                 </p>

@@ -13,7 +13,7 @@ import {
 const props = defineProps<{ data: DailyUsageTrend[] }>();
 
 const chartConfig = {
-  count: { label: "使用次數", color: "var(--primary)" },
+  count: { label: "使用次數", color: "var(--chart-1)" },
 } satisfies ChartConfig;
 
 const svgDefs = `

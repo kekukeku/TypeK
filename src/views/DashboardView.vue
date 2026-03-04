@@ -192,7 +192,7 @@ onBeforeUnmount(() => {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent class="w-72 p-3" side="top">
+          <TooltipContent class="w-72 p-3 bg-card text-card-foreground border border-border" side="bottom" :side-offset="6" hide-arrow>
             <p class="text-xs font-medium mb-2">今日免費額度明細</p>
             <div class="space-y-2">
               <div v-for="(dim, idx) in quotaDimensionList" :key="idx">
@@ -261,7 +261,7 @@ onBeforeUnmount(() => {
               </span>
               <Badge
                 v-if="record.wasEnhanced"
-                class="bg-purple-500/20 text-purple-400 border-0"
+                class="bg-emerald-500/20 text-emerald-400 border-0"
               >
                 AI 整理
               </Badge>
@@ -275,3 +275,4 @@ onBeforeUnmount(() => {
     </Card>
   </div>
 </template>
+
