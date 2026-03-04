@@ -91,6 +91,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - **模組系統** — ESNext modules（`"type": "module"`），匯入路徑不帶 `.ts` 副檔名
 - **路徑別名** — `@/*` → `./src/*`（tsconfig.json + vite.config.ts 同步設定）
 - **環境變數前綴** — 前端環境變數必須以 `VITE_` 或 `TAURI_` 開頭
+- **編譯時常數** — `__APP_VERSION__`（Vite `define`，值來自 `package.json` version），用於 UI 顯示版本號
 - **錯誤訊息格式** — `err instanceof Error ? err.message : String(err)` 作為標準錯誤取值模式（使用 `extractErrorMessage()` from `errorUtils.ts`）
 - **錯誤訊息本地化** — 使用 `src/lib/errorUtils.ts` 集中管理使用者可見的錯誤訊息（繁體中文），按功能分函式：`getMicrophoneErrorMessage()`, `getTranscriptionErrorMessage()`, `getEnhancementErrorMessage()`
 

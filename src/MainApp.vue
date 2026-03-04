@@ -13,6 +13,7 @@ import SiteHeader from "./components/SiteHeader.vue";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -23,8 +24,11 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 
+declare const __APP_VERSION__: string;
+const appVersion = __APP_VERSION__;
+
 const navItems = [
-  { path: "/dashboard", label: "Dashboard", icon: markRaw(LayoutDashboard) },
+  { path: "/dashboard", label: "儀表板", icon: markRaw(LayoutDashboard) },
   { path: "/history", label: "歷史記錄", icon: markRaw(FileText) },
   { path: "/dictionary", label: "自訂字典", icon: markRaw(BookOpen) },
   { path: "/settings", label: "設定", icon: markRaw(Settings) },
@@ -62,14 +66,14 @@ onMounted(async () => {
     data-tauri-drag-region
     class="fixed top-0 left-0 right-0 z-20 flex h-9 items-center justify-center border-b border-border bg-background"
   >
-    <span data-tauri-drag-region class="text-xs font-medium text-muted-foreground select-none">無為-言</span>
+    <span data-tauri-drag-region class="text-xs font-medium text-muted-foreground select-none">SayIt - 言</span>
   </div>
 
   <SidebarProvider class="h-screen !min-h-0 pt-9">
     <Sidebar collapsible="offcanvas">
       <SidebarHeader class="flex-row h-12 items-center gap-3 border-b border-sidebar-border px-4">
         <img src="@/assets/logo-yan.png" alt="言" class="h-7 w-auto" />
-        <span class="text-base font-semibold text-sidebar-foreground">無為</span>
+        <span class="text-base font-semibold text-sidebar-foreground tracking-wide" style="font-family: 'SF Pro Display', 'Inter', system-ui, sans-serif;">SayIt</span>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -90,6 +94,9 @@ onMounted(async () => {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter class="border-t border-sidebar-border px-4 py-2">
+        <span class="text-xs text-muted-foreground">v{{ appVersion }}</span>
+      </SidebarFooter>
     </Sidebar>
 
     <SidebarInset class="overflow-hidden">

@@ -563,12 +563,14 @@ src/components/
 |                                                       |
 | +--[Sidebar]--+ +--[SidebarInset]------------------+ |
 | |  SayIt Logo | | +--[header]--------------------+ | |
-| |             | | | SidebarTrigger  Breadcrumb    | | |
-| |  Dashboard  | | +-------------------------------+ | |
-| |  歷史記錄   | | |                               | | |
-| |  自訂字典   | | |    <RouterView />             | | |
-| |  設定       | | |    (flex-1 space-y-6 p-6)     | | |
+| |  "SayIt"    | | | SidebarTrigger  Breadcrumb    | | |
+| |             | | +-------------------------------+ | |
+| |  Dashboard  | | |                               | | |
+| |  歷史記錄   | | |    <RouterView />             | | |
+| |  自訂字典   | | |    (flex-1 space-y-6 p-6)     | | |
+| |  設定       | | |                               | | |
 | |             | | |                               | | |
+| |  v0.1.0    | | |                               | | |
 | +-------------+ +----------------------------------+ |
 +-------------------------------------------------------+
 ```
@@ -585,6 +587,7 @@ npx shadcn-vue@latest add sidebar
 |------|------|
 | `SidebarProvider` | 包裹整個應用，管理收合狀態 |
 | `Sidebar` | 側邊欄容器，含 `SidebarHeader` / `SidebarContent` / `SidebarFooter` |
+| `SidebarFooter` | 側邊欄底部，顯示版本號（透過 Vite `__APP_VERSION__` 從 `package.json` 動態注入） |
 | `SidebarMenu` + `SidebarMenuItem` + `SidebarMenuButton` | 導航項目 |
 | `SidebarInset` | 主要內容區域 |
 | `SidebarTrigger` | 收合/展開按鈕 |
