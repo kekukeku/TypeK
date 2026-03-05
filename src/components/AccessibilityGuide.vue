@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
-import { nextTick, ref, watch } from "vue";
+import { nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { Button } from "@/components/ui/button";
+
+const PERMISSION_CHECK_INTERVAL_MS = 2000;
 
 const props = defineProps<{
   visible: boolean;
@@ -11,16 +14,70 @@ const emit = defineEmits<{
 }>();
 
 const dialogRef = ref<HTMLDivElement | null>(null);
-const primaryButtonRef = ref<HTMLButtonElement | null>(null);
+const primaryButtonRef = ref<InstanceType<typeof Button> | null>(null);
+const isReinitializing = ref(false);
+const reinitializeError = ref<string | null>(null);
+
+let pollingTimer: ReturnType<typeof setInterval> | null = null;
+
+function startPermissionPolling() {
+  stopPermissionPolling();
+  pollingTimer = setInterval(async () => {
+    if (isReinitializing.value) return;
+    try {
+      const hasPermission = await invoke<boolean>(
+        "check_accessibility_permission_command",
+      );
+      if (hasPermission) {
+        stopPermissionPolling();
+        await handlePermissionGranted();
+      }
+    } catch (error) {
+      console.error("[accessibility-guide] Permission check failed:", error);
+    }
+  }, PERMISSION_CHECK_INTERVAL_MS);
+}
+
+function stopPermissionPolling() {
+  if (pollingTimer !== null) {
+    clearInterval(pollingTimer);
+    pollingTimer = null;
+  }
+}
+
+async function handlePermissionGranted() {
+  isReinitializing.value = true;
+  reinitializeError.value = null;
+  try {
+    await invoke("reinitialize_hotkey_listener");
+    emit("close");
+  } catch (error) {
+    console.error("[accessibility-guide] Reinitialize failed:", error);
+    reinitializeError.value = "快捷鍵重新初始化失敗，請重新啟動應用程式。";
+  } finally {
+    isReinitializing.value = false;
+  }
+}
 
 watch(
   () => props.visible,
   (visible) => {
     if (visible) {
-      nextTick(() => primaryButtonRef.value?.focus());
+      reinitializeError.value = null;
+      nextTick(() => {
+        const el = primaryButtonRef.value?.$el as HTMLElement | undefined;
+        el?.focus();
+      });
+      startPermissionPolling();
+    } else {
+      stopPermissionPolling();
     }
   },
 );
+
+onBeforeUnmount(() => {
+  stopPermissionPolling();
+});
 
 function handleKeydown(event: KeyboardEvent) {
   if (event.key === "Escape") {
@@ -65,38 +122,44 @@ async function handleOpenAccessibilitySettings() {
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
     @keydown="handleKeydown"
   >
-    <div class="mx-4 w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
+    <div class="mx-4 w-full max-w-md rounded-2xl bg-card p-8 shadow-2xl">
       <h2
         id="accessibility-guide-title"
-        class="text-xl font-semibold text-zinc-900"
+        class="text-xl font-semibold text-card-foreground"
       >
         需要輔助使用權限
       </h2>
-      <p class="mt-3 text-sm leading-relaxed text-zinc-700">
+      <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
         SayIt 需要「輔助使用」權限來監聽全域快捷鍵。若未授權，快捷鍵功能將無法使用。
       </p>
-      <ol class="mt-4 list-decimal space-y-2 pl-5 text-sm text-zinc-700">
+      <ol class="mt-4 list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
         <li>點擊下方按鈕開啟系統設定。</li>
         <li>在清單中找到 SayIt 並勾選。</li>
-        <li>回到 App 後重新啟動程式。</li>
+        <li>回到 App，系統將自動偵測並啟用。</li>
       </ol>
 
+      <p v-if="isReinitializing" class="mt-3 text-sm text-primary">
+        偵測到權限已授予，正在啟用快捷鍵...
+      </p>
+      <p v-if="reinitializeError" class="mt-3 text-sm text-destructive">
+        {{ reinitializeError }}
+      </p>
+
       <div class="mt-6 flex gap-3">
-        <button
+        <Button
           ref="primaryButtonRef"
-          type="button"
-          class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
+          :disabled="isReinitializing"
           @click="handleOpenAccessibilitySettings"
         >
           開啟系統設定
-        </button>
-        <button
-          type="button"
-          class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100"
+        </Button>
+        <Button
+          variant="outline"
+          :disabled="isReinitializing"
           @click="emit('close')"
         >
           稍後設定
-        </button>
+        </Button>
       </div>
     </div>
   </div>

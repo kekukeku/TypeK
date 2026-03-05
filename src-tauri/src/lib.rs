@@ -360,6 +360,7 @@ pub fn run() {
             plugins::clipboard_paste::paste_text,
             plugins::hotkey_listener::check_accessibility_permission_command,
             plugins::hotkey_listener::open_accessibility_settings,
+            plugins::hotkey_listener::reinitialize_hotkey_listener,
             plugins::keyboard_monitor::start_quality_monitor
         ])
         .setup(|app| {

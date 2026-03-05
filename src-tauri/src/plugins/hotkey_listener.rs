@@ -53,6 +53,8 @@ pub struct HotkeyListenerState {
     trigger_mode: Arc<Mutex<TriggerMode>>,
     is_pressed: Arc<AtomicBool>,
     is_toggled_on: Arc<AtomicBool>,
+    #[cfg(target_os = "macos")]
+    run_loop_ref: Arc<Mutex<Option<core_foundation::runloop::CFRunLoop>>>,
 }
 
 impl Clone for HotkeyListenerState {
@@ -62,16 +64,22 @@ impl Clone for HotkeyListenerState {
             trigger_mode: self.trigger_mode.clone(),
             is_pressed: self.is_pressed.clone(),
             is_toggled_on: self.is_toggled_on.clone(),
+            #[cfg(target_os = "macos")]
+            run_loop_ref: self.run_loop_ref.clone(),
         }
     }
 }
 
 impl HotkeyListenerState {
+    pub fn reset_key_states(&self) {
+        self.is_pressed.store(false, Ordering::SeqCst);
+        self.is_toggled_on.store(false, Ordering::SeqCst);
+    }
+
     pub fn update_config(&self, key: TriggerKey, mode: TriggerMode) {
         *self.trigger_key.lock().unwrap() = key;
         *self.trigger_mode.lock().unwrap() = mode;
-        self.is_pressed.store(false, Ordering::SeqCst);
-        self.is_toggled_on.store(false, Ordering::SeqCst);
+        self.reset_key_states();
     }
 }
 
@@ -267,6 +275,7 @@ fn is_modifier_pressed(flags: CGEventFlags, trigger_key: &TriggerKey) -> Option<
 
 #[cfg(target_os = "macos")]
 fn start_event_tap<R: Runtime>(app_handle: AppHandle<R>, state: HotkeyListenerState) {
+    let run_loop_ref = state.run_loop_ref.clone();
     std::thread::spawn(move || {
         println!("[hotkey-listener] Creating CGEventTap on thread...");
 
@@ -405,13 +414,17 @@ fn start_event_tap<R: Runtime>(app_handle: AppHandle<R>, state: HotkeyListenerSt
                         .mach_port
                         .create_runloop_source(0)
                         .expect("Failed to create runloop source");
-                    let run_loop = CFRunLoop::get_current();
-                    run_loop.add_source(&loop_source, kCFRunLoopCommonModes);
+                    let current_run_loop = CFRunLoop::get_current();
+                    current_run_loop.add_source(&loop_source, kCFRunLoopCommonModes);
                     tap.enable();
+                    *run_loop_ref.lock().unwrap() = Some(current_run_loop);
                     println!(
                         "[hotkey-listener] RunLoop started, listening for hotkey events..."
                     );
                     CFRunLoop::run_current();
+                    // RunLoop stopped (e.g. by reinitialize), clean up reference
+                    *run_loop_ref.lock().unwrap() = None;
+                    println!("[hotkey-listener] RunLoop stopped");
                 }
             }
             Err(()) => {
@@ -430,6 +443,49 @@ fn start_event_tap<R: Runtime>(app_handle: AppHandle<R>, state: HotkeyListenerSt
             }
         }
     });
+}
+
+#[cfg(target_os = "macos")]
+fn stop_existing_event_tap(
+    run_loop_ref: &Arc<Mutex<Option<core_foundation::runloop::CFRunLoop>>>,
+) {
+    if let Some(ref rl) = *run_loop_ref.lock().unwrap() {
+        rl.stop();
+        println!("[hotkey-listener] Stopped existing CFRunLoop");
+    }
+}
+
+#[tauri::command]
+pub fn reinitialize_hotkey_listener<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        if !check_accessibility_permission() {
+            return Err("Accessibility permission not granted".to_string());
+        }
+
+        let state = app.state::<HotkeyListenerState>();
+
+        // Stop existing event tap if running
+        stop_existing_event_tap(&state.run_loop_ref);
+
+        // Give CFRunLoopStop time to take effect
+        std::thread::sleep(std::time::Duration::from_millis(200));
+
+        // Reset key states
+        state.reset_key_states();
+
+        // Start new event tap
+        let hook_state = state.inner().clone();
+        start_event_tap(app, hook_state);
+
+        println!("[hotkey-listener] Reinitialized hotkey listener");
+        Ok(())
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        Ok(())
+    }
 }
 
 // ========== Windows Implementation ==========
@@ -561,6 +617,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                 trigger_mode: Arc::new(Mutex::new(TriggerMode::Hold)),
                 is_pressed: Arc::new(AtomicBool::new(false)),
                 is_toggled_on: Arc::new(AtomicBool::new(false)),
+                #[cfg(target_os = "macos")]
+                run_loop_ref: Arc::new(Mutex::new(None)),
             };
 
             // Clone state for the hook thread (cheap Arc clones)
