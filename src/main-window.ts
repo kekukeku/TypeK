@@ -9,6 +9,9 @@ import { extractErrorMessage } from "./lib/errorUtils";
 import { useSettingsStore } from "./stores/useSettingsStore";
 import "./style.css";
 
+// 停用 WebView 預設右鍵選單（Back / Reload），讓 app 行為更接近原生
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+
 async function bootstrap() {
   const pinia = createPinia();
   const app = createApp(MainApp).use(pinia).use(router);
@@ -41,21 +44,7 @@ async function bootstrap() {
     console.log("[main-window] API Key missing, redirected to settings");
   }
 
-  // 背景定時檢查更新：啟動 5 秒後首次檢查，之後每 4 小時檢查一次
-  const UPDATE_CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
-  const runUpdateCheck = async () => {
-    try {
-      const { checkForAppUpdate } = await import("./lib/autoUpdater");
-      await checkForAppUpdate();
-    } catch (err) {
-      console.error("[main-window] Update check failed (silenced):", err);
-    }
-  };
-  setTimeout(() => {
-    runUpdateCheck();
-    setInterval(runUpdateCheck, UPDATE_CHECK_INTERVAL_MS);
-  }, 5000);
-
+  // 更新檢查由 MainApp.vue onMounted 的 autoCheckAndDownload() 處理
   console.log("[main-window] Dashboard initialized");
 }
 
