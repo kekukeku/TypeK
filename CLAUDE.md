@@ -186,13 +186,27 @@
                       │ + Apple Signing │
                       │ + Notarization  │
                       │ + Updater .sig  │
+                      │ + Sentry upload │
                       └────────┬────────┘
                                │
                           Draft Release
-                         （手動 Publish）
+                               │
+                               ▼
+                       publish-release job
+                               │
+                               ▼
+                          Public Release
 ```
 
-### GitHub Secrets（8 個）
+### 發版硬規則
+
+- 發版版本號必須在 `git tag`、`package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 四處保持一致
+- 正式版 Sentry release 一律由 `.github/workflows/release.yml` 產生，格式固定為 `sayit@<version>`
+- 前端與 Rust 不可各自手動指定不同的 Sentry release 名稱
+- 正式版 telemetry 與 sourcemap upload 只能走 `release.yml`，不得繞過 workflow 手動上傳
+- 發版前必須確認 GitHub Secrets 與 Sentry Secrets 齊全
+
+### GitHub Secrets（13 個）
 
 | Secret | 用途 |
 |--------|------|
@@ -204,6 +218,11 @@
 | `APPLE_ID` | Apple ID email |
 | `APPLE_PASSWORD` | App-Specific Password |
 | `APPLE_TEAM_ID` | `G9J8D2T6DV` |
+| `SENTRY_DSN` | Rust 正式版 Sentry DSN |
+| `VITE_SENTRY_DSN` | Frontend 正式版 Sentry DSN |
+| `SENTRY_AUTH_TOKEN` | Sentry sourcemap upload token |
+| `SENTRY_ORG` | Sentry organization slug |
+| `SENTRY_PROJECT` | Sentry project slug |
 
 ### 固定下載連結（官網用）
 

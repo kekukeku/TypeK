@@ -384,18 +384,21 @@ src/
 #### CI/CD
 
 - **CI** — `.github/workflows/ci.yml`（push/PR to main → vue-tsc + Vitest）
-- **Release** — `.github/workflows/release.yml`（tag `v*` 或 `workflow_dispatch` → 3 平台建構 + Apple 簽名）
+- **Release** — `.github/workflows/release.yml`（tag `v*` 或 `workflow_dispatch` → 3 平台建構 + Apple 簽名 + Sentry sourcemap upload + 自動公開 Release）
 - **發版腳本** — `./scripts/release.sh X.Y.Z`（bump 版本 → commit → tag → 分開推送 branch/tag）
-- **GitHub Secrets** — 8 個（`TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`）
+- **GitHub Secrets** — 13 個（`TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`, `SENTRY_DSN`, `VITE_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`）
 - **Stable-name Assets** — Release workflow 自動上傳固定名稱 DMG/EXE（`SayIt-mac-arm64.dmg`, `SayIt-mac-x64.dmg`, `SayIt-windows-x64.exe`），支援官網固定下載 URL
-- **Release 為 Draft** — `tauri-action` 建立 Draft release，需手動 Publish 或 `gh release edit --draft=false`
+- **Release 公開流程** — `tauri-action` 先建立 Draft release，待 matrix build 全部成功後由 `publish-release` job 自動執行 `gh release edit --draft=false`
 - **Tag 推送陷阱** — `git push origin main --tags` 可能不觸發 tag 事件，必須分開推送（release.sh 已修正）
+- **版本同步硬規則** — 發版時 `git tag`、`package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 必須一致，Sentry release 一律綁定同一個版本號
 
 #### 環境變數
 
 - **`TAURI_SIGNING_PRIVATE_KEY`** — Updater 簽署金鑰（CI/CD）
 - **`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`** — 私鑰密碼（CI/CD）
 - **`APPLE_CERTIFICATE` 等 6 個** — Apple Code Signing（CI/CD，見 CLAUDE.md）
+- **`SENTRY_DSN` / `VITE_SENTRY_DSN`** — 正式版 Sentry DSN（CI/CD）
+- **`SENTRY_AUTH_TOKEN` / `SENTRY_ORG` / `SENTRY_PROJECT`** — Sentry sourcemap upload 與 release 管理（CI/CD）
 - **`.env` 不進 git** — `.gitignore` 排除
 
 ### Critical Don't-Miss Rules

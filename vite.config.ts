@@ -5,6 +5,8 @@ import tailwindcss from "@tailwindcss/vite";
 import { version } from "./package.json";
 
 const host = process.env.TAURI_DEV_HOST;
+const shouldGenerateSentrySourcemaps =
+  process.env.VITE_SENTRY_SOURCEMAPS_ENABLED === "true";
 
 export default defineConfig({
   define: {
@@ -18,6 +20,7 @@ export default defineConfig({
   },
   clearScreen: false,
   build: {
+    sourcemap: shouldGenerateSentrySourcemaps,
     rollupOptions: {
       input: {
         main: resolve(__dirname, "index.html"),

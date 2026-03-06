@@ -6,6 +6,7 @@ import MainApp from "./MainApp.vue";
 import router from "./router";
 import { initializeDatabase } from "./lib/database";
 import { extractErrorMessage } from "./lib/errorUtils";
+import { initSentryForDashboard, captureError } from "./lib/sentry";
 import { useSettingsStore } from "./stores/useSettingsStore";
 import "./style.css";
 
@@ -14,7 +15,11 @@ document.addEventListener("contextmenu", (e) => e.preventDefault());
 
 async function bootstrap() {
   const pinia = createPinia();
-  const app = createApp(MainApp).use(pinia).use(router);
+  const app = createApp(MainApp);
+
+  initSentryForDashboard(app, router);
+
+  app.use(pinia).use(router);
 
   // DB 必須在 mount 之前初始化，否則 View 的 onMounted 會因 getDatabase() 拋錯而全部失敗
   try {
@@ -22,6 +27,7 @@ async function bootstrap() {
   } catch (err) {
     const message = extractErrorMessage(err);
     console.error("[main-window] Database init failed:", message);
+    captureError(err, { source: "database-init" });
     await invoke("debug_log", {
       level: "error",
       message: `Database init failed: ${message}`,
@@ -50,4 +56,5 @@ async function bootstrap() {
 
 bootstrap().catch((err) => {
   console.error("[main-window] Failed to initialize:", err);
+  captureError(err, { source: "bootstrap" });
 });

@@ -36,20 +36,63 @@ if git tag -l "v$VERSION" | grep -q "v$VERSION"; then
   exit 1
 fi
 
-# 更新版本號（兩個檔案）
+# 確認目前在分支上，避免 detached HEAD 推送失敗
+CURRENT_BRANCH=$(git branch --show-current)
+if [ -z "$CURRENT_BRANCH" ]; then
+  echo "錯誤: 目前不在 git branch 上，無法執行發版"
+  exit 1
+fi
+
+# 更新版本號（四個檔案需同步）
 jq --arg v "$VERSION" '.version = $v' src-tauri/tauri.conf.json > tmp.json && mv tmp.json src-tauri/tauri.conf.json
 jq --arg v "$VERSION" '.version = $v' package.json > tmp.json && mv tmp.json package.json
+python3 - <<PY
+from pathlib import Path
+path = Path("src-tauri/Cargo.toml")
+text = path.read_text()
+old = 'version = "{}"'.format("${CURRENT}")
+new = 'version = "{}"'.format("${VERSION}")
+if old not in text:
+    raise SystemExit("錯誤: Cargo.toml 找不到目前版本字串")
+path.write_text(text.replace(old, new, 1))
+PY
+python3 - <<PY
+from pathlib import Path
+path = Path("src-tauri/Cargo.lock")
+text = path.read_text()
+old = 'name = "sayit"\nversion = "{}"'.format("${CURRENT}")
+new = 'name = "sayit"\nversion = "{}"'.format("${VERSION}")
+if old not in text:
+    raise SystemExit("錯誤: Cargo.lock 找不到 sayit 版本字串")
+path.write_text(text.replace(old, new, 1))
+PY
 
-echo "✓ 已更新 tauri.conf.json 和 package.json"
+PACKAGE_VERSION=$(jq -r .version package.json)
+TAURI_VERSION=$(jq -r .version src-tauri/tauri.conf.json)
+CARGO_VERSION=$(python3 - <<'PY'
+from pathlib import Path
+for line in Path("src-tauri/Cargo.toml").read_text().splitlines():
+    if line.startswith("version = "):
+        print(line.split('"')[1])
+        break
+PY
+)
+
+if [ "$PACKAGE_VERSION" != "$VERSION" ] || [ "$TAURI_VERSION" != "$VERSION" ] || [ "$CARGO_VERSION" != "$VERSION" ]; then
+  echo "錯誤: 版本同步檢查失敗"
+  exit 1
+fi
+
+echo "✓ 已更新 package.json、tauri.conf.json、Cargo.toml、Cargo.lock"
 
 # Commit + Tag + Push（分開推送避免 GitHub Actions tag 事件遺失）
-git add src-tauri/tauri.conf.json package.json
+git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
 git commit -m "chore: bump version to $VERSION"
 git tag "v$VERSION"
-git push origin main
+git push origin "$CURRENT_BRANCH"
 git push origin "v$VERSION"
 
 echo ""
 echo "✓ 已推送 v$VERSION"
-echo "→ Release workflow 已觸發，完成後到 GitHub Releases 頁面 Publish"
+echo "→ Release workflow 已觸發，完成後會自動公開 GitHub Release"
 echo "  https://github.com/chenjackle45/SayIt/releases"

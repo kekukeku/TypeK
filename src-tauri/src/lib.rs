@@ -336,8 +336,53 @@ fn show_main_window(app: &AppHandle) {
     }
 }
 
+const DEFAULT_SENTRY_RELEASE: &str = concat!("sayit@", env!("CARGO_PKG_VERSION"));
+
+fn get_sentry_dsn() -> Option<&'static str> {
+    option_env!("SENTRY_DSN")
+        .map(str::trim)
+        .filter(|value| !value.is_empty() && !value.starts_with("__"))
+}
+
+fn get_sentry_environment() -> &'static str {
+    option_env!("SENTRY_ENVIRONMENT")
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or(if cfg!(debug_assertions) {
+            "development"
+        } else {
+            "production"
+        })
+}
+
+fn get_sentry_release() -> &'static str {
+    option_env!("SENTRY_RELEASE")
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or(DEFAULT_SENTRY_RELEASE)
+}
+
+fn is_sentry_enabled() -> bool {
+    matches!(get_sentry_environment(), "production") && get_sentry_dsn().is_some()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let _sentry_guard = if is_sentry_enabled() {
+        let dsn = get_sentry_dsn().expect("SENTRY_DSN must exist when Sentry is enabled");
+        Some(sentry::init((
+            dsn,
+            sentry::ClientOptions {
+                release: Some(get_sentry_release().into()),
+                environment: Some(get_sentry_environment().into()),
+                send_default_pii: false,
+                ..Default::default()
+            },
+        )))
+    } else {
+        None
+    };
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_http::init())
