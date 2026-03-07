@@ -25,15 +25,7 @@ import {
   calculateWhisperCostCeiling,
   calculateChatCostCeiling,
 } from "../lib/apiPricing";
-import {
-  initializeMicrophone,
-  startRecording,
-  stopRecording,
-  createAudioAnalyser,
-  destroyAudioAnalyser,
-} from "../lib/recorder";
-import type { AudioAnalyserHandle } from "../types/audio";
-import { transcribeAudio } from "../lib/transcriber";
+import type { StopRecordingResult, TranscriptionResult } from "../types/audio";
 import {
   HOTKEY_ERROR,
   HOTKEY_PRESSED,
@@ -101,9 +93,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
   const status = ref<HudStatus>("idle");
   const message = ref("");
   const isRecording = ref<boolean>(false);
-  const analyserHandle = ref<AudioAnalyserHandle | null>(null);
   const recordingElapsedSeconds = ref<number>(0);
-  let recordingStartTime = 0;
   let elapsedTimer: ReturnType<typeof setInterval> | null = null;
   let cachedAppWindow: ReturnType<typeof getCurrentWindow> | null = null;
   const unlistenFunctions: UnlistenFn[] = [];
@@ -442,18 +432,12 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     if (isRecording.value) return;
     isRecording.value = true;
     lastWasModified.value = null;
-    recordingStartTime = performance.now();
 
     try {
-      await Promise.all([muteSystemAudioIfEnabled(), initializeMicrophone()]);
-      startRecording();
-      try {
-        analyserHandle.value = createAudioAnalyser();
-      } catch (analyserError) {
-        writeErrorLog(
-          `useVoiceFlowStore: audio analyser creation failed (non-blocking): ${extractErrorMessage(analyserError)}`,
-        );
-      }
+      await Promise.all([
+        muteSystemAudioIfEnabled(),
+        invoke("start_recording"),
+      ]);
       startElapsedTimer();
       transitionTo("recording", RECORDING_MESSAGE);
       writeInfoLog("useVoiceFlowStore: recording started");
@@ -473,12 +457,10 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
 
     restoreSystemAudio();
     stopElapsedTimer();
-    destroyAudioAnalyser();
-    analyserHandle.value = null;
 
     try {
-      const audioBlob = await stopRecording();
-      const recordingDurationMs = performance.now() - recordingStartTime;
+      const stopResult = await invoke<StopRecordingResult>("stop_recording");
+      const recordingDurationMs = stopResult.recordingDurationMs;
 
       const MINIMUM_RECORDING_DURATION_MS = 300;
       if (recordingDurationMs < MINIMUM_RECORDING_DURATION_MS) {
@@ -512,12 +494,11 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
       );
       const hasVocabulary = vocabularyTermList.length > 0;
 
-      const result = await transcribeAudio(
-        audioBlob,
+      const result = await invoke<TranscriptionResult>("transcribe_audio", {
         apiKey,
-        hasVocabulary ? vocabularyTermList : undefined,
-        settingsStore.selectedWhisperModelId,
-      );
+        vocabularyTermList: hasVocabulary ? vocabularyTermList : null,
+        modelId: settingsStore.selectedWhisperModelId,
+      });
 
       writeInfoLog(`轉錄原文: "${result.rawText}"`);
 
@@ -642,16 +623,6 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
 
     await settingsStore.loadSettings();
 
-    try {
-      await initializeMicrophone();
-      writeInfoLog("useVoiceFlowStore: microphone initialized");
-    } catch (error) {
-      const errorMessage = extractErrorMessage(error);
-      writeErrorLog(
-        `useVoiceFlowStore: microphone initialization failed: ${errorMessage}`,
-      );
-    }
-
     const listeners = await Promise.all([
       listen(HOTKEY_PRESSED, () => {
         void handleStartRecording();
@@ -707,8 +678,6 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     clearCollapseHideTimer();
     stopMonitorPolling();
     stopElapsedTimer();
-    destroyAudioAnalyser();
-    analyserHandle.value = null;
 
     for (const unlisten of unlistenFunctions) {
       unlisten();
@@ -719,7 +688,6 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
   return {
     status,
     message,
-    analyserHandle,
     recordingElapsedSeconds,
     lastWasModified,
     initialize,

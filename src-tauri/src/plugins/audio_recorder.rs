@@ -1,0 +1,540 @@
+use std::io::Cursor;
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, Mutex,
+};
+use std::time::Instant;
+
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use rustfft::{num_complex::Complex, FftPlanner};
+use tauri::{command, AppHandle, Emitter, State};
+
+// ========== Error Type ==========
+
+#[derive(Debug, thiserror::Error)]
+pub enum AudioRecorderError {
+    #[error("No input device available")]
+    NoInputDevice,
+    #[error("Failed to get input config: {0}")]
+    InputConfig(String),
+    #[error("Failed to build audio stream: {0}")]
+    BuildStream(String),
+    #[error("Failed to start audio stream: {0}")]
+    PlayStream(String),
+    #[error("Not recording")]
+    NotRecording,
+    #[error("WAV encoding failed: {0}")]
+    WavEncode(String),
+    #[error("Lock poisoned")]
+    LockPoisoned,
+}
+
+impl serde::Serialize for AudioRecorderError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+// ========== Payloads ==========
+
+#[derive(Clone, serde::Serialize)]
+pub struct WaveformPayload {
+    levels: [f32; 6],
+}
+
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StopRecordingResult {
+    recording_duration_ms: f64,
+}
+
+// ========== State ==========
+
+struct RecordingInner {
+    samples: Mutex<Vec<i16>>,
+    should_stop: AtomicBool,
+}
+
+struct RecordingHandle {
+    inner: Arc<RecordingInner>,
+    thread: Option<std::thread::JoinHandle<()>>,
+    start_time: Instant,
+    sample_rate: u32,
+}
+
+pub struct AudioRecorderState {
+    recording: Mutex<Option<RecordingHandle>>,
+    pub(crate) wav_buffer: Mutex<Option<Vec<u8>>>,
+}
+
+impl AudioRecorderState {
+    pub fn new() -> Self {
+        Self {
+            recording: Mutex::new(None),
+            wav_buffer: Mutex::new(None),
+        }
+    }
+}
+
+// ========== FFT Constants ==========
+
+const FFT_SIZE: usize = 64;
+/// Bin indices in the order the frontend expects for display
+const FREQUENCY_BIN_PICK_INDEX_LIST: [usize; 6] = [9, 4, 1, 2, 6, 12];
+const DB_FLOOR: f32 = -100.0;
+const DB_CEILING: f32 = -20.0;
+const WAVEFORM_EMIT_INTERVAL_MS: u128 = 16;
+
+fn normalize_db(db: f32) -> f32 {
+    ((db - DB_FLOOR) / (DB_CEILING - DB_FLOOR)).clamp(0.0, 1.0)
+}
+
+struct InputConfigSelection {
+    supported_config: cpal::SupportedStreamConfig,
+    sample_rate: u32,
+    channels: u16,
+}
+
+// ========== Commands ==========
+
+#[command]
+pub fn start_recording(
+    app: AppHandle,
+    state: State<'_, AudioRecorderState>,
+) -> Result<(), AudioRecorderError> {
+    let mut guard = state
+        .recording
+        .lock()
+        .map_err(|_| AudioRecorderError::LockPoisoned)?;
+
+    if guard.is_some() {
+        println!("[audio-recorder] Already recording, ignoring start_recording");
+        return Ok(());
+    }
+
+    // Pre-allocate ~30 seconds at 16kHz (480,000 i16 samples ≈ 938KB)
+    let inner = Arc::new(RecordingInner {
+        samples: Mutex::new(Vec::with_capacity(16000 * 30)),
+        should_stop: AtomicBool::new(false),
+    });
+
+    let inner_for_thread = inner.clone();
+    let (ready_tx, ready_rx) = std::sync::mpsc::channel::<Result<u32, AudioRecorderError>>();
+    let start_time = Instant::now();
+
+    let thread = std::thread::Builder::new()
+        .name("audio-recorder".to_string())
+        .spawn(move || {
+            run_recording_thread(app, inner_for_thread, ready_tx);
+        })
+        .map_err(|e| AudioRecorderError::BuildStream(format!("Thread spawn failed: {}", e)))?;
+
+    // Wait for the recording thread to report success or failure
+    match ready_rx.recv() {
+        Ok(Ok(sample_rate)) => {
+            *guard = Some(RecordingHandle {
+                inner,
+                thread: Some(thread),
+                start_time,
+                sample_rate,
+            });
+            Ok(())
+        }
+        Ok(Err(e)) => {
+            let _ = thread.join();
+            Err(e)
+        }
+        Err(_) => {
+            let _ = thread.join();
+            Err(AudioRecorderError::BuildStream(
+                "Recording thread exited unexpectedly".to_string(),
+            ))
+        }
+    }
+}
+
+#[command]
+pub fn stop_recording(
+    state: State<'_, AudioRecorderState>,
+) -> Result<StopRecordingResult, AudioRecorderError> {
+    let mut guard = state
+        .recording
+        .lock()
+        .map_err(|_| AudioRecorderError::LockPoisoned)?;
+
+    let mut handle = guard.take().ok_or(AudioRecorderError::NotRecording)?;
+    let recording_duration_ms = handle.start_time.elapsed().as_secs_f64() * 1000.0;
+
+    // Signal the recording thread to stop
+    handle.inner.should_stop.store(true, Ordering::SeqCst);
+
+    // Wait for the thread to finish (drops the cpal Stream → releases microphone)
+    if let Some(thread) = handle.thread.take() {
+        let _ = thread.join();
+    }
+
+    // Take the collected samples
+    let samples = handle
+        .inner
+        .samples
+        .lock()
+        .map_err(|_| AudioRecorderError::LockPoisoned)?;
+
+    // Encode WAV in memory
+    let wav_data = encode_wav(&samples, handle.sample_rate)?;
+
+    println!(
+        "[audio-recorder] WAV encoded: {} samples, {} bytes, {:.0}ms",
+        samples.len(),
+        wav_data.len(),
+        recording_duration_ms,
+    );
+
+    // Store WAV buffer for transcription to consume
+    let mut wav_guard = state
+        .wav_buffer
+        .lock()
+        .map_err(|_| AudioRecorderError::LockPoisoned)?;
+    *wav_guard = Some(wav_data);
+
+    Ok(StopRecordingResult {
+        recording_duration_ms,
+    })
+}
+
+// ========== Recording Thread ==========
+
+fn run_recording_thread(
+    app: AppHandle,
+    inner: Arc<RecordingInner>,
+    ready_tx: std::sync::mpsc::Sender<Result<u32, AudioRecorderError>>,
+) {
+    // ── Get input device ──
+    let host = cpal::default_host();
+    let device = match host.default_input_device() {
+        Some(d) => d,
+        None => {
+            let _ = ready_tx.send(Err(AudioRecorderError::NoInputDevice));
+            return;
+        }
+    };
+
+    // ── Determine config (prefer 16 kHz mono, fallback to device default) ──
+    let selection = match determine_input_config(&device) {
+        Ok(c) => c,
+        Err(e) => {
+            let _ = ready_tx.send(Err(e));
+            return;
+        }
+    };
+    let sample_rate = selection.sample_rate;
+    let channels = selection.channels;
+
+    let stream = match build_input_stream(&device, &selection.supported_config, inner.clone(), app)
+    {
+        Ok(stream) => stream,
+        Err(error) => {
+            let _ = ready_tx.send(Err(error));
+            return;
+        }
+    };
+
+    // ── Play ──
+    if let Err(e) = stream.play() {
+        let _ = ready_tx.send(Err(AudioRecorderError::PlayStream(e.to_string())));
+        return;
+    }
+
+    println!(
+        "[audio-recorder] Recording started ({}Hz, {}ch)",
+        sample_rate, channels
+    );
+    let _ = ready_tx.send(Ok(sample_rate));
+
+    // ── Keep stream alive until told to stop ──
+    while !inner.should_stop.load(Ordering::SeqCst) {
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+
+    // Stream dropped here → microphone released
+    drop(stream);
+    println!("[audio-recorder] Recording stopped, stream released");
+}
+
+fn determine_input_config(
+    device: &cpal::Device,
+) -> Result<InputConfigSelection, AudioRecorderError> {
+    // Try 16 kHz mono first — smallest WAV, ideal for speech
+    if let Ok(configs) = device.supported_input_configs() {
+        let preferred = configs
+            .filter(|range| {
+                range.min_sample_rate().0 <= 16000 && range.max_sample_rate().0 >= 16000
+            })
+            .min_by_key(|range| {
+                let mono_penalty = if range.channels() == 1 { 0 } else { 1 };
+                (mono_penalty, range.channels())
+            });
+
+        if let Some(range) = preferred {
+            let supported_config = range.with_sample_rate(cpal::SampleRate(16000));
+            return Ok(InputConfigSelection {
+                sample_rate: 16000,
+                channels: supported_config.channels(),
+                supported_config,
+            });
+        }
+    }
+
+    // Fallback: device default
+    let supported_config = device
+        .default_input_config()
+        .map_err(|e| AudioRecorderError::InputConfig(e.to_string()))?;
+
+    let sr = supported_config.sample_rate().0;
+    let ch = supported_config.channels();
+
+    println!(
+        "[audio-recorder] 16 kHz not supported, using device default: {}Hz, {}ch",
+        sr, ch
+    );
+
+    Ok(InputConfigSelection {
+        supported_config,
+        sample_rate: sr,
+        channels: ch,
+    })
+}
+
+fn build_input_stream(
+    device: &cpal::Device,
+    supported_config: &cpal::SupportedStreamConfig,
+    inner: Arc<RecordingInner>,
+    app: AppHandle,
+) -> Result<cpal::Stream, AudioRecorderError> {
+    let sample_format = supported_config.sample_format();
+    let config = supported_config.config();
+    let channels = config.channels;
+
+    match sample_format {
+        cpal::SampleFormat::I8 => {
+            build_typed_input_stream::<i8>(device, &config, channels, inner, app)
+        }
+        cpal::SampleFormat::I16 => {
+            build_typed_input_stream::<i16>(device, &config, channels, inner, app)
+        }
+        cpal::SampleFormat::I32 => {
+            build_typed_input_stream::<i32>(device, &config, channels, inner, app)
+        }
+        cpal::SampleFormat::I64 => {
+            build_typed_input_stream::<i64>(device, &config, channels, inner, app)
+        }
+        cpal::SampleFormat::U8 => {
+            build_typed_input_stream::<u8>(device, &config, channels, inner, app)
+        }
+        cpal::SampleFormat::U16 => {
+            build_typed_input_stream::<u16>(device, &config, channels, inner, app)
+        }
+        cpal::SampleFormat::U32 => {
+            build_typed_input_stream::<u32>(device, &config, channels, inner, app)
+        }
+        cpal::SampleFormat::U64 => {
+            build_typed_input_stream::<u64>(device, &config, channels, inner, app)
+        }
+        cpal::SampleFormat::F32 => {
+            build_typed_input_stream::<f32>(device, &config, channels, inner, app)
+        }
+        cpal::SampleFormat::F64 => {
+            build_typed_input_stream::<f64>(device, &config, channels, inner, app)
+        }
+        other => Err(AudioRecorderError::BuildStream(format!(
+            "Unsupported sample format: {}",
+            other
+        ))),
+    }
+}
+
+fn build_typed_input_stream<T>(
+    device: &cpal::Device,
+    config: &cpal::StreamConfig,
+    channels: u16,
+    inner: Arc<RecordingInner>,
+    app: AppHandle,
+) -> Result<cpal::Stream, AudioRecorderError>
+where
+    T: cpal::Sample + cpal::SizedSample,
+    f32: cpal::FromSample<T>,
+{
+    let inner_for_callback = inner;
+    let app_for_callback = app;
+    let chunk_size = channels as usize;
+
+    let fft = FftPlanner::<f32>::new().plan_fft_forward(FFT_SIZE);
+    let mut ring_buffer = vec![0.0f32; FFT_SIZE];
+    let mut fft_scratch = vec![Complex::new(0.0f32, 0.0); FFT_SIZE];
+    let mut ring_pos: usize = 0;
+    let mut last_emit = Instant::now();
+    let mut total_mono_samples: usize = 0;
+    let mut mono_batch: Vec<i16> = Vec::with_capacity(1024);
+
+    device
+        .build_input_stream(
+            config,
+            move |data: &[T], _: &cpal::InputCallbackInfo| {
+                mono_batch.clear();
+
+                for chunk in data.chunks(chunk_size) {
+                    let mono = if chunk_size > 1 {
+                        chunk
+                            .iter()
+                            .map(|sample| sample.to_sample::<f32>())
+                            .sum::<f32>()
+                            / chunk_size as f32
+                    } else {
+                        chunk[0].to_sample::<f32>()
+                    };
+
+                    let sample =
+                        (mono * i16::MAX as f32).clamp(i16::MIN as f32, i16::MAX as f32) as i16;
+                    mono_batch.push(sample);
+
+                    ring_buffer[ring_pos] = mono;
+                    ring_pos = (ring_pos + 1) % FFT_SIZE;
+                    total_mono_samples += 1;
+                }
+
+                if let Ok(mut samples) = inner_for_callback.samples.lock() {
+                    samples.extend_from_slice(&mono_batch);
+                }
+
+                if total_mono_samples >= FFT_SIZE
+                    && last_emit.elapsed().as_millis() >= WAVEFORM_EMIT_INTERVAL_MS
+                {
+                    for (index, &sample) in ring_buffer.iter().enumerate() {
+                        fft_scratch[index] = Complex::new(sample, 0.0);
+                    }
+                    fft.process(&mut fft_scratch);
+
+                    let mut levels = [0.0f32; 6];
+                    for (index, &bin_idx) in FREQUENCY_BIN_PICK_INDEX_LIST.iter().enumerate() {
+                        if bin_idx < fft_scratch.len() {
+                            let magnitude = fft_scratch[bin_idx].norm() / FFT_SIZE as f32;
+                            let db = if magnitude > 0.0 {
+                                20.0 * magnitude.log10()
+                            } else {
+                                DB_FLOOR
+                            };
+                            levels[index] = normalize_db(db);
+                        }
+                    }
+
+                    let _ = app_for_callback.emit("audio:waveform", WaveformPayload { levels });
+                    last_emit = Instant::now();
+                }
+            },
+            move |err| {
+                eprintln!("[audio-recorder] Stream error: {}", err);
+            },
+            None,
+        )
+        .map_err(|e| AudioRecorderError::BuildStream(e.to_string()))
+}
+
+// ========== WAV Encoding ==========
+
+fn encode_wav(samples: &[i16], sample_rate: u32) -> Result<Vec<u8>, AudioRecorderError> {
+    let spec = hound::WavSpec {
+        channels: 1,
+        sample_rate,
+        bits_per_sample: 16,
+        sample_format: hound::SampleFormat::Int,
+    };
+
+    let mut buffer = Cursor::new(Vec::with_capacity(samples.len() * 2 + 44));
+    {
+        let mut writer = hound::WavWriter::new(&mut buffer, spec)
+            .map_err(|e| AudioRecorderError::WavEncode(e.to_string()))?;
+        for &sample in samples {
+            writer
+                .write_sample(sample)
+                .map_err(|e| AudioRecorderError::WavEncode(e.to_string()))?;
+        }
+        writer
+            .finalize()
+            .map_err(|e| AudioRecorderError::WavEncode(e.to_string()))?;
+    }
+
+    Ok(buffer.into_inner())
+}
+
+// ========== Tests ==========
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_normalize_db_floor() {
+        assert_eq!(normalize_db(-100.0), 0.0);
+    }
+
+    #[test]
+    fn test_normalize_db_ceiling() {
+        assert_eq!(normalize_db(-20.0), 1.0);
+    }
+
+    #[test]
+    fn test_normalize_db_midpoint() {
+        let result = normalize_db(-60.0);
+        assert!((result - 0.5).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_normalize_db_below_floor() {
+        assert_eq!(normalize_db(-200.0), 0.0);
+    }
+
+    #[test]
+    fn test_normalize_db_above_ceiling() {
+        assert_eq!(normalize_db(0.0), 1.0);
+    }
+
+    #[test]
+    fn test_encode_wav_basic() {
+        let samples = vec![0i16, 1000, -1000, 32767, -32768];
+        let wav = encode_wav(&samples, 16000).unwrap();
+
+        // WAV header is 44 bytes, data: 5 samples * 2 bytes = 10 bytes
+        assert_eq!(wav.len(), 44 + 10);
+
+        // Check RIFF header
+        assert_eq!(&wav[0..4], b"RIFF");
+        assert_eq!(&wav[8..12], b"WAVE");
+    }
+
+    #[test]
+    fn test_encode_wav_empty() {
+        let samples: Vec<i16> = vec![];
+        let wav = encode_wav(&samples, 16000).unwrap();
+        assert_eq!(wav.len(), 44); // Header only
+    }
+
+    #[test]
+    fn test_encode_wav_sample_rate_preserved() {
+        let samples = vec![100i16; 16000]; // 1 second at 16 kHz
+        let wav = encode_wav(&samples, 48000).unwrap();
+
+        // Check sample rate in WAV header (bytes 24-27, little-endian u32)
+        let sr = u32::from_le_bytes([wav[24], wav[25], wav[26], wav[27]]);
+        assert_eq!(sr, 48000);
+    }
+
+    #[test]
+    fn test_audio_recorder_state_new() {
+        let state = AudioRecorderState::new();
+        assert!(state.recording.lock().unwrap().is_none());
+        assert!(state.wav_buffer.lock().unwrap().is_none());
+    }
+}

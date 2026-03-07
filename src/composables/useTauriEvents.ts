@@ -15,3 +15,5 @@ export const HOTKEY_TOGGLED = "hotkey:toggled" as const;
 export const HOTKEY_ERROR = "hotkey:error" as const;
 
 export const QUALITY_MONITOR_RESULT = "quality-monitor:result" as const;
+
+export const AUDIO_WAVEFORM = "audio:waveform" as const;

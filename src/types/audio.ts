@@ -1,14 +1,13 @@
-export interface AudioAnalyserHandle {
-  getFrequencyData(): Float32Array;
-  destroy(): void;
+export interface WaveformPayload {
+  levels: number[];
 }
 
-export interface AudioAnalyserConfig {
-  fftSize: number;
-  smoothingTimeConstant: number;
+export interface StopRecordingResult {
+  recordingDurationMs: number;
 }
 
-export const DEFAULT_ANALYSER_CONFIG: AudioAnalyserConfig = {
-  fftSize: 64,
-  smoothingTimeConstant: 0.7,
-};
+export interface TranscriptionResult {
+  rawText: string;
+  transcriptionDurationMs: number;
+  noSpeechProbability: number;
+}

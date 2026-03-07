@@ -5,11 +5,10 @@ extern crate objc;
 mod plugins;
 
 use tauri::{
-    AppHandle,
     command,
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
-    Manager,
+    AppHandle, Manager,
 };
 
 /// 設定 macOS 視窗為瀏海覆蓋層級（與 BoringNotch 相同）
@@ -43,10 +42,9 @@ fn configure_macos_notch_window(window: &tauri::WebviewWindow) {
 #[cfg(target_os = "windows")]
 fn configure_windows_topmost_window(window: &tauri::WebviewWindow) {
     use windows::Win32::UI::WindowsAndMessaging::{
-        GetWindowLongPtrW, SetWindowLongPtrW, SetWindowPos,
-        GWL_EXSTYLE, HWND_TOPMOST,
-        SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE,
-        WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WINDOW_EX_STYLE,
+        GetWindowLongPtrW, SetWindowLongPtrW, SetWindowPos, GWL_EXSTYLE, HWND_TOPMOST,
+        SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, WINDOW_EX_STYLE,
+        WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
     };
 
     match window.hwnd() {
@@ -55,14 +53,17 @@ fn configure_windows_topmost_window(window: &tauri::WebviewWindow) {
             let ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
             let new_ex_style = WINDOW_EX_STYLE(ex_style as u32)
                 | WS_EX_TOOLWINDOW    // 不出現在 Alt+Tab / taskbar，出現在所有虛擬桌面
-                | WS_EX_NOACTIVATE;   // 點擊不搶焦點
+                | WS_EX_NOACTIVATE; // 點擊不搶焦點
             SetWindowLongPtrW(hwnd, GWL_EXSTYLE, new_ex_style.0 as isize);
 
             // HWND_TOPMOST: 視窗永遠在最上層（包括 taskbar 之上）
             let _ = SetWindowPos(
                 hwnd,
                 Some(HWND_TOPMOST),
-                0, 0, 0, 0,
+                0,
+                0,
+                0,
+                0,
                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED,
             );
 
@@ -126,7 +127,9 @@ fn get_cursor_position() -> (f64, f64) {
     impl Drop for CgEventGuard {
         fn drop(&mut self) {
             if !self.0.is_null() {
-                unsafe { CFRelease(self.0 as CFTypeRef); }
+                unsafe {
+                    CFRelease(self.0 as CFTypeRef);
+                }
             }
         }
     }
@@ -312,15 +315,15 @@ fn get_hud_target_position(app: tauri::AppHandle) -> Result<HudTargetPosition, S
     let monitor_logical_y = matched_monitor.position_y as f64 / sf;
 
     // 計算 HUD 在目標螢幕上的 logical 置中偏移
-    let centered_x_logical = calculate_centered_window_x_logical(
-        matched_monitor.width,
-        sf,
-        HUD_WINDOW_WIDTH_LOGICAL,
-    );
+    let centered_x_logical =
+        calculate_centered_window_x_logical(matched_monitor.width, sf, HUD_WINDOW_WIDTH_LOGICAL);
 
     let hud_x = monitor_logical_x + centered_x_logical;
     let hud_y = monitor_logical_y;
-    let monitor_key = format!("{},{}", matched_monitor.position_x, matched_monitor.position_y);
+    let monitor_key = format!(
+        "{},{}",
+        matched_monitor.position_x, matched_monitor.position_y
+    );
 
     Ok(HudTargetPosition {
         x: hud_x,
@@ -406,13 +409,20 @@ pub fn run() {
             plugins::hotkey_listener::check_accessibility_permission_command,
             plugins::hotkey_listener::open_accessibility_settings,
             plugins::hotkey_listener::reinitialize_hotkey_listener,
-            plugins::keyboard_monitor::start_quality_monitor
+            plugins::keyboard_monitor::start_quality_monitor,
+            plugins::audio_recorder::start_recording,
+            plugins::audio_recorder::stop_recording,
+            plugins::transcription::transcribe_audio
         ])
         .setup(|app| {
             // 初始化 keyboard monitor 狀態
             app.manage(plugins::keyboard_monitor::KeyboardMonitorState::new());
             // 初始化 audio control 狀態
             app.manage(plugins::audio_control::AudioControlState::new());
+            // 初始化 audio recorder 狀態
+            app.manage(plugins::audio_recorder::AudioRecorderState::new());
+            // 初始化 transcription 狀態（共用 HTTP client）
+            app.manage(plugins::transcription::TranscriptionState::new());
 
             let open_dashboard_item =
                 MenuItem::with_id(app, "open-dashboard", "開啟 Dashboard", true, None::<&str>)?;
@@ -420,7 +430,9 @@ pub fn run() {
             let menu = Menu::with_items(app, &[&open_dashboard_item, &quit_item])?;
 
             TrayIconBuilder::new()
-                .icon(tauri::image::Image::from_bytes(include_bytes!("../icons/tray-icon.png"))?)
+                .icon(tauri::image::Image::from_bytes(include_bytes!(
+                    "../icons/tray-icon.png"
+                ))?)
                 .icon_as_template(true)
                 .menu(&menu)
                 .show_menu_on_left_click(true)
@@ -544,9 +556,15 @@ mod tests {
     fn test_find_monitor_single_monitor() {
         let monitors = vec![make_monitor(0, 0, 1920, 1080, 1.0)];
         // 游標在螢幕中央
-        assert_eq!(find_monitor_for_cursor(960.0, 540.0, &monitors, false), Some(0));
+        assert_eq!(
+            find_monitor_for_cursor(960.0, 540.0, &monitors, false),
+            Some(0)
+        );
         // macOS 也一樣（scale 1.0）
-        assert_eq!(find_monitor_for_cursor(960.0, 540.0, &monitors, true), Some(0));
+        assert_eq!(
+            find_monitor_for_cursor(960.0, 540.0, &monitors, true),
+            Some(0)
+        );
     }
 
     #[test]
@@ -557,22 +575,34 @@ mod tests {
             make_monitor(1920, 0, 1920, 1080, 1.0),
         ];
         // 游標在右螢幕
-        assert_eq!(find_monitor_for_cursor(2000.0, 500.0, &monitors, false), Some(1));
+        assert_eq!(
+            find_monitor_for_cursor(2000.0, 500.0, &monitors, false),
+            Some(1)
+        );
         // 游標在左螢幕
-        assert_eq!(find_monitor_for_cursor(100.0, 500.0, &monitors, false), Some(0));
+        assert_eq!(
+            find_monitor_for_cursor(100.0, 500.0, &monitors, false),
+            Some(0)
+        );
     }
 
     #[test]
     fn test_find_monitor_dual_vertical() {
         // 副螢幕在上方（y 為負值）
         let monitors = vec![
-            make_monitor(0, 0, 1920, 1080, 1.0),       // 主螢幕
-            make_monitor(0, -1080, 1920, 1080, 1.0),    // 上方副螢幕
+            make_monitor(0, 0, 1920, 1080, 1.0),     // 主螢幕
+            make_monitor(0, -1080, 1920, 1080, 1.0), // 上方副螢幕
         ];
         // 游標在上方螢幕
-        assert_eq!(find_monitor_for_cursor(960.0, -500.0, &monitors, false), Some(1));
+        assert_eq!(
+            find_monitor_for_cursor(960.0, -500.0, &monitors, false),
+            Some(1)
+        );
         // 游標在主螢幕
-        assert_eq!(find_monitor_for_cursor(960.0, 500.0, &monitors, false), Some(0));
+        assert_eq!(
+            find_monitor_for_cursor(960.0, 500.0, &monitors, false),
+            Some(0)
+        );
     }
 
     #[test]
@@ -583,13 +613,19 @@ mod tests {
         // 外接: physical (2560,0) → logical (2560,0), logical size 1920x1080
         // logical 座標存在間隙 (1280~2560)，因兩螢幕 scale factor 不同
         let monitors = vec![
-            make_monitor(0, 0, 2560, 1600, 2.0),        // Retina 主螢幕
-            make_monitor(2560, 0, 1920, 1080, 1.0),      // 外接 1080p
+            make_monitor(0, 0, 2560, 1600, 2.0),    // Retina 主螢幕
+            make_monitor(2560, 0, 1920, 1080, 1.0), // 外接 1080p
         ];
         // 游標在 Retina 主螢幕（logical x=640, y=400）
-        assert_eq!(find_monitor_for_cursor(640.0, 400.0, &monitors, true), Some(0));
+        assert_eq!(
+            find_monitor_for_cursor(640.0, 400.0, &monitors, true),
+            Some(0)
+        );
         // 游標在外接螢幕（logical x=3000, y=500）
-        assert_eq!(find_monitor_for_cursor(3000.0, 500.0, &monitors, true), Some(1));
+        assert_eq!(
+            find_monitor_for_cursor(3000.0, 500.0, &monitors, true),
+            Some(1)
+        );
     }
 
     #[test]
@@ -599,7 +635,10 @@ mod tests {
             make_monitor(1920, 0, 1920, 1080, 1.0),
         ];
         // 游標恰好在右螢幕左邊界上（x=1920）
-        assert_eq!(find_monitor_for_cursor(1920.0, 500.0, &monitors, false), Some(1));
+        assert_eq!(
+            find_monitor_for_cursor(1920.0, 500.0, &monitors, false),
+            Some(1)
+        );
         // 游標恰好在左螢幕左上角（x=0, y=0）
         assert_eq!(find_monitor_for_cursor(0.0, 0.0, &monitors, false), Some(0));
     }
@@ -612,23 +651,30 @@ mod tests {
             make_monitor(-1920, 0, 1920, 1080, 1.0),
         ];
         // 游標在左方副螢幕
-        assert_eq!(find_monitor_for_cursor(-500.0, 500.0, &monitors, false), Some(1));
+        assert_eq!(
+            find_monitor_for_cursor(-500.0, 500.0, &monitors, false),
+            Some(1)
+        );
     }
 
     #[test]
     fn test_find_monitor_fallback() {
         // 游標座標不在任何螢幕內 → fallback 到 index 0
-        let monitors = vec![
-            make_monitor(0, 0, 1920, 1080, 1.0),
-        ];
-        assert_eq!(find_monitor_for_cursor(5000.0, 5000.0, &monitors, false), Some(0));
+        let monitors = vec![make_monitor(0, 0, 1920, 1080, 1.0)];
+        assert_eq!(
+            find_monitor_for_cursor(5000.0, 5000.0, &monitors, false),
+            Some(0)
+        );
     }
 
     #[test]
     fn test_find_monitor_empty_monitors() {
         // 空螢幕列表 → None
         let monitors: Vec<MonitorInfo> = vec![];
-        assert_eq!(find_monitor_for_cursor(960.0, 540.0, &monitors, false), None);
+        assert_eq!(
+            find_monitor_for_cursor(960.0, 540.0, &monitors, false),
+            None
+        );
     }
 
     // ============================================================
@@ -647,18 +693,30 @@ mod tests {
         // 右 portrait: NSScreen origin (1440,0), sf=1.0 → physical (1440,0), size 1080x1920
         //   logical bounds: [1440, 2520) x [0, 1920)
         let monitors = vec![
-            make_monitor(-1920, 0, 1920, 1080, 1.0),  // 左
-            make_monitor(0, 0, 2880, 1800, 2.0),       // 中 Retina
-            make_monitor(1440, 0, 1080, 1920, 1.0),    // 右 portrait
+            make_monitor(-1920, 0, 1920, 1080, 1.0), // 左
+            make_monitor(0, 0, 2880, 1800, 2.0),     // 中 Retina
+            make_monitor(1440, 0, 1080, 1920, 1.0),  // 右 portrait
         ];
         // 游標在左螢幕
-        assert_eq!(find_monitor_for_cursor(-960.0, 540.0, &monitors, true), Some(0));
+        assert_eq!(
+            find_monitor_for_cursor(-960.0, 540.0, &monitors, true),
+            Some(0)
+        );
         // 游標在中間 Retina 螢幕
-        assert_eq!(find_monitor_for_cursor(720.0, 450.0, &monitors, true), Some(1));
+        assert_eq!(
+            find_monitor_for_cursor(720.0, 450.0, &monitors, true),
+            Some(1)
+        );
         // 游標在右 portrait 螢幕（中央）
-        assert_eq!(find_monitor_for_cursor(1980.0, 960.0, &monitors, true), Some(2));
+        assert_eq!(
+            find_monitor_for_cursor(1980.0, 960.0, &monitors, true),
+            Some(2)
+        );
         // 游標在右 portrait 螢幕下半部（超出 landscape 高度範圍）
-        assert_eq!(find_monitor_for_cursor(1500.0, 1500.0, &monitors, true), Some(2));
+        assert_eq!(
+            find_monitor_for_cursor(1500.0, 1500.0, &monitors, true),
+            Some(2)
+        );
     }
 
     #[test]
@@ -670,15 +728,24 @@ mod tests {
         //   NSScreen origin y = 900 - 1920 = -1020
         //   physical position = (1440 * 1.0, -1020 * 1.0) = (1440, -1020)
         let monitors = vec![
-            make_monitor(0, 0, 2880, 1800, 2.0),          // 中 Retina
-            make_monitor(1440, -1020, 1080, 1920, 1.0),    // 右 portrait
+            make_monitor(0, 0, 2880, 1800, 2.0),        // 中 Retina
+            make_monitor(1440, -1020, 1080, 1920, 1.0), // 右 portrait
         ];
         // 游標在右 portrait 上半部（y 為負值）
-        assert_eq!(find_monitor_for_cursor(1980.0, -500.0, &monitors, true), Some(1));
+        assert_eq!(
+            find_monitor_for_cursor(1980.0, -500.0, &monitors, true),
+            Some(1)
+        );
         // 游標在右 portrait 下半部
-        assert_eq!(find_monitor_for_cursor(1980.0, 800.0, &monitors, true), Some(1));
+        assert_eq!(
+            find_monitor_for_cursor(1980.0, 800.0, &monitors, true),
+            Some(1)
+        );
         // 游標在中 Retina
-        assert_eq!(find_monitor_for_cursor(720.0, 450.0, &monitors, true), Some(0));
+        assert_eq!(
+            find_monitor_for_cursor(720.0, 450.0, &monitors, true),
+            Some(0)
+        );
     }
 
     #[test]
@@ -686,12 +753,18 @@ mod tests {
         // 游標落在兩螢幕間的 rounding 間隙 → fallback 到最近螢幕
         let monitors = vec![
             make_monitor(0, 0, 1920, 1080, 1.0),
-            make_monitor(3840, 0, 1920, 1080, 1.0),  // 隔了一段距離
+            make_monitor(3840, 0, 1920, 1080, 1.0), // 隔了一段距離
         ];
         // 游標在兩螢幕之間但靠近右螢幕
-        assert_eq!(find_monitor_for_cursor(3500.0, 540.0, &monitors, false), Some(1));
+        assert_eq!(
+            find_monitor_for_cursor(3500.0, 540.0, &monitors, false),
+            Some(1)
+        );
         // 游標在兩螢幕之間但靠近左螢幕
-        assert_eq!(find_monitor_for_cursor(2000.0, 540.0, &monitors, false), Some(0));
+        assert_eq!(
+            find_monitor_for_cursor(2000.0, 540.0, &monitors, false),
+            Some(0)
+        );
     }
 
     // ============================================================

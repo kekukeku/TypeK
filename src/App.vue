@@ -90,7 +90,6 @@ onUnmounted(() => {
     <NotchHud
       :status="voiceFlowStore.status"
       :message="voiceFlowStore.message"
-      :analyser-handle="voiceFlowStore.analyserHandle"
       :recording-elapsed-seconds="voiceFlowStore.recordingElapsedSeconds"
       @retry="handleRetry"
     />

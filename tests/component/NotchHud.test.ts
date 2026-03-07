@@ -2,16 +2,27 @@ import { mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import NotchHud from "../../src/components/NotchHud.vue";
 
+const { mockListen } = vi.hoisted(() => ({
+  mockListen: vi.fn().mockResolvedValue(vi.fn()),
+}));
+
+vi.mock("@tauri-apps/api/event", () => ({
+  listen: mockListen,
+  emit: vi.fn().mockResolvedValue(undefined),
+}));
+
 describe("NotchHud", () => {
   afterEach(() => {
     vi.useRealTimers();
+    mockListen.mockReset();
+    mockListen.mockResolvedValue(vi.fn());
   });
 
   it("[P0] recording 狀態應顯示波形元素和計時器", () => {
     const wrapper = mount(NotchHud, {
       props: {
         status: "recording",
-        analyserHandle: null,
+
         recordingElapsedSeconds: 3,
         message: "",
       },
@@ -26,7 +37,7 @@ describe("NotchHud", () => {
     const wrapper = mount(NotchHud, {
       props: {
         status: "recording",
-        analyserHandle: null,
+
         recordingElapsedSeconds: 0,
         message: "",
       },
@@ -40,7 +51,7 @@ describe("NotchHud", () => {
     const wrapper = mount(NotchHud, {
       props: {
         status: "success",
-        analyserHandle: null,
+
         recordingElapsedSeconds: 0,
         message: "",
       },
@@ -57,7 +68,7 @@ describe("NotchHud", () => {
     const wrapper = mount(NotchHud, {
       props: {
         status: "error",
-        analyserHandle: null,
+
         recordingElapsedSeconds: 0,
         message: "",
       },
@@ -72,7 +83,7 @@ describe("NotchHud", () => {
     const wrapper = mount(NotchHud, {
       props: {
         status: "error",
-        analyserHandle: null,
+
         recordingElapsedSeconds: 0,
         message: "API Key 未設定",
       },
@@ -93,7 +104,7 @@ describe("NotchHud", () => {
     const wrapper = mount(NotchHud, {
       props: {
         status: "idle",
-        analyserHandle: null,
+
         recordingElapsedSeconds: 0,
         message: "",
       },
@@ -106,7 +117,7 @@ describe("NotchHud", () => {
     const wrapper = mount(NotchHud, {
       props: {
         status: "error",
-        analyserHandle: null,
+
         recordingElapsedSeconds: 0,
         message: "",
       },
@@ -120,7 +131,7 @@ describe("NotchHud", () => {
     const wrapper = mount(NotchHud, {
       props: {
         status: "success",
-        analyserHandle: null,
+
         recordingElapsedSeconds: 0,
         message: "",
       },
@@ -135,7 +146,7 @@ describe("NotchHud", () => {
     const wrapper = mount(NotchHud, {
       props: {
         status: "error",
-        analyserHandle: null,
+
         recordingElapsedSeconds: 0,
         message: "",
       },
@@ -149,7 +160,7 @@ describe("NotchHud", () => {
     const wrapper = mount(NotchHud, {
       props: {
         status: "error",
-        analyserHandle: null,
+
         recordingElapsedSeconds: 0,
         message: "",
       },
@@ -175,7 +186,7 @@ describe("NotchHud", () => {
     const wrapper = mount(NotchHud, {
       props: {
         status: "success",
-        analyserHandle: null,
+
         recordingElapsedSeconds: 0,
         message: "",
       },
@@ -199,7 +210,7 @@ describe("NotchHud", () => {
     const wrapper = mount(NotchHud, {
       props: {
         status: "error",
-        analyserHandle: null,
+
         recordingElapsedSeconds: 0,
         message: "",
       },
@@ -221,5 +232,29 @@ describe("NotchHud", () => {
     vi.advanceTimersByTime(400);
     await wrapper.vm.$nextTick();
     expect(wrapper.find(".notch-wrapper").exists()).toBe(true);
+  });
+
+  it("[P1] 波形 listener 晚到時應立即解除，避免殘留監聽", async () => {
+    let resolveListen!: (unlisten: () => void) => void;
+    const deferredListen = new Promise<() => void>((resolve) => {
+      resolveListen = resolve;
+    });
+    const mockUnlisten = vi.fn();
+    mockListen.mockImplementationOnce(async () => deferredListen);
+
+    const wrapper = mount(NotchHud, {
+      props: {
+        status: "recording",
+        recordingElapsedSeconds: 0,
+        message: "",
+      },
+    });
+
+    await wrapper.setProps({ status: "idle" });
+    resolveListen(mockUnlisten);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockUnlisten).toHaveBeenCalledTimes(1);
   });
 });

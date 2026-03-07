@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch, onUnmounted, toRef } from "vue";
+import { computed, ref, watch, onUnmounted } from "vue";
 import type { HudStatus } from "../types";
-import type { AudioAnalyserHandle } from "../types/audio";
 import { useAudioWaveform } from "../composables/useAudioWaveform";
 
 type VisualMode =
@@ -15,7 +14,6 @@ type VisualMode =
 
 const props = defineProps<{
   status: HudStatus;
-  analyserHandle: AudioAnalyserHandle | null;
   recordingElapsedSeconds: number;
   message: string;
 }>();
@@ -29,9 +27,8 @@ let morphingTimer: ReturnType<typeof setTimeout> | null = null;
 let collapsingTimer: ReturnType<typeof setTimeout> | null = null;
 const COLLAPSE_ANIMATION_DURATION_MS = 400;
 
-const analyserHandleRef = toRef(props, "analyserHandle");
 const { waveformLevelList, startWaveformAnimation, stopWaveformAnimation } =
-  useAudioWaveform(analyserHandleRef);
+  useAudioWaveform();
 
 const WAVEFORM_ELEMENT_COUNT = 6;
 const MIN_BAR_HEIGHT = 4;
