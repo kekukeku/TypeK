@@ -1,10 +1,10 @@
 ---
 project_name: 'sayit'
 user_name: 'Jackle'
-date: '2026-03-08'
+date: '2026-03-09'
 sections_completed: ['technology_stack', 'language_rules', 'framework_rules', 'testing_rules', 'code_quality', 'workflow_rules', 'critical_rules', 'sentry_telemetry', 'i18n']
 status: 'complete'
-rule_count: 145
+rule_count: 155
 optimized_for_llm: true
 ---
 
@@ -81,7 +81,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 ### External APIs
 
-- Groq Whisper API — `https://api.groq.com/openai/v1/audio/transcriptions`（預設模型：`whisper-large-v3`，語言：動態由前端 `getWhisperLanguageCode()` 傳入、Rust fallback `"zh"`，可選 `whisper-large-v3-turbo`）
+- Groq Whisper API — `https://api.groq.com/openai/v1/audio/transcriptions`（預設模型：`whisper-large-v3`，語言：由 `getWhisperLanguageCode()` 回傳 `string | null`（auto 模式回傳 `null` 表示 Whisper 自動偵測），Rust fallback `"zh"`，可選 `whisper-large-v3-turbo`）
 - Groq LLM API — `https://api.groq.com/openai/v1/chat/completions`（預設模型：`llama-3.3-70b-versatile`，支援 7 個模型切換，temperature: 0.3，timeout: 5s）
 - **模型註冊** — `src/lib/modelRegistry.ts` 集中管理所有可用模型、價格、免費配額，支援模型下架自動遷移（`DECOMMISSIONED_MODEL_MAP`）
 - CSP 白名單：`connect-src 'self' https://api.groq.com`
@@ -109,8 +109,12 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 #### Sentry 規則
 
-- **錯誤上報** — 關鍵流程失敗（錄音、轉錄、AI 整理、DB 初始化、bootstrap）必須呼叫 `captureError(error, { context })`
+- **錯誤上報** — 關鍵流程失敗（錄音、轉錄、AI 整理、DB 初始化、bootstrap）必須呼叫 `captureError(error, { source, step })`
+- **context 結構規範** — `captureError(err, { source: "模組名", step: "操作名" })`，`source` 對應模組（`settings`/`voice-flow`/`history`/`database-init`/`bootstrap`），`step` 對應操作（`load`/`save-locale`/`transcribe`）
 - **上報層級** — 只從 store actions 或啟動腳本（`main.ts`, `main-window.ts`）呼叫，`lib/` 層只拋錯不上報
+- **覆蓋範圍** — 29 個 `captureError` 呼叫點：`useSettingsStore`（8）、`useVoiceFlowStore`（7）、`useHistoryStore`（6）、`main.ts`（2）、`main-window.ts`（3）、`AccessibilityGuide.vue`（3）
+- **全域錯誤處理** — 兩個視窗各自設定 `app.config.errorHandler`（Vue 元件錯誤）+ `window.addEventListener("unhandledrejection")`（未捕獲 Promise），確保逃逸的錯誤也能上報
+- **Rust 端清理** — App 退出前呼叫 `sentry::end_session()` + `client.flush(Duration::from_secs(2))`，確保最後的 event 發送完成
 - **Release 格式** — `sayit@<version>`，由 CI/CD 環境變數自動設定
 - **Sourcemap 上傳** — 僅 `release.yml` 的 macOS ARM64 job 執行（避免重複），使用 `@sentry/cli`
 
@@ -223,10 +227,26 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - **翻譯檔案** — `src/i18n/locales/{locale}.json`，key 結構按功能分組（`settings.*`, `dashboard.*`, `errors.*`, `voiceFlow.*` 等），5 個檔案的 key 集合必須完全一致
 - **AI Prompt 多語言** — `src/i18n/prompts.ts` 集中管理各語言預設 prompt（prompt 過長不適合 JSON），`getDefaultPromptForLocale(locale)` 取得對應語言版本
 - **語言偵測** — `detectSystemLocale()` 5 層匹配：精確 → script subtag（`zh-Hant` → `zh-TW`）→ 語言前綴 → 裸 `zh` → fallback `zh-TW`（保護既有中文使用者升級路徑）
-- **Whisper 語言連動** — UI 語言切換時，`getWhisperLanguageCode()` 回傳對應 Whisper code（zh-TW/zh-CN → `"zh"`），傳入 Rust `transcribe_audio` 的 `language` 參數
-- **Prompt 切換連動** — 語言切換時，若 `aiPrompt` 等於舊語言預設值，自動更新為新語言預設；已自訂則保留
 - **HTML lang 屬性** — `document.documentElement.lang` 隨 locale 更新（zh-TW → `zh-Hant`、zh-CN → `zh-Hans`）
 - **幻覺檢測語言感知** — `isSilenceOrHallucination()` 的 CJK 檢查僅在 `getWhisperLanguageCode() === "zh"` 時啟用，避免英文/日文/韓文正常轉錄被誤殺
+
+#### 轉錄語言分離（TranscriptionLocale）
+
+- **型別** — `TranscriptionLocale = SupportedLocale | "auto"`（定義於 `languageConfig.ts`）
+- **UI locale vs 轉錄 locale** — `selectedLocale`（UI 語言）和 `selectedTranscriptionLocale`（Whisper 語言）獨立儲存，使用者可選不同語言組合（如 UI 繁中 + Whisper 英文）
+- **`selectedTranscriptionLocale` state** — 存在 `useSettingsStore`，持久化 key `selectedTranscriptionLocale`，首次遷移預設為 UI locale
+- **`saveTranscriptionLocale(locale)`** — 儲存轉錄語言，觸發 prompt auto-switch + `settings:updated` event
+- **`getWhisperLanguageCode()`** — 回傳 `string | null`，根據 `selectedTranscriptionLocale` 解析：`"auto"` → `null`（Whisper 自動偵測），具體語言 → 對應 Whisper code
+- **`getWhisperCodeForTranscriptionLocale(locale)`** — 純函式版本（`languageConfig.ts`），`"auto"` → `null`
+- **`TRANSCRIPTION_LANGUAGE_OPTIONS`** — 含 `auto` + 5 語言的下拉選單選項陣列（`TranscriptionLanguageOption[]`）
+- **`getEffectivePromptLocale()`** — 內部 helper，解析 prompt 預設值應用哪個 locale：transcription 為 auto 時跟 UI locale，否則跟 transcription locale
+
+#### Prompt 語言連動規則（⚠️ 關鍵行為）
+
+- **Prompt 跟隨轉錄語言** — 切換轉錄語言時，若當前 prompt 等於舊語言預設值，自動更新為新語言預設；已自訂則保留
+- **Auto 模式下跟隨 UI 語言** — 轉錄語言為 `auto` 時，切換 UI 語言也會觸發 prompt 更新（同上條件）
+- **⚠️ 僅記憶體更新，不自動持久化** — prompt auto-switch 只修改 `aiPrompt.value`（記憶體），**不呼叫** `store.set("aiPrompt")`。使用者必須在設定頁面手動按「儲存」才會持久化。這是為了避免系統未經使用者同意就覆蓋 prompt
+- **`refreshCrossWindowSettings()` 順序** — 必須先載入 `selectedLocale` + `selectedTranscriptionLocale`，再計算 `aiPrompt` fallback（因為 `getEffectivePromptLocale()` 依賴這兩個值）
 
 #### Tailwind CSS v4
 
@@ -363,7 +383,7 @@ src/
 │   └── ui/              # shadcn-vue CLI 生成元件（不手動修改）
 ├── i18n/                    # 多語言國際化
 │   ├── index.ts             # createI18n() instance（非 singleton，各 WebView 獨立）
-│   ├── languageConfig.ts    # SupportedLocale 型別、LANGUAGE_OPTIONS、detectSystemLocale()
+│   ├── languageConfig.ts    # SupportedLocale、TranscriptionLocale 型別、LANGUAGE_OPTIONS、TRANSCRIPTION_LANGUAGE_OPTIONS、detectSystemLocale()、getWhisperCodeForTranscriptionLocale()
 │   ├── prompts.ts           # 各語言預設 AI Prompt（getDefaultPromptForLocale）
 │   └── locales/             # 翻譯 JSON 檔（5 語言，key 結構必須一致）
 │       ├── zh-TW.json       # 繁體中文（基準語言）
@@ -385,7 +405,7 @@ src/
 │   ├── apiPricing.ts        # API 費用上限計算（Whisper + LLM）
 │   └── utils.ts             # cn() shadcn-vue 工具函式
 ├── stores/               # Pinia stores
-│   ├── useSettingsStore.ts      # 快捷鍵 / API Key / AI Prompt / 開機啟動
+│   ├── useSettingsStore.ts      # 快捷鍵 / API Key / AI Prompt / 開機啟動 / UI locale / 轉錄 locale / Whisper 語言
 │   ├── useHistoryStore.ts       # 歷史記錄 CRUD + Dashboard 統計 + 分頁
 │   ├── useVocabularyStore.ts    # 詞彙字典 CRUD
 │   └── useVoiceFlowStore.ts     # 錄音/轉錄/AI 整理/貼上完整流程
@@ -523,6 +543,8 @@ src/
 - **❌ 字串解析提取結構化資訊** — 禁止用 regex 從 `error.message` 提取 status code 等資訊（如 `match(/：(\d+)/)`），必須用 Error class 屬性（如 `EnhancerApiError.statusCode`）
 - **❌ 在 lib 層使用 `useI18n()`** — `useI18n()` 只能在 Vue 元件 `<script setup>` 中使用，lib/store 層必須用 `i18n.global.t()`
 - **❌ 新增翻譯鍵但不同步所有 locale 檔案** — 5 個 locale JSON 的 key 結構必須完全一致，新增鍵時必須同時更新所有檔案
+- **❌ 語言切換時自動持久化 prompt** — prompt auto-switch 只寫記憶體（`aiPrompt.value`），**禁止**呼叫 `store.set("aiPrompt")`。使用者必須手動儲存，避免系統未經同意覆蓋自訂 prompt
+- **❌ `refreshCrossWindowSettings` 中先算 prompt 再載 transcription locale** — 必須先載入 `selectedLocale` + `selectedTranscriptionLocale`，再計算 `aiPrompt` fallback，否則 `getEffectivePromptLocale()` 會用到舊值
 
 #### 資料映射陷阱
 
@@ -585,4 +607,4 @@ src/
 - Review periodically for outdated rules
 - Remove rules that become obvious over time
 
-Last Updated: 2026-03-08 (v4 — i18n 多語言、EnhancerApiError 結構化錯誤)
+Last Updated: 2026-03-09 (v5 — TranscriptionLocale 分離、CGEvent Cmd+V 貼上、Sentry captureError 全覆蓋、Prompt in-memory-only auto-switch)
