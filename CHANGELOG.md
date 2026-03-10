@@ -2,6 +2,23 @@
 
 SayIt 版本更新紀錄。
 
+## [0.7.0](https://github.com/chenjackle45/SayIt/releases/tag/v0.7.0) - 2026-03-10
+
+### Added
+
+- 智慧字典學習系統：貼上文字後自動偵測使用者修正，透過 AI 分析學習新詞彙
+- 字典權重排序：高頻詞優先送入 Whisper/AI 辨識提示（前 50 個）
+- macOS Accessibility API 文字讀取（text_field_reader）：讀取游標附近文字用於修正比對
+- HUD 學習通知：新增字典時以 expanded mode 顯示詞彙 + Glass 音效
+- 自訂字典頁面改版：AI 推薦／手動新增分區、權重 Badge、用途說明文字
+- Dashboard 新增字典分析 API 用量統計
+- 設定頁面新增「智慧字典學習」開關（macOS 預設開啟）
+
+### Changed
+
+- DB schema 升級至 v3（vocabulary 新增 weight/source 欄位、api_usage CHECK constraint 擴展）
+- Whisper prompt 詞彙上限統一為 50 個（依權重排序）
+
 ## [0.6.0](https://github.com/chenjackle45/SayIt/releases/tag/v0.6.0) - 2026-03-09
 
 ### Added
