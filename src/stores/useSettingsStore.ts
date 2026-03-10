@@ -38,10 +38,13 @@ import { emitEvent, SETTINGS_UPDATED } from "../composables/useTauriEvents";
 import type { SettingsUpdatedPayload } from "../types/events";
 import {
   DEFAULT_LLM_MODEL_ID,
+  DEFAULT_VOCABULARY_ANALYSIS_MODEL_ID,
   DEFAULT_WHISPER_MODEL_ID,
   getEffectiveLlmModelId,
+  getEffectiveVocabularyAnalysisModelId,
   getEffectiveWhisperModelId,
   type LlmModelId,
+  type VocabularyAnalysisModelId,
   type WhisperModelId,
 } from "../lib/modelRegistry";
 
@@ -85,6 +88,9 @@ export const useSettingsStore = defineStore("settings", () => {
     DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT,
   );
   const selectedLlmModelId = ref<LlmModelId>(DEFAULT_LLM_MODEL_ID);
+  const selectedVocabularyAnalysisModelId = ref<VocabularyAnalysisModelId>(
+    DEFAULT_VOCABULARY_ANALYSIS_MODEL_ID,
+  );
   const selectedWhisperModelId = ref<WhisperModelId>(DEFAULT_WHISPER_MODEL_ID);
   const customTriggerKey = ref<CustomTriggerKey | null>(null);
   const isMuteOnRecordingEnabled = ref<boolean>(DEFAULT_MUTE_ON_RECORDING);
@@ -197,6 +203,14 @@ export const useSettingsStore = defineStore("settings", () => {
       selectedLlmModelId.value = getEffectiveLlmModelId(
         savedLlmModelId ?? null,
       );
+
+      const savedVocabularyAnalysisModelId = await store.get<string>(
+        "vocabularyAnalysisModelId",
+      );
+      selectedVocabularyAnalysisModelId.value =
+        getEffectiveVocabularyAnalysisModelId(
+          savedVocabularyAnalysisModelId ?? null,
+        );
 
       const savedWhisperModelId = await store.get<string>("whisperModelId");
       selectedWhisperModelId.value = getEffectiveWhisperModelId(
@@ -499,6 +513,28 @@ export const useSettingsStore = defineStore("settings", () => {
     }
   }
 
+  async function saveVocabularyAnalysisModel(id: VocabularyAnalysisModelId) {
+    try {
+      const store = await load(STORE_NAME);
+      await store.set("vocabularyAnalysisModelId", id);
+      await store.save();
+      selectedVocabularyAnalysisModelId.value = id;
+
+      const payload: SettingsUpdatedPayload = {
+        key: "vocabularyAnalysisModel",
+        value: id,
+      };
+      await emitEvent(SETTINGS_UPDATED, payload);
+      console.log(`[useSettingsStore] Vocabulary analysis model saved: ${id}`);
+    } catch (err) {
+      console.error(
+        "[useSettingsStore] saveVocabularyAnalysisModel failed:",
+        extractErrorMessage(err),
+      );
+      throw err;
+    }
+  }
+
   async function saveWhisperModel(id: WhisperModelId) {
     try {
       const store = await load(STORE_NAME);
@@ -707,6 +743,9 @@ export const useSettingsStore = defineStore("settings", () => {
         "enhancementThresholdCharCount",
       );
       const savedLlmModelId = await store.get<string>("llmModelId");
+      const savedVocabModelId = await store.get<string>(
+        "vocabularyAnalysisModelId",
+      );
       const savedWhisperModelId = await store.get<string>("whisperModelId");
       const savedMuteOnRecording = await store.get<boolean>("muteOnRecording");
       const savedSmartDictionary = await store.get<boolean>(
@@ -750,6 +789,8 @@ export const useSettingsStore = defineStore("settings", () => {
       selectedLlmModelId.value = getEffectiveLlmModelId(
         savedLlmModelId ?? null,
       );
+      selectedVocabularyAnalysisModelId.value =
+        getEffectiveVocabularyAnalysisModelId(savedVocabModelId ?? null);
       selectedWhisperModelId.value = getEffectiveWhisperModelId(
         savedWhisperModelId ?? null,
       );
@@ -798,6 +839,7 @@ export const useSettingsStore = defineStore("settings", () => {
     isEnhancementThresholdEnabled,
     enhancementThresholdCharCount,
     selectedLlmModelId,
+    selectedVocabularyAnalysisModelId,
     selectedWhisperModelId,
     getApiKey,
     getAiPrompt,
@@ -824,6 +866,7 @@ export const useSettingsStore = defineStore("settings", () => {
     deleteApiKey,
     saveEnhancementThreshold,
     saveLlmModel,
+    saveVocabularyAnalysisModel,
     saveWhisperModel,
     isMuteOnRecordingEnabled,
     saveMuteOnRecording,

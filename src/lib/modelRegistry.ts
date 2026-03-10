@@ -3,17 +3,32 @@
 export type LlmModelId =
   | "llama-3.3-70b-versatile"
   | "meta-llama/llama-4-scout-17b-16e-instruct"
-  | "qwen/qwen3-32b";
+  | "qwen/qwen3-32b"
+  | "moonshotai/kimi-k2-instruct";
 
-export interface LlmModelConfig {
-  id: LlmModelId;
+// ── 字典分析模型 ─────────────────────────────────────────
+
+export type VocabularyAnalysisModelId =
+  | "llama-3.3-70b-versatile"
+  | "moonshotai/kimi-k2-instruct";
+
+interface BaseModelConfig {
   displayName: string;
+  badgeKey: string;
   speedTps: number;
   inputCostPerMillion: number;
   outputCostPerMillion: number;
   freeQuotaRpd: number;
   freeQuotaTpd: number;
   isDefault: boolean;
+}
+
+export interface LlmModelConfig extends BaseModelConfig {
+  id: LlmModelId;
+}
+
+export interface VocabularyAnalysisModelConfig extends BaseModelConfig {
+  id: VocabularyAnalysisModelId;
 }
 
 // ── Whisper 模型（語音轉錄用）─────────────────────────────
@@ -32,6 +47,8 @@ export interface WhisperModelConfig {
 // ── 預設值 ────────────────────────────────────────────────
 
 export const DEFAULT_LLM_MODEL_ID: LlmModelId = "qwen/qwen3-32b";
+export const DEFAULT_VOCABULARY_ANALYSIS_MODEL_ID: VocabularyAnalysisModelId =
+  "llama-3.3-70b-versatile";
 export const DEFAULT_WHISPER_MODEL_ID: WhisperModelId = "whisper-large-v3";
 
 // ── 已下架模型 ID 映射（舊 → 新，用於自動遷移）──────────
@@ -51,8 +68,20 @@ export const DECOMMISSIONED_MODEL_MAP: Record<string, LlmModelId> = {
 
 export const LLM_MODEL_LIST: LlmModelConfig[] = [
   {
+    id: "qwen/qwen3-32b",
+    displayName: "Qwen3 32B",
+    badgeKey: "settings.modelBadge.balanced",
+    speedTps: 400,
+    inputCostPerMillion: 0.29,
+    outputCostPerMillion: 0.59,
+    freeQuotaRpd: 1_000,
+    freeQuotaTpd: 500_000,
+    isDefault: true,
+  },
+  {
     id: "llama-3.3-70b-versatile",
     displayName: "Llama 3.3 70B Versatile",
+    badgeKey: "settings.modelBadge.stableCostly",
     speedTps: 280,
     inputCostPerMillion: 0.59,
     outputCostPerMillion: 0.79,
@@ -63,6 +92,7 @@ export const LLM_MODEL_LIST: LlmModelConfig[] = [
   {
     id: "meta-llama/llama-4-scout-17b-16e-instruct",
     displayName: "Llama 4 Scout 17B",
+    badgeKey: "settings.modelBadge.fastCheap",
     speedTps: 750,
     inputCostPerMillion: 0.11,
     outputCostPerMillion: 0.34,
@@ -71,14 +101,42 @@ export const LLM_MODEL_LIST: LlmModelConfig[] = [
     isDefault: false,
   },
   {
-    id: "qwen/qwen3-32b",
-    displayName: "Qwen3 32B",
-    speedTps: 400,
-    inputCostPerMillion: 0.29,
-    outputCostPerMillion: 0.59,
+    id: "moonshotai/kimi-k2-instruct",
+    displayName: "Kimi K2 Instruct",
+    badgeKey: "settings.modelBadge.smartestSlow",
+    speedTps: 200,
+    inputCostPerMillion: 0.2,
+    outputCostPerMillion: 0.4,
     freeQuotaRpd: 1_000,
-    freeQuotaTpd: 500_000,
+    freeQuotaTpd: 100_000,
+    isDefault: false,
+  },
+];
+
+// ── 字典分析模型清單（指令遵從 + JSON 穩定性優先）──────
+
+export const VOCABULARY_ANALYSIS_MODEL_LIST: VocabularyAnalysisModelConfig[] = [
+  {
+    id: "llama-3.3-70b-versatile",
+    displayName: "Llama 3.3 70B Versatile",
+    badgeKey: "settings.modelBadge.balanced",
+    speedTps: 280,
+    inputCostPerMillion: 0.59,
+    outputCostPerMillion: 0.79,
+    freeQuotaRpd: 1_000,
+    freeQuotaTpd: 100_000,
     isDefault: true,
+  },
+  {
+    id: "moonshotai/kimi-k2-instruct",
+    displayName: "Kimi K2 Instruct",
+    badgeKey: "settings.modelBadge.smartestSlow",
+    speedTps: 200,
+    inputCostPerMillion: 0.2,
+    outputCostPerMillion: 0.4,
+    freeQuotaRpd: 1_000,
+    freeQuotaTpd: 100_000,
+    isDefault: false,
   },
 ];
 
@@ -107,6 +165,12 @@ export function findLlmModelConfig(id: string): LlmModelConfig | undefined {
   return LLM_MODEL_LIST.find((m) => m.id === id);
 }
 
+export function findVocabularyAnalysisModelConfig(
+  id: string,
+): VocabularyAnalysisModelConfig | undefined {
+  return VOCABULARY_ANALYSIS_MODEL_LIST.find((m) => m.id === id);
+}
+
 export function findWhisperModelConfig(
   id: string,
 ): WhisperModelConfig | undefined {
@@ -125,6 +189,17 @@ export function getEffectiveLlmModelId(savedId: string | null): LlmModelId {
   }
 
   return DEFAULT_LLM_MODEL_ID;
+}
+
+/**
+ * 安全取得字典分析模型 ID：若 savedId 不在 registry 則 fallback 到預設。
+ */
+export function getEffectiveVocabularyAnalysisModelId(
+  savedId: string | null,
+): VocabularyAnalysisModelId {
+  if (savedId && findVocabularyAnalysisModelConfig(savedId))
+    return savedId as VocabularyAnalysisModelId;
+  return DEFAULT_VOCABULARY_ANALYSIS_MODEL_ID;
 }
 
 /**

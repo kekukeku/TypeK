@@ -40,5 +40,6 @@ const forwardedProps = useForwardProps(delegatedProps)
     <SelectItemText>
       <slot />
     </SelectItemText>
+    <slot name="extra" />
   </SelectItem>
 </template>

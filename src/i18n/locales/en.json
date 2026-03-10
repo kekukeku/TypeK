@@ -68,6 +68,12 @@
       "default": "Default",
       "costPerHour": "${cost}/hour"
     },
+    "modelBadge": {
+      "balanced": "Balanced · Default",
+      "stableCostly": "Stable · Costly",
+      "fastCheap": "Fastest · Cheapest",
+      "smartestSlow": "Smartest · Slower"
+    },
     "prompt": {
       "title": "AI Enhancement Prompt",
       "description": "Customize the system prompt used by AI when enhancing text. Click Save after editing.",
@@ -106,7 +112,10 @@
     "smartDictionary": {
       "title": "Smart Dictionary Learning",
       "description": "Auto-detect corrections after paste and learn new terms via AI analysis",
-      "privacyNote": "When enabled, the system reads text near the cursor for AI analysis. No original text is stored"
+      "privacyNote": "When enabled, the system reads text near the cursor for AI analysis. No original text is stored",
+      "analysisModelLabel": "Dictionary Analysis Model",
+      "analysisModelDescription": "AI model for determining whether corrected terms should be added to the dictionary (independent from text enhancement model)",
+      "analysisModelUpdated": "Dictionary analysis model updated"
     }
   },
   "dashboard": {

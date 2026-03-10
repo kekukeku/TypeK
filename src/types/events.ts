@@ -24,6 +24,7 @@ export type SettingsKey =
   | "aiPrompt"
   | "enhancementThreshold"
   | "llmModel"
+  | "vocabularyAnalysisModel"
   | "whisperModel"
   | "muteOnRecording"
   | "smartDictionaryEnabled"

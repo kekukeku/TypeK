@@ -605,7 +605,9 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
                     pastedText,
                     fieldText,
                     apiKey,
-                    { modelId: settingsStore.selectedLlmModelId },
+                    {
+                      modelId: settingsStore.selectedVocabularyAnalysisModelId,
+                    },
                   );
 
                   writeInfoLog(
@@ -651,7 +653,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
                         id: crypto.randomUUID(),
                         transcriptionId,
                         apiType: "vocabulary_analysis",
-                        model: settingsStore.selectedLlmModelId,
+                        model: settingsStore.selectedVocabularyAnalysisModelId,
                         promptTokens: analysisResult.usage.promptTokens,
                         completionTokens: analysisResult.usage.completionTokens,
                         totalTokens: analysisResult.usage.totalTokens,

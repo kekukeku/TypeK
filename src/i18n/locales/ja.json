@@ -68,6 +68,12 @@
       "default": "デフォルト",
       "costPerHour": "1時間あたり ${cost}"
     },
+    "modelBadge": {
+      "balanced": "バランス · デフォルト",
+      "stableCostly": "安定 · 高コスト",
+      "fastCheap": "最速 · 最安",
+      "smartestSlow": "最賢 · 低速"
+    },
     "prompt": {
       "title": "AI 整理 Prompt",
       "description": "AI がテキストを整理する際に使用するシステムプロンプトをカスタマイズします。変更後、保存をクリックしてください。",
@@ -106,7 +112,10 @@
     "smartDictionary": {
       "title": "スマート辞書学習",
       "description": "貼り付け後に修正を自動検出し、AI 分析で新語を学習",
-      "privacyNote": "有効にすると、AI 分析のためにカーソル付近のテキストを読み取ります。原文は保存されません"
+      "privacyNote": "有効にすると、AI 分析のためにカーソル付近のテキストを読み取ります。原文は保存されません",
+      "analysisModelLabel": "辞書分析モデル",
+      "analysisModelDescription": "修正された語彙を辞書に追加すべきかを判断する AI モデル（テキスト整理モデルとは独立）",
+      "analysisModelUpdated": "辞書分析モデルを更新しました"
     }
   },
   "dashboard": {

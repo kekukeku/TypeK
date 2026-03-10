@@ -1,6 +1,7 @@
 import {
   findWhisperModelConfig,
   findLlmModelConfig,
+  findVocabularyAnalysisModelConfig,
   DEFAULT_WHISPER_MODEL_ID,
   DEFAULT_LLM_MODEL_ID,
 } from "./modelRegistry";
@@ -30,7 +31,8 @@ export function calculateChatCostCeiling(
   totalTokens: number,
   modelId: string = DEFAULT_LLM_MODEL_ID,
 ): number {
-  const config = findLlmModelConfig(modelId);
+  const config =
+    findLlmModelConfig(modelId) ?? findVocabularyAnalysisModelConfig(modelId);
   const maxCostPerToken = config
     ? Math.max(config.inputCostPerMillion, config.outputCostPerMillion) /
       1_000_000

@@ -15,10 +15,13 @@ import {
 import type { TriggerMode } from "../types";
 import {
   LLM_MODEL_LIST,
+  VOCABULARY_ANALYSIS_MODEL_LIST,
   WHISPER_MODEL_LIST,
   findLlmModelConfig,
+  findVocabularyAnalysisModelConfig,
   findWhisperModelConfig,
   type LlmModelId,
+  type VocabularyAnalysisModelId,
   type WhisperModelId,
 } from "../lib/modelRegistry";
 import {
@@ -445,10 +448,32 @@ async function handleTranscriptionLocaleChange(newLocale: TranscriptionLocale) {
 // ── 智慧字典學習 ────────────────────────────────────────────
 const smartDictionaryFeedback = useFeedbackMessage();
 
+const vocabularyAnalysisModelDescription = computed(() => {
+  const config = findVocabularyAnalysisModelConfig(
+    settingsStore.selectedVocabularyAnalysisModelId,
+  );
+  if (!config) return "";
+  return `${config.speedTps} TPS · $${config.inputCostPerMillion}/$${config.outputCostPerMillion} per M tokens`;
+});
+
 async function handleToggleSmartDictionary(newValue: boolean) {
   try {
     await settingsStore.saveSmartDictionaryEnabled(newValue);
     smartDictionaryFeedback.show("success", t("common.save"));
+  } catch (err) {
+    smartDictionaryFeedback.show("error", extractErrorMessage(err));
+  }
+}
+
+async function handleVocabularyAnalysisModelChange(
+  newId: VocabularyAnalysisModelId,
+) {
+  try {
+    await settingsStore.saveVocabularyAnalysisModel(newId);
+    smartDictionaryFeedback.show(
+      "success",
+      t("settings.smartDictionary.analysisModelUpdated"),
+    );
   } catch (err) {
     smartDictionaryFeedback.show("error", extractErrorMessage(err));
   }
@@ -820,8 +845,10 @@ onBeforeUnmount(() => {
                 :key="model.id"
                 :value="model.id"
               >
-                <span>{{ model.displayName }}</span>
-                <Badge v-if="model.isDefault" variant="secondary" class="text-xs">{{ $t("settings.model.default") }}</Badge>
+                {{ model.displayName }}
+                <template v-if="model.isDefault" #extra>
+                  <Badge variant="secondary" class="ml-2 text-xs">{{ $t("settings.model.default") }}</Badge>
+                </template>
               </SelectItem>
             </SelectContent>
           </Select>
@@ -844,8 +871,10 @@ onBeforeUnmount(() => {
                 :key="model.id"
                 :value="model.id"
               >
-                <span>{{ model.displayName }}</span>
-                <Badge v-if="model.isDefault" variant="secondary" class="text-xs">{{ $t("settings.model.default") }}</Badge>
+                {{ model.displayName }}
+                <template #extra>
+                  <Badge variant="secondary" class="ml-2 text-xs">{{ $t(model.badgeKey) }}</Badge>
+                </template>
               </SelectItem>
             </SelectContent>
           </Select>
@@ -989,6 +1018,35 @@ onBeforeUnmount(() => {
             :model-value="settingsStore.isSmartDictionaryEnabled"
             @update:model-value="handleToggleSmartDictionary"
           />
+        </div>
+
+        <!-- 字典分析模型 -->
+        <div v-if="settingsStore.isSmartDictionaryEnabled" class="space-y-2">
+          <Label for="vocabulary-analysis-model">{{ $t("settings.smartDictionary.analysisModelLabel") }}</Label>
+          <Select
+            :model-value="settingsStore.selectedVocabularyAnalysisModelId"
+            @update:model-value="handleVocabularyAnalysisModelChange($event as VocabularyAnalysisModelId)"
+          >
+            <SelectTrigger id="vocabulary-analysis-model" class="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                v-for="model in VOCABULARY_ANALYSIS_MODEL_LIST"
+                :key="model.id"
+                :value="model.id"
+              >
+                {{ model.displayName }}
+                <template #extra>
+                  <Badge variant="secondary" class="ml-2 text-xs">{{ $t(model.badgeKey) }}</Badge>
+                </template>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <p class="text-xs text-muted-foreground">
+            {{ $t("settings.smartDictionary.analysisModelDescription") }}
+          </p>
+          <p class="text-xs text-muted-foreground">{{ vocabularyAnalysisModelDescription }}</p>
         </div>
 
         <p class="text-xs text-muted-foreground">

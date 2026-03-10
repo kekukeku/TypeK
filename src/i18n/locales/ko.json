@@ -68,6 +68,12 @@
       "default": "기본",
       "costPerHour": "시간당 ${cost}"
     },
+    "modelBadge": {
+      "balanced": "균형 · 기본",
+      "stableCostly": "안정 · 고비용",
+      "fastCheap": "가장 빠름 · 가장 저렴",
+      "smartestSlow": "가장 똑똑 · 느림"
+    },
     "prompt": {
       "title": "AI 정리 Prompt",
       "description": "AI가 텍스트를 정리할 때 사용하는 시스템 프롬프트를 사용자 정의합니다. 수정 후 저장을 클릭하세요.",
@@ -106,7 +112,10 @@
     "smartDictionary": {
       "title": "스마트 사전 학습",
       "description": "붙여넣기 후 수정을 자동 감지하고 AI 분석으로 새 용어 학습",
-      "privacyNote": "활성화하면 AI 분석을 위해 커서 주변의 텍스트를 읽습니다. 원문은 저장되지 않습니다"
+      "privacyNote": "활성화하면 AI 분석을 위해 커서 주변의 텍스트를 읽습니다. 원문은 저장되지 않습니다",
+      "analysisModelLabel": "사전 분석 모델",
+      "analysisModelDescription": "수정된 용어를 사전에 추가할지 판단하는 AI 모델 (텍스트 정리 모델과 독립)",
+      "analysisModelUpdated": "사전 분석 모델이 업데이트되었습니다"
     }
   },
   "dashboard": {

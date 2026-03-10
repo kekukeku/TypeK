@@ -68,6 +68,12 @@
       "default": "默认",
       "costPerHour": "每小时 ${cost}"
     },
+    "modelBadge": {
+      "balanced": "平衡 · 默认",
+      "stableCostly": "稳定可靠 · 成本高",
+      "fastCheap": "最快 · 最便宜",
+      "smartestSlow": "最聪明 · 较慢"
+    },
     "prompt": {
       "title": "AI 整理 Prompt",
       "description": "自定义 AI 整理文字时使用的系统提示词。修改后点击保存。",
@@ -106,7 +112,10 @@
     "smartDictionary": {
       "title": "智能字典学习",
       "description": "转录粘贴后自动检测修正，通过 AI 分析学习新词汇",
-      "privacyNote": "启用后，系统会读取光标附近的文字用于 AI 分析，不存储原文"
+      "privacyNote": "启用后，系统会读取光标附近的文字用于 AI 分析，不存储原文",
+      "analysisModelLabel": "字典分析模型",
+      "analysisModelDescription": "用于判断修正词汇是否应加入字典的 AI 模型（独立于文字整理模型）",
+      "analysisModelUpdated": "字典分析模型已更新"
     }
   },
   "dashboard": {
