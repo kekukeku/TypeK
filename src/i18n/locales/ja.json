@@ -224,7 +224,10 @@
     "vocabularyLearnedLabel": "辞書に追加",
     "vocabularyLearned": "{terms}",
     "vocabularyLearnedTruncated": "{terms} 他 {count} 語",
-    "retryFailed": "認識失敗、もう一度録音してください"
+    "retryFailed": "認識失敗、もう一度録音してください",
+    "hallucinationLearnedLabel": "幻覚語を学習",
+    "hallucinationLearned": "{terms}",
+    "hallucinationLearnedTruncated": "{terms} 他 {count} 語"
   },
   "errors": {
     "apiKeyEmpty": "API Key は空にできません",
@@ -281,6 +284,7 @@
       "dashboard": "ダッシュボード",
       "history": "履歴",
       "dictionary": "カスタム辞書",
+      "hallucinations": "幻覚フィルター",
       "settings": "設定"
     },
     "update": {
@@ -304,5 +308,23 @@
       "cancel": "キャンセル",
       "startUpdate": "更新を開始"
     }
+  },
+  "hallucination": {
+    "title": "幻覚フィルター管理",
+    "totalCount": "全 {count} 件の幻覚語",
+    "addPlaceholder": "新しい幻覚語を入力...",
+    "addButton": "追加",
+    "emptyState": "幻覚語の記録はまだありません。システムが Whisper の一般的な幻覚テキストを自動学習します",
+    "sourceBuiltin": "内蔵",
+    "sourceAuto": "自動学習",
+    "sourceManual": "手動追加",
+    "deleteConfirm": "この幻覚語を削除しますか？",
+    "duplicateWarning": "この幻覚語はすでに存在します",
+    "termHeader": "幻覚語",
+    "sourceHeader": "ソース",
+    "localeHeader": "言語",
+    "dateHeader": "追加日時",
+    "actionHeader": "操作",
+    "description": "幻覚フィルターは、Whisper が音声なしの際に生成する誤ったテキストを検出します。内蔵辞書は一般的な幻覚パターンをカバーし、システムも新しい幻覚語を自動学習します。"
   }
 }

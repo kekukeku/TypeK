@@ -72,3 +72,7 @@ export interface CorrectionMonitorResultPayload {
 export interface VocabularyLearnedPayload {
   termList: string[];
 }
+
+export interface HallucinationLearnedPayload {
+  termList: string[];
+}

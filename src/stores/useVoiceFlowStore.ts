@@ -36,6 +36,7 @@ import {
   VOICE_FLOW_STATE_CHANGED,
   CORRECTION_MONITOR_RESULT,
   VOCABULARY_LEARNED,
+  HALLUCINATION_LEARNED,
   emitEvent,
   listenToEvent,
 } from "../composables/useTauriEvents";
@@ -46,7 +47,10 @@ import {
   type QualityMonitorResultPayload,
   type CorrectionMonitorResultPayload,
   type VocabularyLearnedPayload,
+  type HallucinationLearnedPayload,
 } from "../types/events";
+import { detectHallucination } from "../lib/hallucinationDetector";
+import { useHallucinationStore } from "./useHallucinationStore";
 import type { HudStatus, HudTargetPosition } from "../types";
 import type { VoiceFlowStateChangedPayload } from "../types/events";
 import { useSettingsStore } from "./useSettingsStore";
@@ -937,6 +941,88 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
         return;
       }
 
+      // ── 幻覺偵測（非空白但可疑的第二層過濾）──
+      const hallucinationStore = useHallucinationStore();
+      const hallucinationTermList =
+        await hallucinationStore.getTermListForDetection(
+          settingsStore.selectedTranscriptionLocale,
+        );
+      const hallucinationDetectionResult = detectHallucination({
+        rawText: result.rawText,
+        recordingDurationMs,
+        noSpeechProbability: result.noSpeechProbability,
+        hallucinationTermList,
+      });
+
+      if (hallucinationDetectionResult.isHallucination) {
+        writeInfoLog(
+          `useVoiceFlowStore: hallucination detected (reason=${hallucinationDetectionResult.reason}, text="${hallucinationDetectionResult.detectedText}")`,
+        );
+
+        // 自動學習（在 return 之前）
+        if (hallucinationDetectionResult.shouldAutoLearn) {
+          const whisperCode = settingsStore.getWhisperLanguageCode() ?? "zh";
+          void hallucinationStore.addTerm(
+            result.rawText.trim(),
+            "auto",
+            whisperCode,
+          );
+          void emitEvent(HALLUCINATION_LEARNED, {
+            termList: [result.rawText.trim()],
+          } satisfies HallucinationLearnedPayload);
+
+          // NotchHud 會在 error 狀態期間佇列此通知，error 結束後 HUD 視窗已隱藏，
+          // 需要重新顯示視窗讓佇列中的幻覺學習通知可見（與 VOCABULARY_LEARNED 同模式）
+          const hallucinationLearnedShowDelayMs =
+            ERROR_DISPLAY_DURATION_MS + COLLAPSE_HIDE_DELAY_MS + 100;
+          setTimeout(() => {
+            if (status.value !== "idle") return;
+            clearLearnedHideTimer();
+            const appWindow = getAppWindow();
+            void appWindow.show().then(async () => {
+              await appWindow.setIgnoreCursorEvents(true);
+              learnedHideTimer = setTimeout(() => {
+                learnedHideTimer = null;
+                if (status.value === "idle") {
+                  hideHud().catch((err) =>
+                    writeErrorLog(
+                      `useVoiceFlowStore: hallucination learned hideHud failed: ${extractErrorMessage(err)}`,
+                    ),
+                  );
+                }
+              }, LEARNED_NOTIFICATION_TOTAL_DURATION_MS);
+            });
+          }, hallucinationLearnedShowDelayMs);
+        }
+
+        // 寫入 failed 記錄
+        const failedRecord = buildTranscriptionRecord({
+          id: transcriptionId,
+          rawText: result.rawText,
+          processedText: null,
+          recordingDurationMs,
+          transcriptionDurationMs: result.transcriptionDurationMs,
+          enhancementDurationMs: null,
+          wasEnhanced: false,
+          audioFilePath,
+          status: "failed",
+        });
+        void saveTranscriptionRecord(failedRecord);
+
+        // 設定重送狀態
+        if (audioFilePath) {
+          lastFailedTranscriptionId.value = transcriptionId;
+          lastFailedAudioFilePath.value = audioFilePath;
+          lastFailedRecordingDurationMs.value = recordingDurationMs;
+        }
+
+        failRecordingFlow(
+          t("voiceFlow.noSpeechDetected"),
+          `useVoiceFlowStore: hallucination intercepted (reason=${hallucinationDetectionResult.reason})`,
+        );
+        return;
+      }
+
       if (
         !settingsStore.isEnhancementThresholdEnabled ||
         result.rawText.length >= settingsStore.enhancementThresholdCharCount
@@ -1122,6 +1208,29 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
 
       if (isEmptyTranscription(result.rawText)) {
         // 重送也失敗 → 不再提供重送
+        transitionTo("error", t("voiceFlow.retryFailed"));
+        lastFailedAudioFilePath.value = null;
+        isRetryAttempt.value = false;
+        return;
+      }
+
+      // ── 重送也需幻覺偵測 ──
+      const retryHallucinationStore = useHallucinationStore();
+      const retryHallucinationTermList =
+        await retryHallucinationStore.getTermListForDetection(
+          settingsStore.selectedTranscriptionLocale,
+        );
+      const retryHallucinationResult = detectHallucination({
+        rawText: result.rawText,
+        recordingDurationMs,
+        noSpeechProbability: result.noSpeechProbability,
+        hallucinationTermList: retryHallucinationTermList,
+      });
+
+      if (retryHallucinationResult.isHallucination) {
+        writeInfoLog(
+          `useVoiceFlowStore: retry hallucination detected (reason=${retryHallucinationResult.reason})`,
+        );
         transitionTo("error", t("voiceFlow.retryFailed"));
         lastFailedAudioFilePath.value = null;
         isRetryAttempt.value = false;

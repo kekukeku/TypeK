@@ -3,9 +3,16 @@ import { computed, ref, watch, onMounted, onUnmounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import type { HudStatus } from "../types";
-import type { VocabularyLearnedPayload } from "../types/events";
+import type {
+  VocabularyLearnedPayload,
+  HallucinationLearnedPayload,
+} from "../types/events";
 import { useAudioWaveform } from "../composables/useAudioWaveform";
-import { listenToEvent, VOCABULARY_LEARNED } from "../composables/useTauriEvents";
+import {
+  listenToEvent,
+  VOCABULARY_LEARNED,
+  HALLUCINATION_LEARNED,
+} from "../composables/useTauriEvents";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
@@ -36,8 +43,11 @@ let morphingTimer: ReturnType<typeof setTimeout> | null = null;
 let collapsingTimer: ReturnType<typeof setTimeout> | null = null;
 let learnedTimer: ReturnType<typeof setTimeout> | null = null;
 let unlistenVocabularyLearned: UnlistenFn | null = null;
+let unlistenHallucinationLearned: UnlistenFn | null = null;
 const pendingLearnedTermList = ref<string[][]>([]);
+const pendingLearnedTypeList = ref<("vocabulary" | "hallucination")[]>([]);
 const learnedDisplayText = ref("");
+const learnedNotificationType = ref<"vocabulary" | "hallucination">("vocabulary");
 const COLLAPSE_ANIMATION_DURATION_MS = 400;
 const LEARNED_DISPLAY_DURATION_MS = 2000;
 const MAX_DISPLAY_TERM_COUNT = 3;
@@ -186,8 +196,28 @@ function formatLearnedText(termList: string[]): string {
   });
 }
 
-function showLearnedNotification(termList: string[]) {
-  learnedDisplayText.value = formatLearnedText(termList);
+function formatHallucinationLearnedText(termList: string[]): string {
+  if (termList.length <= MAX_DISPLAY_TERM_COUNT) {
+    return t("voiceFlow.hallucinationLearned", {
+      terms: termList.join(", "),
+    });
+  }
+  const displayedTermList = termList.slice(0, MAX_DISPLAY_TERM_COUNT);
+  return t("voiceFlow.hallucinationLearnedTruncated", {
+    terms: displayedTermList.join(", "),
+    count: termList.length - MAX_DISPLAY_TERM_COUNT,
+  });
+}
+
+function showLearnedNotification(
+  termList: string[],
+  type: "vocabulary" | "hallucination" = "vocabulary",
+) {
+  learnedNotificationType.value = type;
+  learnedDisplayText.value =
+    type === "hallucination"
+      ? formatHallucinationLearnedText(termList)
+      : formatLearnedText(termList);
   visualMode.value = "learned";
   void invoke("play_learned_sound").catch(() => {});
   clearLearnedTimer();
@@ -204,7 +234,8 @@ function processNextLearnedNotification() {
   if (pendingLearnedTermList.value.length === 0) return;
   if (isHighPriorityMode.value) return;
   const nextTermList = pendingLearnedTermList.value.shift()!;
-  showLearnedNotification(nextTermList);
+  const nextType = pendingLearnedTypeList.value.shift() ?? "vocabulary";
+  showLearnedNotification(nextTermList, nextType);
 }
 
 function handleVocabularyLearned(payload: VocabularyLearnedPayload) {
@@ -216,11 +247,28 @@ function handleVocabularyLearned(payload: VocabularyLearnedPayload) {
   if (isHighPriorityMode.value || visualMode.value === "learned") {
     console.log("[NotchHud] queued (high priority or already showing learned)");
     pendingLearnedTermList.value.push(payload.termList);
+    pendingLearnedTypeList.value.push("vocabulary");
     return;
   }
 
   console.log("[NotchHud] showing learned notification now");
-  showLearnedNotification(payload.termList);
+  showLearnedNotification(payload.termList, "vocabulary");
+}
+
+function handleHallucinationLearned(payload: HallucinationLearnedPayload) {
+  console.log(
+    `[NotchHud] HALLUCINATION_LEARNED received: termList=${JSON.stringify(payload.termList)}, visualMode=${visualMode.value}`,
+  );
+  if (!payload.termList || payload.termList.length === 0) return;
+
+  if (isHighPriorityMode.value || visualMode.value === "learned") {
+    console.log("[NotchHud] queued hallucination learned");
+    pendingLearnedTermList.value.push(payload.termList);
+    pendingLearnedTypeList.value.push("hallucination");
+    return;
+  }
+
+  showLearnedNotification(payload.termList, "hallucination");
 }
 
 watch(
@@ -288,6 +336,13 @@ onMounted(async () => {
       handleVocabularyLearned(event.payload);
     },
   );
+  unlistenHallucinationLearned =
+    await listenToEvent<HallucinationLearnedPayload>(
+      HALLUCINATION_LEARNED,
+      (event) => {
+        handleHallucinationLearned(event.payload);
+      },
+    );
 });
 
 onUnmounted(() => {
@@ -296,6 +351,7 @@ onUnmounted(() => {
   clearLearnedTimer();
   stopWaveformAnimation();
   unlistenVocabularyLearned?.();
+  unlistenHallucinationLearned?.();
 });
 </script>
 
@@ -365,7 +421,7 @@ onUnmounted(() => {
 
         <div class="notch-right">
           <span v-if="visualMode === 'learned'" class="learned-label">
-            {{ $t('voiceFlow.vocabularyLearnedLabel') }}
+            {{ learnedNotificationType === 'hallucination' ? $t('voiceFlow.hallucinationLearnedLabel') : $t('voiceFlow.vocabularyLearnedLabel') }}
           </span>
           <span v-else-if="visualMode === 'recording'" class="elapsed-timer">
             {{ formattedElapsedTime }}

@@ -6,6 +6,7 @@ import {
   FileText,
   LayoutDashboard,
   Settings,
+  ShieldAlert,
 } from "lucide-vue-next";
 import { useI18n } from "vue-i18n";
 import { computed, markRaw, onMounted, onUnmounted, ref } from "vue";
@@ -51,6 +52,7 @@ const navItems = computed(() => [
   { path: "/dashboard", label: t("mainApp.nav.dashboard"), icon: markRaw(LayoutDashboard) },
   { path: "/history", label: t("mainApp.nav.history"), icon: markRaw(FileText) },
   { path: "/dictionary", label: t("mainApp.nav.dictionary"), icon: markRaw(BookOpen) },
+  { path: "/hallucinations", label: t("mainApp.nav.hallucinations"), icon: markRaw(ShieldAlert) },
   { path: "/settings", label: t("mainApp.nav.settings"), icon: markRaw(Settings) },
 ]);
 

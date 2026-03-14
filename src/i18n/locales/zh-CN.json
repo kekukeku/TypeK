@@ -224,7 +224,10 @@
     "vocabularyLearnedLabel": "新增字典",
     "vocabularyLearned": "{terms}",
     "vocabularyLearnedTruncated": "{terms} 等 {count} 个",
-    "retryFailed": "识别失败，请重新录音"
+    "retryFailed": "识别失败，请重新录音",
+    "hallucinationLearnedLabel": "已学习幻觉词",
+    "hallucinationLearned": "{terms}",
+    "hallucinationLearnedTruncated": "{terms} 等 {count} 个"
   },
   "errors": {
     "apiKeyEmpty": "API Key 不可为空",
@@ -281,6 +284,7 @@
       "dashboard": "仪表板",
       "history": "历史记录",
       "dictionary": "自定义字典",
+      "hallucinations": "幻觉词库",
       "settings": "设置"
     },
     "update": {
@@ -304,5 +308,23 @@
       "cancel": "取消",
       "startUpdate": "开始更新"
     }
+  },
+  "hallucination": {
+    "title": "幻觉词库管理",
+    "totalCount": "共 {count} 个幻觉词",
+    "addPlaceholder": "输入新的幻觉词...",
+    "addButton": "新增",
+    "emptyState": "尚无幻觉词记录，系统会自动学习 Whisper 常见幻觉文字",
+    "sourceBuiltin": "内建",
+    "sourceAuto": "自动学习",
+    "sourceManual": "手动新增",
+    "deleteConfirm": "确认删除此幻觉词？",
+    "duplicateWarning": "此幻觉词已存在",
+    "termHeader": "幻觉词",
+    "sourceHeader": "来源",
+    "localeHeader": "语言",
+    "dateHeader": "新增时间",
+    "actionHeader": "操作",
+    "description": "幻觉词库用于过滤 Whisper 在无语音时产生的虚假文字。内建词库涵盖常见幻觉模式，系统也会自动学习新的幻觉词。"
   }
 }

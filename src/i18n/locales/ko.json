@@ -224,7 +224,10 @@
     "vocabularyLearnedLabel": "사전에 추가",
     "vocabularyLearned": "{terms}",
     "vocabularyLearnedTruncated": "{terms} 외 {count}개",
-    "retryFailed": "인식 실패, 다시 녹음해 주세요"
+    "retryFailed": "인식 실패, 다시 녹음해 주세요",
+    "hallucinationLearnedLabel": "환각어 학습됨",
+    "hallucinationLearned": "{terms}",
+    "hallucinationLearnedTruncated": "{terms} 외 {count}개"
   },
   "errors": {
     "apiKeyEmpty": "API Key는 비워둘 수 없습니다",
@@ -281,6 +284,7 @@
       "dashboard": "대시보드",
       "history": "기록",
       "dictionary": "사용자 사전",
+      "hallucinations": "환각 필터",
       "settings": "설정"
     },
     "update": {
@@ -304,5 +308,23 @@
       "cancel": "취소",
       "startUpdate": "업데이트 시작"
     }
+  },
+  "hallucination": {
+    "title": "환각 필터 관리",
+    "totalCount": "총 {count}개 환각어",
+    "addPlaceholder": "새 환각어 입력...",
+    "addButton": "추가",
+    "emptyState": "아직 환각어 기록이 없습니다. 시스템이 Whisper의 일반적인 환각 텍스트를 자동 학습합니다",
+    "sourceBuiltin": "내장",
+    "sourceAuto": "자동 학습",
+    "sourceManual": "수동 추가",
+    "deleteConfirm": "이 환각어를 삭제하시겠습니까?",
+    "duplicateWarning": "이 환각어는 이미 존재합니다",
+    "termHeader": "환각어",
+    "sourceHeader": "출처",
+    "localeHeader": "언어",
+    "dateHeader": "추가 일시",
+    "actionHeader": "작업",
+    "description": "환각 필터는 Whisper가 음성 없이 생성하는 허위 텍스트를 감지합니다. 내장 사전은 일반적인 환각 패턴을 커버하고, 시스템도 새로운 환각어를 자동 학습합니다."
   }
 }

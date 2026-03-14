@@ -192,6 +192,39 @@ export async function initializeDatabase(): Promise<Database> {
     );
   }
 
+  // --- Migration v4 → v5: hallucination_terms table ---
+  const v5VersionRows = await connection.select<{ version: number }[]>(
+    "SELECT version FROM schema_version ORDER BY version DESC LIMIT 1",
+  );
+  const v5CurrentVersion = v5VersionRows[0]?.version ?? 1;
+
+  if (v5CurrentVersion < 5) {
+    await connection.execute("BEGIN TRANSACTION;");
+    try {
+      await connection.execute(`
+        CREATE TABLE IF NOT EXISTS hallucination_terms (
+          id TEXT PRIMARY KEY,
+          term TEXT NOT NULL UNIQUE,
+          source TEXT NOT NULL CHECK(source IN ('builtin', 'auto', 'manual')),
+          locale TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+      `);
+      await connection.execute(`
+        CREATE INDEX IF NOT EXISTS idx_hallucination_terms_locale
+        ON hallucination_terms(locale);
+      `);
+      await connection.execute(
+        "INSERT OR REPLACE INTO schema_version (version) VALUES (5);",
+      );
+      await connection.execute("COMMIT;");
+    } catch (migrationError) {
+      await connection.execute("ROLLBACK;");
+      throw migrationError;
+    }
+    console.log("[database] Migration v4 → v5: hallucination_terms table");
+  }
+
   // 只有全部 schema 建立成功才設定 singleton
   db = connection;
   console.log("[database] SQLite initialized with WAL mode");
