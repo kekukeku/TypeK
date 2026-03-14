@@ -56,14 +56,14 @@ interface NotchShapeParams {
   bottomRadius: number;
 }
 
-const NOTCH_SHAPES: Record<string, NotchShapeParams> = {
-  hidden: { width: 350, height: 42, topRadius: 14, bottomRadius: 22 },
-  recording: { width: 350, height: 42, topRadius: 14, bottomRadius: 22 },
-  morphing: { width: 350, height: 42, topRadius: 14, bottomRadius: 22 },
-  transcribing: { width: 350, height: 42, topRadius: 14, bottomRadius: 22 },
-  success: { width: 350, height: 42, topRadius: 14, bottomRadius: 22 },
-  error: { width: 350, height: 42, topRadius: 14, bottomRadius: 22 },
-  learned: { width: 350, height: 42, topRadius: 14, bottomRadius: 22 },
+const DEFAULT_NOTCH_SHAPE: NotchShapeParams = {
+  width: 350,
+  height: 42,
+  topRadius: 14,
+  bottomRadius: 22,
+};
+
+const NOTCH_SHAPE_OVERRIDES: Partial<Record<VisualMode, NotchShapeParams>> = {
   collapsing: { width: 200, height: 32, topRadius: 10, bottomRadius: 16 },
 };
 
@@ -81,7 +81,7 @@ const isExpandedMode = computed(
 );
 
 const notchStyle = computed(() => {
-  let params = NOTCH_SHAPES[visualMode.value] ?? NOTCH_SHAPES.hidden;
+  let params = NOTCH_SHAPE_OVERRIDES[visualMode.value] ?? DEFAULT_NOTCH_SHAPE;
   if (isExpandedMode.value) {
     params = { ...params, height: ERROR_WITH_MESSAGE_HEIGHT };
   }

@@ -212,6 +212,7 @@ onMounted(async () => {
         "[main-window] Failed to check accessibility permission:",
         error,
       );
+      captureError(error, { source: "accessibility", step: "check-permission" });
     }
   }
 

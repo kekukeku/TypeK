@@ -84,6 +84,7 @@ watch(
       stopPermissionPolling();
     }
   },
+  { immediate: true },
 );
 
 onBeforeUnmount(() => {

@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { LogicalPosition } from "@tauri-apps/api/dpi";
-import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
+import type { UnlistenFn } from "@tauri-apps/api/event";
 import { Window, getCurrentWindow } from "@tauri-apps/api/window";
 import { defineStore } from "pinia";
 import { ref } from "vue";
@@ -37,6 +37,7 @@ import {
   CORRECTION_MONITOR_RESULT,
   VOCABULARY_LEARNED,
   emitEvent,
+  listenToEvent,
 } from "../composables/useTauriEvents";
 import {
   HOTKEY_ERROR_CODES,
@@ -140,7 +141,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
       status: nextStatus,
       message: nextMessage,
     };
-    void emit(VOICE_FLOW_STATE_CHANGED, payload);
+    void emitEvent(VOICE_FLOW_STATE_CHANGED, payload);
   }
 
   async function repositionHudToCurrentMonitor() {
@@ -464,7 +465,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
 
         // 一次性監聽 correction-monitor:result
         correctionMonitorUnlisten =
-          await listen<CorrectionMonitorResultPayload>(
+          await listenToEvent<CorrectionMonitorResultPayload>(
             CORRECTION_MONITOR_RESULT,
             (event) => {
               cleanupCorrectionMonitorListener();
@@ -967,13 +968,13 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     await settingsStore.loadSettings();
 
     const listeners = await Promise.all([
-      listen(HOTKEY_PRESSED, () => {
+      listenToEvent(HOTKEY_PRESSED, () => {
         void handleStartRecording();
       }),
-      listen(HOTKEY_RELEASED, () => {
+      listenToEvent(HOTKEY_RELEASED, () => {
         void handleStopRecording();
       }),
-      listen<HotkeyEventPayload>(HOTKEY_TOGGLED, (event) => {
+      listenToEvent<HotkeyEventPayload>(HOTKEY_TOGGLED, (event) => {
         if (event.payload.action === "start") {
           void handleStartRecording();
           return;
@@ -983,13 +984,16 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
           void handleStopRecording();
         }
       }),
-      listen<QualityMonitorResultPayload>(QUALITY_MONITOR_RESULT, (event) => {
-        lastWasModified.value = event.payload.wasModified;
-        writeInfoLog(
-          `useVoiceFlowStore: quality monitor result: wasModified=${event.payload.wasModified}`,
-        );
-      }),
-      listen<HotkeyErrorPayload>(HOTKEY_ERROR, (event) => {
+      listenToEvent<QualityMonitorResultPayload>(
+        QUALITY_MONITOR_RESULT,
+        (event) => {
+          lastWasModified.value = event.payload.wasModified;
+          writeInfoLog(
+            `useVoiceFlowStore: quality monitor result: wasModified=${event.payload.wasModified}`,
+          );
+        },
+      ),
+      listenToEvent<HotkeyErrorPayload>(HOTKEY_ERROR, (event) => {
         const hudMessage = getHotkeyErrorMessage(event.payload.error);
         if (
           event.payload.error === HOTKEY_ERROR_CODES.ACCESSIBILITY_PERMISSION
