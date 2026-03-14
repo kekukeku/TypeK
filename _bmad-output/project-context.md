@@ -1,10 +1,10 @@
 ---
 project_name: 'sayit'
 user_name: 'Jackle'
-date: '2026-03-10'
-sections_completed: ['technology_stack', 'language_rules', 'framework_rules', 'testing_rules', 'code_quality', 'workflow_rules', 'critical_rules', 'sentry_telemetry', 'i18n', 'smart_dictionary']
+date: '2026-03-15'
+sections_completed: ['technology_stack', 'language_rules', 'framework_rules', 'testing_rules', 'code_quality', 'workflow_rules', 'critical_rules', 'sentry_telemetry', 'i18n', 'smart_dictionary', 'model_registry_v2']
 status: 'complete'
-rule_count: 161
+rule_count: 168
 optimized_for_llm: true
 ---
 
@@ -85,7 +85,12 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - Groq LLM API — `https://api.groq.com/openai/v1/chat/completions`，兩個獨立模型設定：
   - **文字整理**（enhancer）：預設 `qwen/qwen3-32b`，可選 Llama 3.3 70B / Llama 4 Scout 17B / Kimi K2 Instruct，temperature: 0.3，timeout: 5s
   - **字典分析**（vocabularyAnalyzer）：預設 `llama-3.3-70b-versatile`，可選 Kimi K2 Instruct，temperature: 0，max_tokens: 256
-- **模型註冊** — `src/lib/modelRegistry.ts` 集中管理所有可用模型（`LLM_MODEL_LIST` + `VOCABULARY_ANALYSIS_MODEL_LIST`）、價格、免費配額、Badge 標籤（`badgeKey`），支援模型下架自動遷移（`DECOMMISSIONED_MODEL_MAP`）
+- **模型註冊** — `src/lib/modelRegistry.ts` 集中管理：
+  - 三組獨立型別：`LlmModelId`、`VocabularyAnalysisModelId`、`WhisperModelId`
+  - 三個獨立模型清單：`LLM_MODEL_LIST`、`VOCABULARY_ANALYSIS_MODEL_LIST`、`WHISPER_MODEL_LIST`
+  - 三個安全取得函式：`getEffectiveLlmModelId()`、`getEffectiveVocabularyAnalysisModelId()`、`getEffectiveWhisperModelId()`
+  - 價格、免費配額、Badge 標籤（`badgeKey`）
+  - **下架遷移機制** — `DECOMMISSIONED_MODEL_MAP: Record<string, LlmModelId>`，舊 ID → 新 ID 映射，`getEffectiveLlmModelId()` 自動遷移（僅 LLM 模型，Whisper/字典分析直接 fallback 預設）
 - CSP 白名單：`connect-src 'self' https://api.groq.com`
 
 ### Sentry/Telemetry 整合
@@ -222,6 +227,12 @@ _This file contains critical rules and patterns that AI agents must follow when 
 | `audio:waveform` | `AUDIO_WAVEFORM` | Rust → HUD | `WaveformPayload { levels: [f32; 6] }` |
 | `vocabulary:learned` | `VOCABULARY_LEARNED` | VoiceFlowStore → HUD | `VocabularyLearnedPayload` |
 
+#### SettingsKey 跨視窗同步
+
+- **`SettingsKey` 型別** — 定義 `settings:updated` event 的 `key` 欄位（`events.ts`）：`hotkey` | `apiKey` | `aiPrompt` | `enhancementThreshold` | `llmModel` | `vocabularyAnalysisModel` | `whisperModel` | `muteOnRecording` | `smartDictionaryEnabled` | `locale` | `transcriptionLocale`
+- **智慧字典開關** — `isSmartDictionaryEnabled`（macOS 預設啟用，Windows 預設關閉——因 Windows 尚未支援 `read_focused_text_field` AX API）
+- **字典分析模型獨立** — `selectedVocabularyAnalysisModelId` 與 `selectedLlmModelId` 分開儲存和選擇，各自有獨立的模型清單和設定 UI
+
 #### i18n 多語言（vue-i18n）
 
 - **支援語言** — zh-TW（繁體中文，fallback）、en（英文，vue-i18n fallbackLocale）、ja、zh-CN、ko
@@ -232,7 +243,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - **AI Prompt 多語言** — `src/i18n/prompts.ts` 集中管理各語言預設 prompt（prompt 過長不適合 JSON），`getDefaultPromptForLocale(locale)` 取得對應語言版本
 - **語言偵測** — `detectSystemLocale()` 5 層匹配：精確 → script subtag（`zh-Hant` → `zh-TW`）→ 語言前綴 → 裸 `zh` → fallback `zh-TW`（保護既有中文使用者升級路徑）
 - **HTML lang 屬性** — `document.documentElement.lang` 隨 locale 更新（zh-TW → `zh-Hant`、zh-CN → `zh-Hans`）
-- **幻覺檢測語言感知** — `isSilenceOrHallucination()` 的 CJK 檢查僅在 `getWhisperLanguageCode() === "zh"` 時啟用，避免英文/日文/韓文正常轉錄被誤殺
+- **幻覺檢測策略（v0.7.3 修正）** — `isEmptyTranscription()` 只攔截完全空白文字（`!rawText.trim()`）。Whisper 幻聽（如「谢谢大家」、重複片語）不攔截，直接貼上讓使用者自行 Cmd+Z。理由：攔截幻聽 + 顯示「未偵測到語音」會讓使用者誤以為系統故障
 
 #### 轉錄語言分離（TranscriptionLocale）
 
@@ -552,6 +563,9 @@ src/
 - **❌ 新增翻譯鍵但不同步所有 locale 檔案** — 5 個 locale JSON 的 key 結構必須完全一致，新增鍵時必須同時更新所有檔案
 - **❌ 語言切換時自動持久化 prompt** — prompt auto-switch 只寫記憶體（`aiPrompt.value`），**禁止**呼叫 `store.set("aiPrompt")`。使用者必須手動儲存，避免系統未經同意覆蓋自訂 prompt
 - **❌ `refreshCrossWindowSettings` 中先算 prompt 再載 transcription locale** — 必須先載入 `selectedLocale` + `selectedTranscriptionLocale`，再計算 `aiPrompt` fallback，否則 `getEffectivePromptLocale()` 會用到舊值
+- **❌ 硬編碼模型 ID** — 模型 ID 必須從 `modelRegistry.ts` 的 type union（`LlmModelId` / `VocabularyAnalysisModelId` / `WhisperModelId`）取值，禁止字串硬編碼。新增/移除模型時必須同時更新 type、清單、預設值
+- **❌ 忽略下架模型遷移** — 新模型取代舊模型時必須在 `DECOMMISSIONED_MODEL_MAP` 加入舊 ID → 新 ID 映射，否則舊版使用者升級後設定會 fallback 到預設而非指定替代
+- **❌ 字典分析使用 enhancer 模型清單** — 字典分析（`vocabularyAnalyzer.ts`）和文字整理（`enhancer.ts`）使用完全獨立的模型清單（`VOCABULARY_ANALYSIS_MODEL_LIST` vs `LLM_MODEL_LIST`）和 ID 型別（`VocabularyAnalysisModelId` vs `LlmModelId`），不可混用
 
 #### 資料映射陷阱
 
@@ -614,4 +628,4 @@ src/
 - Review periodically for outdated rules
 - Remove rules that become obvious over time
 
-Last Updated: 2026-03-10 (v6 — 智慧字典學習系統：權重系統、修正偵測、AI 字典分析、HUD 學習通知、text_field_reader AX API)
+Last Updated: 2026-03-15 (v7 — 模型註冊架構重構：字典分析模型獨立、下架遷移機制、幻覺檢測策略修正、SettingsKey 擴展)

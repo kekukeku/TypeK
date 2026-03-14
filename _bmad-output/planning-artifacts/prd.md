@@ -355,7 +355,7 @@ SayIt 是一款常駐 System Tray 的跨平台桌面應用，使用 Tauri v2 框
 
 ### 語音轉文字
 
-- FR6: 系統可將錄音音訊送至 Groq Whisper API 取得繁體中文轉錄結果
+- FR6: 系統可將錄音音訊送至 Groq Whisper API 取得轉錄結果；轉錄失敗時可從暫存錄音重送一次
 - FR7: 系統可將自訂詞彙清單注入 Whisper API prompt 參數以提升專有名詞辨識率
 
 ### AI 文字整理
@@ -390,20 +390,26 @@ SayIt 是一款常駐 System Tray 的跨平台桌面應用，使用 Tauri v2 框
 
 ### 狀態回饋（HUD）
 
-- FR26: 系統在各階段透過 Notch-style HUD 顯示目前狀態（idle → recording → transcribing → enhancing → success/error → idle）
+- FR26: 系統在各階段透過 Notch-style HUD 顯示目前狀態（idle → recording → transcribing → enhancing → success/error → idle），error 狀態提供一鍵重送按鈕
 - FR27: 系統在 success 狀態短暫顯示後自動收起 HUD
-- FR28: 系統在 API 請求失敗時透過 HUD 顯示清晰的錯誤訊息
+- FR28: 系統在 API 請求失敗時透過 HUD 顯示清晰的錯誤訊息，並提供重送按鈕（限一次）供使用者重新送出同一段錄音
 - FR29: 系統在 Groq API 逾時時直接貼上原始轉錄文字跳過 AI 整理
 
 ### 應用程式管理
 
-- FR30: 使用者可在設定頁面配置快捷鍵（觸發鍵選擇 + 觸發模式）
+- FR30: 使用者可在設定頁面配置快捷鍵（預設觸發鍵選擇、自訂組合鍵（0~N 個 modifier + 1 個普通鍵）、觸發模式）
 - FR31: 使用者可在設定頁面輸入/修改 Groq API Key
 - FR32: 系統常駐 System Tray，使用者可從 Tray 開啟主視窗
 - FR33: 系統支援開機自啟動，使用者可在設定中關閉
 - FR34: 系統支援自動更新，啟動時檢查並背景下載更新
 - FR35: 系統在 macOS 首次啟動時引導使用者授權 Accessibility 權限
 - FR36: 系統在首次錄音時觸發麥克風權限請求
+
+### 錄音檔管理
+
+- FR37: 系統在每次錄音結束後將 WAV 檔案永久儲存至本地磁碟（{APP_DATA}/recordings/），使用者可在歷史記錄中播放錄音
+- FR38: 系統自動偵測 Whisper 幻覺文字（三層偵測：語速異常、noSpeechProbability 門檻、幻覺詞庫比對），判定為幻覺時不貼上並自動學習至幻覺詞庫
+- FR39: 使用者可在設定頁面管理幻覺詞庫（瀏覽、新增、刪除），以及設定錄音檔自動清理策略（手動刪除全部 + 自動清理天數）
 
 ## Non-Functional Requirements
 
@@ -432,7 +438,7 @@ SayIt 是一款常駐 System Tray 的跨平台桌面應用，使用 Tauri v2 框
 
 | 整合對象 | 可靠性需求 | 降級策略 |
 |----------|----------|---------|
-| Groq Whisper API | 依賴網路，無離線替代 | 失敗時 HUD 顯示錯誤，使用者可重試 |
+| Groq Whisper API | 依賴網路，無離線替代 | 失敗時 HUD 顯示錯誤並提供一鍵重送按鈕（從暫存錄音重送，限一次） |
 | Groq LLM API | 依賴網路，有 timeout 降級 | 5 秒逾時則跳過 AI 整理，直接貼上原始轉錄 |
 | 作業系統剪貼簿 | 系統層級，高可靠 | 無降級，失敗視為系統錯誤 |
 | 作業系統鍵盤模擬 | 系統層級，需權限 | macOS 需 Accessibility 授權，未授權時引導 |

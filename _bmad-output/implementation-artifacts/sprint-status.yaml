@@ -48,10 +48,11 @@ development_status:
   1-5-hud-status-permission-guide: in-progress
   epic-1-retrospective: optional
 
-  epic-2: done
+  epic-2: in-progress
   2-1-groq-llm-text-enhancement: done
   2-2-ai-prompt-customization-context: done
   2-3-paste-quality-monitoring: done
+  2-4-whisper-hallucination-detection: backlog
   epic-2-retrospective: optional
 
   epic-3: done
@@ -59,10 +60,12 @@ development_status:
   3-2-vocabulary-injection-whisper-ai: done
   epic-3-retrospective: optional
 
-  epic-4: done
+  epic-4: in-progress
   4-1-transcription-auto-save: done
   4-2-history-browse-search-copy: done
   4-3-dashboard-stats-recent-summary: done
+  4-4-recording-storage-history-playback: backlog
+  4-5-transcription-retry-resend: backlog
   epic-4-retrospective: optional
 
   epic-5: done

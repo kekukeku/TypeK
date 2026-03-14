@@ -86,6 +86,11 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 ### Cross-Cutting Concerns Identified
 
 1. **跨平台行為抽象** — OS 原生鍵盤 API（macOS CGEventTap / Windows SetWindowsHookExW）的事件模型差異（鍵碼對應、權限需求、事件觸發頻率）需要統一的抽象層
+   - **組合鍵支援**：`CustomTriggerKey` 擴展為 `{ modifiers: Vec<Modifier>, keycode: u16 }`
+   - `Modifier` enum: `Ctrl`, `Shift`, `Cmd`(macOS), `Alt`
+   - macOS 判定：CGEventFlags 檢查 modifier 狀態 + keycode 匹配
+   - Windows 判定：GetKeyState() 檢查 modifier 狀態 + VK code 匹配
+   - 向後相容：舊 `{ keycode }` 解析為 `{ modifiers: [], keycode }`
 2. **雙視窗狀態同步** — HUD Window 和 Main Window 需共享應用程式狀態（錄音狀態、設定變更、歷史更新），Tauri Events 或 Pinia 跨視窗同步是關鍵決策點
 3. **API 錯誤降級** — Groq API 的 timeout/失敗需要一致的降級策略：Whisper 失敗 → 顯示錯誤；LLM 超時 → 跳過 AI 直接貼上原始文字
 4. **安全金鑰儲存** — API Key 使用 tauri-plugin-store 儲存於 App Data 目錄（明文 JSON），安全依賴 OS 檔案系統權限，不暴露於日誌或網路
@@ -208,11 +213,22 @@ CREATE TABLE IF NOT EXISTS transcriptions (
   trigger_mode TEXT NOT NULL CHECK(trigger_mode IN ('hold', 'toggle')),
   was_enhanced INTEGER NOT NULL DEFAULT 0,
   was_modified INTEGER,          -- 貼上後是否被使用者修改
+  audio_file_path TEXT,             -- 指向 recordings/ 目錄下的 WAV 檔案
+  status TEXT NOT NULL DEFAULT 'success',  -- 'success' | 'failed'
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE INDEX idx_transcriptions_timestamp ON transcriptions(timestamp DESC);
 CREATE INDEX idx_transcriptions_created_at ON transcriptions(created_at);
+
+-- 幻覺詞彙攔截
+CREATE TABLE IF NOT EXISTS hallucination_terms (
+  id TEXT PRIMARY KEY,
+  term TEXT NOT NULL UNIQUE,
+  source TEXT NOT NULL DEFAULT 'auto',  -- 'builtin' | 'auto' | 'manual'
+  language TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
 
 -- 自訂詞彙
 CREATE TABLE IF NOT EXISTS vocabulary (
@@ -226,6 +242,17 @@ CREATE TABLE IF NOT EXISTS schema_version (
   version INTEGER PRIMARY KEY
 );
 ```
+
+### 錄音檔管理
+
+- **儲存位置**：`{APP_DATA}/recordings/` 目錄
+- **檔案格式**：WAV（16-bit mono 16kHz，由 audio_recorder.rs 編碼）
+- **命名規則**：`{transcription_id}.wav`（UUID 對應 transcriptions 表）
+- **儲存時機**：`stop_recording()` 完成 WAV 編碼後，同時存入 Rust State 和磁碟
+- **失敗記錄**：轉錄失敗（Whisper 回傳空字串或幻覺攔截）時仍儲存錄音檔，transcriptions 表 status 為 'failed'
+- **清理策略**：使用者可設定自動清理天數（預設 7 天）+ 手動刪除所有錄音檔
+- **前端播放**：`convertFileSrc()` 轉換本地路徑 → HTML5 `<audio>` 串流播放
+- **大小估算**：~32KB/秒，10 秒錄音 ≈ 320KB
 
 ### Security
 
@@ -641,6 +668,16 @@ sayit/
 | Rust → WebView | `emit()` / `emitTo()` | 熱鍵按下事件、鍵盤監控結果 |
 | Rust → Groq | Rust reqwest（Whisper API） | `transcription.rs`（音訊錄製到轉錄全程 Rust） |
 | WebView → Groq | 直接 HTTPS（LLM API，不經 Rust） | `enhancer.ts` |
+
+**Tauri Commands（補充）：**
+
+| Command | Rust 位置 | 參數 | 回傳 | 用途 |
+|---------|-----------|------|------|------|
+| `save_recording_file` | `audio_recorder.rs` | `id: String` | `Result<String, String>`（檔案路徑） | 將 WAV 資料寫入 `{APP_DATA}/recordings/{id}.wav` |
+| `delete_all_recordings` | `audio_recorder.rs` | — | `Result<u32, String>`（刪除數量） | 刪除 recordings/ 目錄下所有 WAV 檔案 |
+| `cleanup_old_recordings` | `audio_recorder.rs` | `days: u32` | `Result<u32, String>`（刪除數量） | 刪除超過指定天數的錄音檔 |
+
+- `stop_recording` 回傳型別 `StopRecordingResult` 新增 `peak_energy_level: f32` 欄位，用於判斷錄音是否為靜音
 
 **Data Boundaries：**
 
