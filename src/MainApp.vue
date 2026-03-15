@@ -9,7 +9,7 @@ import {
   ShieldAlert,
 } from "lucide-vue-next";
 import { useI18n } from "vue-i18n";
-import { computed, markRaw, onMounted, onUnmounted, ref } from "vue";
+import { computed, markRaw, onMounted, onUnmounted, ref, watch } from "vue";
 import { RouterLink, RouterView, useRoute } from "vue-router";
 import AccessibilityGuide from "./components/AccessibilityGuide.vue";
 import SiteHeader from "./components/SiteHeader.vue";
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useFeedbackMessage } from "./composables/useFeedbackMessage";
 import { listenToEvent, VOCABULARY_CHANGED, HALLUCINATION_CHANGED } from "./composables/useTauriEvents";
+import { useSettingsStore } from "./stores/useSettingsStore";
 import { useVocabularyStore } from "./stores/useVocabularyStore";
 import { useHallucinationStore } from "./stores/useHallucinationStore";
 import { captureError } from "./lib/sentry";
@@ -74,6 +75,16 @@ const updateFeedback = useFeedbackMessage();
 // AlertDialog 控制
 const showManualUpdateDialog = ref(false);
 const showAutoInstallDialog = ref(false);
+
+// 升級提示（watch 而非 onMounted，因為 loadSettings 在 mount 之後才執行）
+const settingsStore = useSettingsStore();
+const showUpgradeNoticeDialog = ref(false);
+watch(() => settingsStore.showPromptUpgradeNotice, (shouldShow) => {
+  if (shouldShow) {
+    showUpgradeNoticeDialog.value = true;
+    settingsStore.showPromptUpgradeNotice = false;
+  }
+});
 
 // ── 流程 1：自動偵測（靜默檢查 → 靜默下載 → 通知安裝） ──
 async function autoCheckAndDownload() {
@@ -332,6 +343,27 @@ onUnmounted(() => {
       <AlertDialogFooter>
         <AlertDialogCancel @click="handleAutoInstallLater">{{ $t("mainApp.update.later") }}</AlertDialogCancel>
         <AlertDialogAction @click="handleAutoInstall">{{ $t("mainApp.update.installRestart") }}</AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+
+  <!-- 升級提示 AlertDialog -->
+  <AlertDialog :open="showUpgradeNoticeDialog">
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>{{ $t("mainApp.upgradeNotice.title") }}</AlertDialogTitle>
+        <AlertDialogDescription as="div">
+          <ul class="mt-2 space-y-1.5 text-sm text-muted-foreground">
+            <li>{{ $t("mainApp.upgradeNotice.item1") }}</li>
+            <li>{{ $t("mainApp.upgradeNotice.item2") }}</li>
+            <li>{{ $t("mainApp.upgradeNotice.item3") }}</li>
+            <li>{{ $t("mainApp.upgradeNotice.item4") }}</li>
+            <li>{{ $t("mainApp.upgradeNotice.item5") }}</li>
+          </ul>
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogAction @click="showUpgradeNoticeDialog = false">{{ $t("mainApp.upgradeNotice.dismiss") }}</AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>

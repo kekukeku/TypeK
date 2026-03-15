@@ -1,5 +1,4 @@
 import type { TriggerMode } from "./index";
-import type { LlmModelId, WhisperModelId } from "../lib/modelRegistry";
 
 export type PresetTriggerKey =
   | "fn"
@@ -31,12 +30,6 @@ export interface HotkeyConfig {
   triggerMode: TriggerMode;
 }
 
-export interface SettingsDto {
-  hotkeyConfig: HotkeyConfig | null;
-  hasApiKey: boolean;
-  aiPrompt: string;
-  isEnhancementThresholdEnabled: boolean;
-  enhancementThresholdCharCount: number;
-  llmModelId: LlmModelId;
-  whisperModelId: WhisperModelId;
-}
+export const PROMPT_MODE_VALUES = ["minimal", "active", "custom"] as const;
+export type PromptMode = (typeof PROMPT_MODE_VALUES)[number];
+export type PresetPromptMode = Exclude<PromptMode, "custom">;

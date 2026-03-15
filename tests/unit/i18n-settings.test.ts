@@ -280,17 +280,17 @@ describe("i18n 設定功能", () => {
       const store = useSettingsStore();
       await store.loadSettings();
 
-      const { getDefaultPromptForLocale } = await import(
+      const { getMinimalPromptForLocale } = await import(
         "../../src/i18n/prompts"
       );
-      const zhDefault = getDefaultPromptForLocale("zh-TW");
+      const zhDefault = getMinimalPromptForLocale("zh-TW");
       expect(store.getAiPrompt()).toBe(zhDefault);
 
       // 切換轉錄語言為 English（prompt 應跟著切換，但不存檔）
       mockStoreSet.mockClear();
       await store.saveTranscriptionLocale("en");
 
-      const enDefault = getDefaultPromptForLocale("en");
+      const enDefault = getMinimalPromptForLocale("en");
       expect(store.getAiPrompt()).toBe(enDefault);
 
       // prompt 不應被自動寫入 store（使用者需手動儲存）
@@ -327,10 +327,10 @@ describe("i18n 設定功能", () => {
       const store = useSettingsStore();
       await store.loadSettings();
 
-      const { getDefaultPromptForLocale } = await import(
+      const { getMinimalPromptForLocale } = await import(
         "../../src/i18n/prompts"
       );
-      const zhDefault = getDefaultPromptForLocale("zh-TW");
+      const zhDefault = getMinimalPromptForLocale("zh-TW");
       expect(store.getAiPrompt()).toBe(zhDefault);
 
       // 轉錄語言為 zh-TW（非 auto），切換 UI 語言不影響 prompt
@@ -349,17 +349,17 @@ describe("i18n 設定功能", () => {
       const store = useSettingsStore();
       await store.loadSettings();
 
-      const { getDefaultPromptForLocale } = await import(
+      const { getMinimalPromptForLocale } = await import(
         "../../src/i18n/prompts"
       );
-      const zhDefault = getDefaultPromptForLocale("zh-TW");
+      const zhDefault = getMinimalPromptForLocale("zh-TW");
       expect(store.getAiPrompt()).toBe(zhDefault);
 
       // 轉錄語言為 auto，切換 UI 語言 → prompt 跟著切換
       mockStoreSet.mockClear();
       await store.saveLocale("en");
 
-      const enDefault = getDefaultPromptForLocale("en");
+      const enDefault = getMinimalPromptForLocale("en");
       expect(store.getAiPrompt()).toBe(enDefault);
 
       // prompt 不應被自動寫入 store

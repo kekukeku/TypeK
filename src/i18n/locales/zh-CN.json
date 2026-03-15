@@ -76,11 +76,18 @@
     },
     "prompt": {
       "title": "AI 整理 Prompt",
-      "description": "自定义 AI 整理文字时使用的系统提示词。修改后点击保存。",
+      "description": "选择整理模式或自定义 Prompt。",
+      "modeTitle": "整理模式",
+      "modeMinimal": "精简",
+      "modeMinimalDescription": "修错字、去赘词、补标点，保持原句结构",
+      "modeActive": "积极",
+      "modeActiveDescription": "理解语意后重新排版，以段落和列点呈现（类似 Typeless）",
+      "modeCustom": "自定义",
+      "modeCustomDescription": "使用自定义 Prompt",
       "saved": "Prompt 已保存",
       "confirmReset": "确认重置？",
-      "reset": "重置为默认",
-      "resetDone": "已重置为默认"
+      "reset": "重置为精简模式",
+      "resetDone": "已重置为精简模式"
     },
     "threshold": {
       "title": "短文字门槛",
@@ -313,6 +320,15 @@
       "newVersionDescription": "SayIt v{version} 已可供更新。点击开始更新将自动下载并重新启动应用程序。",
       "cancel": "取消",
       "startUpdate": "开始更新"
+    },
+    "upgradeNotice": {
+      "title": "SayIt 更新摘要",
+      "item1": "AI 整理新增三种模式：精简、积极（类似 Typeless）、自定义",
+      "item2": "录音文件自动保存，历史记录可播放与重新转录",
+      "item3": "Whisper 幻觉侦测自动学习，减少无声时的错误文字",
+      "item4": "按 ESC 可随时取消录音、转录或 AI 整理",
+      "item5": "新增音效反馈（可在设置中开关）",
+      "dismiss": "了解"
     }
   },
   "hallucination": {

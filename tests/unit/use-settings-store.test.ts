@@ -271,6 +271,8 @@ describe("useSettingsStore", () => {
       );
       const store = useSettingsStore();
 
+      // 先切到 custom 模式，getAiPrompt() 才回傳 aiPrompt ref 值
+      await store.savePromptMode("custom");
       await store.saveAiPrompt("自訂 prompt 內容");
 
       expect(mockStoreSet).toHaveBeenCalledWith("aiPrompt", "自訂 prompt 內容");
@@ -413,6 +415,7 @@ describe("useSettingsStore", () => {
       mockStoreData.set("customTriggerKeyDomCode", "F13");
       mockStoreData.set("groqApiKey", "  gsk_sync  ");
       mockStoreData.set("aiPrompt", "  同步後 prompt  ");
+      mockStoreData.set("promptMode", "custom");
       mockStoreData.set("enhancementThresholdEnabled", true);
       mockStoreData.set("enhancementThresholdCharCount", 42);
       mockStoreData.set("llmModelId", "llama-3.3-70b-versatile");

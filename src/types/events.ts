@@ -30,7 +30,8 @@ export type SettingsKey =
   | "smartDictionaryEnabled"
   | "locale"
   | "transcriptionLocale"
-  | "soundEffectsEnabled";
+  | "soundEffectsEnabled"
+  | "promptMode";
 
 export interface SettingsUpdatedPayload {
   key: SettingsKey;

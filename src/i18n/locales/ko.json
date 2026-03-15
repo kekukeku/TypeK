@@ -76,11 +76,18 @@
     },
     "prompt": {
       "title": "AI 정리 Prompt",
-      "description": "AI가 텍스트를 정리할 때 사용하는 시스템 프롬프트를 사용자 정의합니다. 수정 후 저장을 클릭하세요.",
+      "description": "정리 모드를 선택하거나 프롬프트를 사용자 정의합니다.",
+      "modeTitle": "정리 모드",
+      "modeMinimal": "간편",
+      "modeMinimalDescription": "오타 수정, 군말 제거, 문장 부호 추가, 원문 구조 유지",
+      "modeActive": "적극",
+      "modeActiveDescription": "의미를 이해하고 단락과 목록으로 재구성 (Typeless 스타일)",
+      "modeCustom": "사용자 정의",
+      "modeCustomDescription": "사용자 정의 프롬프트 사용",
       "saved": "Prompt가 저장되었습니다",
       "confirmReset": "초기화하시겠습니까?",
-      "reset": "기본값으로 초기화",
-      "resetDone": "기본값으로 초기화되었습니다"
+      "reset": "간편 모드로 초기화",
+      "resetDone": "간편 모드로 초기화되었습니다"
     },
     "threshold": {
       "title": "짧은 텍스트 임계값",
@@ -313,6 +320,15 @@
       "newVersionDescription": "SayIt v{version} 업데이트가 가능합니다. 업데이트 시작을 클릭하면 자동으로 다운로드 후 앱이 재시작됩니다.",
       "cancel": "취소",
       "startUpdate": "업데이트 시작"
+    },
+    "upgradeNotice": {
+      "title": "SayIt 업데이트 요약",
+      "item1": "AI 정리에 3가지 모드 추가: 간편, 적극 (Typeless 스타일), 사용자 정의",
+      "item2": "녹음 파일 자동 저장 — 기록에서 재생 및 재전사 가능",
+      "item3": "Whisper 환각 자동 학습으로 무음 시 오류 텍스트 감소",
+      "item4": "ESC 키로 언제든 녹음, 전사, AI 정리를 취소",
+      "item5": "사운드 피드백 추가 (설정에서 전환 가능)",
+      "dismiss": "확인"
     }
   },
   "hallucination": {

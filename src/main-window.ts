@@ -56,6 +56,7 @@ async function bootstrap() {
 
   const settingsStore = useSettingsStore();
   await settingsStore.loadSettings();
+  await settingsStore.consumeUpgradeNotice();
   await settingsStore.initializeAutoStart();
 
   if (!settingsStore.hasApiKey) {

@@ -76,11 +76,18 @@
     },
     "prompt": {
       "title": "AI Enhancement Prompt",
-      "description": "Customize the system prompt used by AI when enhancing text. Click Save after editing.",
+      "description": "Choose an enhancement mode or customize your prompt.",
+      "modeTitle": "Enhancement Mode",
+      "modeMinimal": "Minimal",
+      "modeMinimalDescription": "Fix typos, remove fillers, add punctuation, keep original structure",
+      "modeActive": "Active",
+      "modeActiveDescription": "Reorganize into paragraphs and bullet points for easy scanning (similar to Typeless)",
+      "modeCustom": "Custom",
+      "modeCustomDescription": "Use a custom prompt",
       "saved": "Prompt saved",
       "confirmReset": "Confirm reset?",
-      "reset": "Reset to Default",
-      "resetDone": "Reset to default"
+      "reset": "Reset to Minimal",
+      "resetDone": "Reset to Minimal mode"
     },
     "threshold": {
       "title": "Short Text Threshold",
@@ -313,6 +320,15 @@
       "newVersionDescription": "SayIt v{version} is available. Click Start Update to download and restart the application automatically.",
       "cancel": "Cancel",
       "startUpdate": "Start Update"
+    },
+    "upgradeNotice": {
+      "title": "SayIt Update Summary",
+      "item1": "AI enhancement now offers three modes: Minimal, Active (similar to Typeless), Custom",
+      "item2": "Recordings auto-saved — play back or re-transcribe from history",
+      "item3": "Whisper hallucination auto-learning reduces false text on silence",
+      "item4": "Press ESC anytime to cancel recording, transcription, or AI enhancement",
+      "item5": "Sound feedback added (toggle in Settings)",
+      "dismiss": "Got it"
     }
   },
   "hallucination": {

@@ -76,11 +76,18 @@
     },
     "prompt": {
       "title": "AI 整理 Prompt",
-      "description": "AI がテキストを整理する際に使用するシステムプロンプトをカスタマイズします。変更後、保存をクリックしてください。",
+      "description": "整理モードを選択するか、プロンプトをカスタマイズします。",
+      "modeTitle": "整理モード",
+      "modeMinimal": "シンプル",
+      "modeMinimalDescription": "誤字修正、フィラー除去、句読点補完、原文構造を維持",
+      "modeActive": "アクティブ",
+      "modeActiveDescription": "意味を理解し段落とリストで再構成（Typeless 風）",
+      "modeCustom": "カスタム",
+      "modeCustomDescription": "カスタムプロンプトを使用",
       "saved": "Prompt を保存しました",
       "confirmReset": "リセットしてよろしいですか？",
-      "reset": "デフォルトにリセット",
-      "resetDone": "デフォルトにリセットしました"
+      "reset": "シンプルモードにリセット",
+      "resetDone": "シンプルモードにリセットしました"
     },
     "threshold": {
       "title": "短文しきい値",
@@ -313,6 +320,15 @@
       "newVersionDescription": "SayIt v{version} が利用可能です。更新を開始すると、自動的にダウンロードされアプリが再起動します。",
       "cancel": "キャンセル",
       "startUpdate": "更新を開始"
+    },
+    "upgradeNotice": {
+      "title": "SayIt アップデート概要",
+      "item1": "AI 整理に 3 つのモードを追加：シンプル、アクティブ（Typeless 風）、カスタム",
+      "item2": "録音ファイルを自動保存 — 履歴から再生・再文字起こしが可能",
+      "item3": "Whisper 幻覚の自動学習で無音時の誤テキストを軽減",
+      "item4": "ESC キーでいつでも録音・文字起こし・AI 整理をキャンセル",
+      "item5": "効果音フィードバックを追加（設定でオン・オフ可能）",
+      "dismiss": "了解"
     }
   },
   "hallucination": {
