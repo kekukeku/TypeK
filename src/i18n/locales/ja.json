@@ -100,6 +100,10 @@
       "muteDescription": "録音開始時にシステムスピーカーを自動ミュートし、終了後に復元します",
       "muteEnabled": "録音時自動ミュートを有効にしました",
       "muteDisabled": "録音時自動ミュートを無効にしました",
+      "soundFeedback": "効果音フィードバック",
+      "soundFeedbackDescription": "録音の開始・終了・エラー時に効果音を再生します",
+      "soundFeedbackEnabled": "効果音フィードバックを有効にしました",
+      "soundFeedbackDisabled": "効果音フィードバックを無効にしました",
       "autoStart": "ログイン時に自動起動",
       "autoStartDescription": "システムログイン後に SayIt を自動的に起動します",
       "autoStartEnabled": "自動起動を有効にしました",
@@ -317,7 +321,6 @@
     "addPlaceholder": "新しい幻覚語を入力...",
     "addButton": "追加",
     "emptyState": "幻覚語の記録はまだありません。システムが Whisper の一般的な幻覚テキストを自動学習します",
-    "sourceBuiltin": "内蔵",
     "sourceAuto": "自動学習",
     "sourceManual": "手動追加",
     "deleteConfirm": "この幻覚語を削除しますか？",
@@ -327,6 +330,6 @@
     "localeHeader": "言語",
     "dateHeader": "追加日時",
     "actionHeader": "操作",
-    "description": "幻覚フィルターは、Whisper が音声なしの際に生成する誤ったテキストを検出します。内蔵辞書は一般的な幻覚パターンをカバーし、システムも新しい幻覚語を自動学習します。"
+    "description": "幻覚フィルターは、Whisper が音声なしの際に生成する誤ったテキストを検出します。システムは検出した幻覚語を自動学習し、次回同じテキストが出現した場合に直接フィルタリングします。手動で既知の幻覚語を追加することもできます。"
   }
 }

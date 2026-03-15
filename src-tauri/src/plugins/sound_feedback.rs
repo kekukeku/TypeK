@@ -60,6 +60,10 @@ mod macos {
     pub fn play_learned_sound() {
         play_system_sound("/System/Library/Sounds/Glass.aiff");
     }
+
+    pub fn play_error_sound() {
+        play_system_sound("/System/Library/Sounds/Ping.aiff");
+    }
 }
 
 // ========== Windows PlaySound Implementation ==========
@@ -91,6 +95,11 @@ mod windows_sound {
     pub fn play_learned_sound() {
         // Windows 暫時復用 start sound，之後可換專用音效
         play_start_sound();
+    }
+
+    pub fn play_error_sound() {
+        // Windows 暫時復用 stop sound，之後可換專用音效
+        play_stop_sound();
     }
 }
 
@@ -126,6 +135,21 @@ fn platform_play_stop_sound() {
     }
 }
 
+fn platform_play_error_sound() {
+    #[cfg(target_os = "macos")]
+    {
+        macos::play_error_sound();
+    }
+    #[cfg(target_os = "windows")]
+    {
+        windows_sound::play_error_sound();
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        println!("[sound-feedback] play_error_sound: unsupported platform (no-op)");
+    }
+}
+
 fn platform_play_learned_sound() {
     #[cfg(target_os = "macos")]
     {
@@ -151,6 +175,11 @@ pub fn play_start_sound() {
 #[command]
 pub fn play_stop_sound() {
     platform_play_stop_sound();
+}
+
+#[command]
+pub fn play_error_sound() {
+    platform_play_error_sound();
 }
 
 #[command]

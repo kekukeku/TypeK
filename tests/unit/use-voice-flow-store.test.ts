@@ -51,7 +51,11 @@ const {
         case "start_recording":
           return undefined;
         case "stop_recording":
-          return { recordingDurationMs: 2500 };
+          return {
+            recordingDurationMs: 2500,
+            peakEnergyLevel: 0.3,
+            rmsEnergyLevel: 0.1,
+          };
         case "transcribe_audio":
           return {
             rawText: "測試轉錄",
@@ -85,6 +89,7 @@ const {
       selectedLlmModelId: "llama-3.3-70b-versatile",
       selectedWhisperModelId: "whisper-large-v3",
       isMuteOnRecordingEnabled: false,
+      isSoundEffectsEnabled: true,
       isSmartDictionaryEnabled: false,
       whisperLanguageCode: "zh" as string | null,
     },
@@ -188,6 +193,9 @@ vi.mock("../../src/stores/useSettingsStore", () => ({
     get isMuteOnRecordingEnabled() {
       return mockSettingsState.isMuteOnRecordingEnabled;
     },
+    get isSoundEffectsEnabled() {
+      return mockSettingsState.isSoundEffectsEnabled;
+    },
     get isSmartDictionaryEnabled() {
       return mockSettingsState.isSmartDictionaryEnabled;
     },
@@ -251,7 +259,13 @@ function createMockInvokeHandler(options?: {
       case "start_recording":
         return undefined;
       case "stop_recording":
-        return options?.stopRecordingResult ?? { recordingDurationMs: 2500 };
+        return (
+          options?.stopRecordingResult ?? {
+            recordingDurationMs: 2500,
+            peakEnergyLevel: 0.3,
+            rmsEnergyLevel: 0.1,
+          }
+        );
       case "save_recording_file":
         return "/mock/recordings/test.wav";
       case "transcribe_audio":
@@ -305,6 +319,7 @@ describe("useVoiceFlowStore", () => {
     mockSettingsState.selectedLlmModelId = "llama-3.3-70b-versatile";
     mockSettingsState.selectedWhisperModelId = "whisper-large-v3";
     mockSettingsState.isMuteOnRecordingEnabled = false;
+    mockSettingsState.isSoundEffectsEnabled = true;
     mockSettingsState.isSmartDictionaryEnabled = false;
     mockSettingsState.whisperLanguageCode = "zh";
     mockVocabularyState.termList = [];
@@ -2138,6 +2153,37 @@ describe("useVoiceFlowStore", () => {
       });
 
       expect(store.status).toBe("success");
+    });
+
+    it("音效停用時不應呼叫 play_start_sound", async () => {
+      mockSettingsState.isSoundEffectsEnabled = false;
+      const store = useVoiceFlowStore();
+      await store.initialize();
+
+      triggerHotkeyEvent("hotkey:pressed");
+      await vi.waitFor(() => {
+        expect(mockInvoke).toHaveBeenCalledWith("start_recording");
+      });
+      expect(mockInvoke).not.toHaveBeenCalledWith("play_start_sound");
+    });
+
+    it("音效停用時不應呼叫 play_stop_sound", async () => {
+      mockSettingsState.isSoundEffectsEnabled = false;
+      const store = useVoiceFlowStore();
+      await store.initialize();
+
+      triggerHotkeyEvent("hotkey:pressed");
+      await vi.waitFor(() => {
+        expect(mockInvoke).toHaveBeenCalledWith("start_recording");
+      });
+
+      triggerHotkeyEvent("hotkey:released");
+      await vi.waitFor(() => {
+        expect(mockInvoke).toHaveBeenCalledWith("paste_text", {
+          text: "測試轉錄",
+        });
+      });
+      expect(mockInvoke).not.toHaveBeenCalledWith("play_stop_sound");
     });
   });
 });

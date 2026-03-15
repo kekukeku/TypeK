@@ -58,6 +58,7 @@ import { useSettingsStore } from "./useSettingsStore";
 
 const SUCCESS_DISPLAY_DURATION_MS = 1000;
 const ERROR_DISPLAY_DURATION_MS = 3000;
+const ERROR_WITH_RETRY_DISPLAY_DURATION_MS = 6000;
 const START_SOUND_DURATION_MS = 400;
 const CANCELLED_DISPLAY_DURATION_MS = 1000;
 
@@ -97,6 +98,8 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
   const lastFailedTranscriptionId = ref<string | null>(null);
   const lastFailedAudioFilePath = ref<string | null>(null);
   const lastFailedRecordingDurationMs = ref<number>(0);
+  const lastFailedPeakEnergyLevel = ref<number>(0);
+  const lastFailedRmsEnergyLevel = ref<number>(0);
   const isAborted = ref<boolean>(false);
   let abortController: AbortController | null = null;
   const isRetryAttempt = ref<boolean>(false);
@@ -381,9 +384,12 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
             step: "showHud-enableCursor",
           });
         });
+      const errorDuration = canRetry.value
+        ? ERROR_WITH_RETRY_DISPLAY_DURATION_MS
+        : ERROR_DISPLAY_DURATION_MS;
       autoHideTimer = setTimeout(() => {
         transitionTo("idle");
-      }, ERROR_DISPLAY_DURATION_MS);
+      }, errorDuration);
     }
   }
 
@@ -396,9 +402,16 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     restoreSystemAudio();
     isRecording.value = false;
     transitionTo("error", errorMessage);
+    playSoundIfEnabled("play_error_sound");
     writeErrorLog(logMessage);
     if (error) {
       captureError(error, { userMessage: errorMessage, source: "voice-flow" });
+    }
+  }
+
+  function playSoundIfEnabled(command: string) {
+    if (useSettingsStore().isSoundEffectsEnabled) {
+      void invoke(command).catch(() => {});
     }
   }
 
@@ -856,10 +869,12 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     lastFailedTranscriptionId.value = null;
     lastFailedAudioFilePath.value = null;
     lastFailedRecordingDurationMs.value = 0;
+    lastFailedPeakEnergyLevel.value = 0;
+    lastFailedRmsEnergyLevel.value = 0;
     isRetryAttempt.value = false;
 
     try {
-      void invoke("play_start_sound").catch(() => {});
+      playSoundIfEnabled("play_start_sound");
       delayedMuteTimer = setTimeout(() => {
         delayedMuteTimer = null;
         void muteSystemAudioIfEnabled();
@@ -886,7 +901,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
 
     clearDelayedMuteTimer();
     await restoreSystemAudio();
-    void invoke("play_stop_sound").catch(() => {});
+    playSoundIfEnabled("play_stop_sound");
     stopElapsedTimer();
 
     // 生成 transcriptionId 貫穿整個流程
@@ -894,11 +909,15 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     // 提升到 try 外層，讓 catch 也能存取（AC2: API 錯誤時仍寫入 failed 記錄）
     let audioFilePath: string | null = null;
     let recordingDurationMs = 0;
+    let peakEnergyLevel = 0;
+    let rmsEnergyLevel = 0;
 
     try {
       const stopResult = await invoke<StopRecordingResult>("stop_recording");
       if (isAborted.value) return;
       recordingDurationMs = stopResult.recordingDurationMs;
+      peakEnergyLevel = stopResult.peakEnergyLevel;
+      rmsEnergyLevel = stopResult.rmsEnergyLevel;
 
       // 錄音檔儲存（不阻斷主流程）
       try {
@@ -990,6 +1009,8 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
           lastFailedTranscriptionId.value = transcriptionId;
           lastFailedAudioFilePath.value = audioFilePath;
           lastFailedRecordingDurationMs.value = recordingDurationMs;
+          lastFailedPeakEnergyLevel.value = peakEnergyLevel;
+          lastFailedRmsEnergyLevel.value = rmsEnergyLevel;
         }
 
         failRecordingFlow(
@@ -1005,53 +1026,41 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
         await hallucinationStore.getTermListForDetection(
           settingsStore.selectedTranscriptionLocale,
         );
+
+      writeInfoLog(
+        `useVoiceFlowStore: hallucination detection input: peakEnergy=${peakEnergyLevel.toFixed(4)}, rmsEnergy=${rmsEnergyLevel.toFixed(4)}, nsp=${result.noSpeechProbability.toFixed(3)}, rawText="${result.rawText}", durationMs=${Math.round(recordingDurationMs)}, termCount=${hallucinationTermList.length}`,
+      );
+
       const hallucinationDetectionResult = detectHallucination({
         rawText: result.rawText,
         recordingDurationMs,
+        peakEnergyLevel,
+        rmsEnergyLevel,
         noSpeechProbability: result.noSpeechProbability,
         hallucinationTermList,
       });
 
-      if (hallucinationDetectionResult.isHallucination) {
-        writeInfoLog(
-          `useVoiceFlowStore: hallucination detected (reason=${hallucinationDetectionResult.reason}, text="${hallucinationDetectionResult.detectedText}")`,
-        );
+      writeInfoLog(
+        `useVoiceFlowStore: hallucination detection result: isHallucination=${hallucinationDetectionResult.isHallucination}, reason=${hallucinationDetectionResult.reason}, shouldAutoLearn=${hallucinationDetectionResult.shouldAutoLearn}`,
+      );
 
-        // 自動學習（在 return 之前）
+      if (hallucinationDetectionResult.isHallucination) {
+        // 自動學習（在 failRecordingFlow 之前，立即寫入 DB）
         if (hallucinationDetectionResult.shouldAutoLearn) {
           const whisperCode = settingsStore.getWhisperLanguageCode() ?? "zh";
-          void hallucinationStore.addTerm(
-            result.rawText.trim(),
-            "auto",
-            whisperCode,
-          );
-          void emitEvent(HALLUCINATION_LEARNED, {
-            termList: [result.rawText.trim()],
-          } satisfies HallucinationLearnedPayload);
-
-          // NotchHud 會在 error 狀態期間佇列此通知，error 結束後 HUD 視窗已隱藏，
-          // 需要重新顯示視窗讓佇列中的幻覺學習通知可見（與 VOCABULARY_LEARNED 同模式）
-          const hallucinationLearnedShowDelayMs =
-            ERROR_DISPLAY_DURATION_MS + COLLAPSE_HIDE_DELAY_MS + 100;
-          setTimeout(() => {
-            if (status.value !== "idle") return;
-            clearLearnedHideTimer();
-            const appWindow = getAppWindow();
-            void appWindow.show().then(async () => {
-              await appWindow.setIgnoreCursorEvents(true);
-              learnedHideTimer = setTimeout(() => {
-                learnedHideTimer = null;
-                if (status.value === "idle") {
-                  hideHud().catch((err) =>
-                    writeErrorLog(
-                      `useVoiceFlowStore: hallucination learned hideHud failed: ${extractErrorMessage(err)}`,
-                    ),
-                  );
-                }
-              }, LEARNED_NOTIFICATION_TOTAL_DURATION_MS);
-            });
-          }, hallucinationLearnedShowDelayMs);
+          hallucinationStore
+            .addTerm(result.rawText.trim(), "auto", whisperCode)
+            .catch((err) =>
+              writeErrorLog(
+                `useVoiceFlowStore: hallucination addTerm failed: ${extractErrorMessage(err)}`,
+              ),
+            );
         }
+
+        // 保存 shouldAutoLearn 狀態供 setTimeout 回調使用
+        const shouldNotifyLearned =
+          hallucinationDetectionResult.shouldAutoLearn;
+        const learnedText = result.rawText.trim();
 
         // 寫入 failed 記錄
         const failedRecord = buildTranscriptionRecord({
@@ -1072,12 +1081,47 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
           lastFailedTranscriptionId.value = transcriptionId;
           lastFailedAudioFilePath.value = audioFilePath;
           lastFailedRecordingDurationMs.value = recordingDurationMs;
+          lastFailedPeakEnergyLevel.value = peakEnergyLevel;
+          lastFailedRmsEnergyLevel.value = rmsEnergyLevel;
         }
 
         failRecordingFlow(
           t("voiceFlow.noSpeechDetected"),
           `useVoiceFlowStore: hallucination intercepted (reason=${hallucinationDetectionResult.reason})`,
         );
+
+        // error 結束後發送學習通知（延遲到 status=idle，避免 NotchHud 佇列死鎖）
+        if (shouldNotifyLearned) {
+          const hallucinationLearnedShowDelayMs =
+            ERROR_DISPLAY_DURATION_MS + COLLAPSE_HIDE_DELAY_MS + 100;
+          setTimeout(() => {
+            if (status.value !== "idle") return;
+
+            writeInfoLog(
+              "useVoiceFlowStore: emitting HALLUCINATION_LEARNED (delayed after error cycle)",
+            );
+            void emitEvent(HALLUCINATION_LEARNED, {
+              termList: [learnedText],
+            } satisfies HallucinationLearnedPayload);
+
+            clearLearnedHideTimer();
+            const appWindow = getAppWindow();
+            void appWindow.show().then(async () => {
+              await appWindow.setIgnoreCursorEvents(true);
+              learnedHideTimer = setTimeout(() => {
+                learnedHideTimer = null;
+                if (status.value === "idle") {
+                  hideHud().catch((err) =>
+                    writeErrorLog(
+                      `useVoiceFlowStore: hallucination learned hideHud failed: ${extractErrorMessage(err)}`,
+                    ),
+                  );
+                }
+              }, LEARNED_NOTIFICATION_TOTAL_DURATION_MS);
+            });
+          }, hallucinationLearnedShowDelayMs);
+        }
+
         return;
       }
 
@@ -1210,6 +1254,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
         lastFailedTranscriptionId.value = transcriptionId;
         lastFailedAudioFilePath.value = audioFilePath;
         lastFailedRecordingDurationMs.value = recordingDurationMs;
+        lastFailedPeakEnergyLevel.value = peakEnergyLevel;
       }
 
       const userMessage = getTranscriptionErrorMessage(error);
@@ -1248,6 +1293,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
 
       if (!apiKey) {
         transitionTo("error", t("errors.apiKeyMissing"));
+        playSoundIfEnabled("play_error_sound");
         lastFailedAudioFilePath.value = null;
         isRetryAttempt.value = false;
         return;
@@ -1274,20 +1320,24 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
       if (isEmptyTranscription(result.rawText)) {
         // 重送也失敗 → 不再提供重送
         transitionTo("error", t("voiceFlow.retryFailed"));
+        playSoundIfEnabled("play_error_sound");
         lastFailedAudioFilePath.value = null;
         isRetryAttempt.value = false;
         return;
       }
 
-      // ── 重送也需幻覺偵測 ──
+      // ── 重送也需幻覺偵測（使用原始錄音的 peakEnergyLevel）──
       const retryHallucinationStore = useHallucinationStore();
       const retryHallucinationTermList =
         await retryHallucinationStore.getTermListForDetection(
           settingsStore.selectedTranscriptionLocale,
         );
+
       const retryHallucinationResult = detectHallucination({
         rawText: result.rawText,
         recordingDurationMs,
+        peakEnergyLevel: lastFailedPeakEnergyLevel.value,
+        rmsEnergyLevel: lastFailedRmsEnergyLevel.value,
         noSpeechProbability: result.noSpeechProbability,
         hallucinationTermList: retryHallucinationTermList,
       });
@@ -1297,6 +1347,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
           `useVoiceFlowStore: retry hallucination detected (reason=${retryHallucinationResult.reason})`,
         );
         transitionTo("error", t("voiceFlow.retryFailed"));
+        playSoundIfEnabled("play_error_sound");
         lastFailedAudioFilePath.value = null;
         isRetryAttempt.value = false;
         return;
@@ -1475,6 +1526,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
       if (isAborted.value) return;
       // 重送也失敗（API 錯誤等）→ 不再提供重送
       transitionTo("error", t("voiceFlow.retryFailed"));
+      playSoundIfEnabled("play_error_sound");
       lastFailedAudioFilePath.value = null;
       isRetryAttempt.value = false;
       writeErrorLog(
@@ -1541,6 +1593,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
           })();
         }
         transitionTo("error", hudMessage);
+        playSoundIfEnabled("play_error_sound");
         writeErrorLog(
           `useVoiceFlowStore: hotkey error: ${event.payload.message}`,
         );

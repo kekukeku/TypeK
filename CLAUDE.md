@@ -62,6 +62,7 @@
 | `transcribe_audio` | `plugins/transcription.rs` | useVoiceFlowStore | `state: State<AudioRecorderState>, transcription_state: State<TranscriptionState>, api_key: String, vocabulary_term_list: Option<Vec<String>>, model_id: Option<String>, language: Option<String>` | `Result<TranscriptionResult, TranscriptionError>` |
 | `play_start_sound` | `plugins/sound_feedback.rs` | useVoiceFlowStore | — | `()` |
 | `play_stop_sound` | `plugins/sound_feedback.rs` | useVoiceFlowStore | — | `()` |
+| `play_error_sound` | `plugins/sound_feedback.rs` | useVoiceFlowStore | — | `()` |
 | `play_learned_sound` | `plugins/sound_feedback.rs` | NotchHud.vue | — | `()` |
 
 ### Rust → Frontend Events

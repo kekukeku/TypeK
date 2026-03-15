@@ -29,7 +29,8 @@ export type SettingsKey =
   | "muteOnRecording"
   | "smartDictionaryEnabled"
   | "locale"
-  | "transcriptionLocale";
+  | "transcriptionLocale"
+  | "soundEffectsEnabled";
 
 export interface SettingsUpdatedPayload {
   key: SettingsKey;

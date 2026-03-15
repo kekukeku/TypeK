@@ -100,6 +100,10 @@
       "muteDescription": "녹음 시작 시 시스템 스피커를 자동으로 음소거하고, 종료 후 복원합니다",
       "muteEnabled": "녹음 자동 음소거가 활성화되었습니다",
       "muteDisabled": "녹음 자동 음소거가 비활성화되었습니다",
+      "soundFeedback": "사운드 피드백",
+      "soundFeedbackDescription": "녹음 시작, 종료 및 오류 시 효과음을 재생합니다",
+      "soundFeedbackEnabled": "사운드 피드백이 활성화되었습니다",
+      "soundFeedbackDisabled": "사운드 피드백이 비활성화되었습니다",
       "autoStart": "부팅 시 자동 시작",
       "autoStartDescription": "시스템 로그인 후 SayIt을 자동으로 시작합니다",
       "autoStartEnabled": "부팅 시 자동 시작이 활성화되었습니다",
@@ -317,7 +321,6 @@
     "addPlaceholder": "새 환각어 입력...",
     "addButton": "추가",
     "emptyState": "아직 환각어 기록이 없습니다. 시스템이 Whisper의 일반적인 환각 텍스트를 자동 학습합니다",
-    "sourceBuiltin": "내장",
     "sourceAuto": "자동 학습",
     "sourceManual": "수동 추가",
     "deleteConfirm": "이 환각어를 삭제하시겠습니까?",
@@ -327,6 +330,6 @@
     "localeHeader": "언어",
     "dateHeader": "추가 일시",
     "actionHeader": "작업",
-    "description": "환각 필터는 Whisper가 음성 없이 생성하는 허위 텍스트를 감지합니다. 내장 사전은 일반적인 환각 패턴을 커버하고, 시스템도 새로운 환각어를 자동 학습합니다."
+    "description": "환각 필터는 Whisper가 음성 없이 생성하는 허위 텍스트를 감지합니다. 시스템은 감지된 환각어를 자동 학습하여 다음에 동일한 텍스트가 나타나면 직접 필터링합니다. 알려진 환각어를 수동으로 추가할 수도 있습니다."
   }
 }

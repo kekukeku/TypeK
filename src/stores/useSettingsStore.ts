@@ -55,6 +55,7 @@ export const DEFAULT_ENHANCEMENT_THRESHOLD_ENABLED = false;
 export const DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT = 10;
 export const DEFAULT_MUTE_ON_RECORDING = true;
 const DEFAULT_SMART_DICTIONARY_ENABLED = navigator.userAgent.includes("Mac"); // macOS only — Windows 尚未支援 text field 讀取
+const DEFAULT_SOUND_EFFECTS_ENABLED = true;
 const DEFAULT_RECORDING_AUTO_CLEANUP_ENABLED = false;
 const DEFAULT_RECORDING_AUTO_CLEANUP_DAYS = 7;
 
@@ -103,6 +104,7 @@ export const useSettingsStore = defineStore("settings", () => {
   const customTriggerKeyDomCode = ref<string>("");
   const selectedLocale = ref<SupportedLocale>(FALLBACK_LOCALE);
   const selectedTranscriptionLocale = ref<TranscriptionLocale>(FALLBACK_LOCALE);
+  const isSoundEffectsEnabled = ref<boolean>(DEFAULT_SOUND_EFFECTS_ENABLED);
   const isRecordingAutoCleanupEnabled = ref<boolean>(
     DEFAULT_RECORDING_AUTO_CLEANUP_ENABLED,
   );
@@ -230,6 +232,10 @@ export const useSettingsStore = defineStore("settings", () => {
       isMuteOnRecordingEnabled.value =
         savedMuteOnRecording ?? DEFAULT_MUTE_ON_RECORDING;
 
+      const savedSoundEffects = await store.get<boolean>("soundEffectsEnabled");
+      isSoundEffectsEnabled.value =
+        savedSoundEffects ?? DEFAULT_SOUND_EFFECTS_ENABLED;
+
       const savedSmartDictionary = await store.get<boolean>(
         "smartDictionaryEnabled",
       );
@@ -269,6 +275,7 @@ export const useSettingsStore = defineStore("settings", () => {
       enhancementThresholdCharCount.value =
         DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT;
       isMuteOnRecordingEnabled.value = DEFAULT_MUTE_ON_RECORDING;
+      isSoundEffectsEnabled.value = DEFAULT_SOUND_EFFECTS_ENABLED;
     }
   }
 
@@ -717,6 +724,29 @@ export const useSettingsStore = defineStore("settings", () => {
     }
   }
 
+  async function saveSoundEffectsEnabled(enabled: boolean) {
+    try {
+      const store = await load(STORE_NAME);
+      await store.set("soundEffectsEnabled", enabled);
+      await store.save();
+      isSoundEffectsEnabled.value = enabled;
+
+      const payload: SettingsUpdatedPayload = {
+        key: "soundEffectsEnabled",
+        value: enabled,
+      };
+      await emitEvent(SETTINGS_UPDATED, payload);
+      console.log(`[useSettingsStore] soundEffectsEnabled saved: ${enabled}`);
+    } catch (err) {
+      console.error(
+        "[useSettingsStore] saveSoundEffectsEnabled failed:",
+        extractErrorMessage(err),
+      );
+      captureError(err, { source: "settings", step: "save-sound-effects" });
+      throw err;
+    }
+  }
+
   async function saveSmartDictionaryEnabled(enabled: boolean) {
     try {
       const store = await load(STORE_NAME);
@@ -800,6 +830,7 @@ export const useSettingsStore = defineStore("settings", () => {
       );
       const savedWhisperModelId = await store.get<string>("whisperModelId");
       const savedMuteOnRecording = await store.get<boolean>("muteOnRecording");
+      const savedSoundEffects = await store.get<boolean>("soundEffectsEnabled");
       const savedSmartDictionary = await store.get<boolean>(
         "smartDictionaryEnabled",
       );
@@ -848,6 +879,8 @@ export const useSettingsStore = defineStore("settings", () => {
       );
       isMuteOnRecordingEnabled.value =
         savedMuteOnRecording ?? DEFAULT_MUTE_ON_RECORDING;
+      isSoundEffectsEnabled.value =
+        savedSoundEffects ?? DEFAULT_SOUND_EFFECTS_ENABLED;
       isSmartDictionaryEnabled.value =
         savedSmartDictionary ?? DEFAULT_SMART_DICTIONARY_ENABLED;
 
@@ -934,6 +967,8 @@ export const useSettingsStore = defineStore("settings", () => {
     saveWhisperModel,
     isMuteOnRecordingEnabled,
     saveMuteOnRecording,
+    isSoundEffectsEnabled,
+    saveSoundEffectsEnabled,
     isSmartDictionaryEnabled,
     saveSmartDictionaryEnabled,
     isRecordingAutoCleanupEnabled,

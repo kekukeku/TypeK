@@ -100,6 +100,10 @@
       "muteDescription": "開始錄音時自動靜音系統喇叭，結束後恢復",
       "muteEnabled": "已啟用錄音自動靜音",
       "muteDisabled": "已停用錄音自動靜音",
+      "soundFeedback": "音效回饋",
+      "soundFeedbackDescription": "錄音開始、結束及錯誤時播放提示音效",
+      "soundFeedbackEnabled": "已啟用音效回饋",
+      "soundFeedbackDisabled": "已停用音效回饋",
       "autoStart": "開機自動啟動",
       "autoStartDescription": "登入系統後自動啟動 SayIt",
       "autoStartEnabled": "已啟用開機自啟動",
@@ -317,7 +321,6 @@
     "addPlaceholder": "輸入新的幻覺詞...",
     "addButton": "新增",
     "emptyState": "尚無幻覺詞記錄，系統會自動學習 Whisper 常見幻覺文字",
-    "sourceBuiltin": "內建",
     "sourceAuto": "自動學習",
     "sourceManual": "手動新增",
     "deleteConfirm": "確認刪除此幻覺詞？",
@@ -327,6 +330,6 @@
     "localeHeader": "語言",
     "dateHeader": "新增時間",
     "actionHeader": "操作",
-    "description": "幻覺詞庫用於過濾 Whisper 在無語音時產生的虛假文字。內建詞庫涵蓋常見幻覺模式，系統也會自動學習新的幻覺詞。"
+    "description": "幻覺詞庫用於過濾 Whisper 在無語音時產生的虛假文字。系統會自動學習攔截到的幻覺詞，下次完全相同的文字出現時直接過濾。你也可以手動新增已知的幻覺詞。"
   }
 }

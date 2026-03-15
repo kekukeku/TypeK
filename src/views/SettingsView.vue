@@ -436,6 +436,22 @@ async function handleToggleMuteOnRecording(newValue: boolean) {
   }
 }
 
+const soundFeedbackFeedback = useFeedbackMessage();
+
+async function handleToggleSoundFeedback(newValue: boolean) {
+  try {
+    await settingsStore.saveSoundEffectsEnabled(newValue);
+    soundFeedbackFeedback.show(
+      "success",
+      newValue
+        ? t("settings.app.soundFeedbackEnabled")
+        : t("settings.app.soundFeedbackDisabled"),
+    );
+  } catch (err) {
+    soundFeedbackFeedback.show("error", extractErrorMessage(err));
+  }
+}
+
 // ── 介面語言 ──────────────────────────────────────────────
 const localeFeedback = useFeedbackMessage();
 
@@ -594,6 +610,7 @@ onBeforeUnmount(() => {
   enhancementThresholdFeedback.clearTimer();
   modelFeedback.clearTimer();
   muteOnRecordingFeedback.clearTimer();
+  soundFeedbackFeedback.clearTimer();
   localeFeedback.clearTimer();
   transcriptionLocaleFeedback.clearTimer();
   autoStartFeedback.clearTimer();
@@ -1332,6 +1349,34 @@ onBeforeUnmount(() => {
             "
           >
             {{ muteOnRecordingFeedback.message.value }}
+          </p>
+        </transition>
+
+        <div class="border-t border-border" />
+
+        <div class="flex items-center justify-between">
+          <div>
+            <Label for="sound-feedback">{{ $t("settings.app.soundFeedback") }}</Label>
+            <p class="text-sm text-muted-foreground">{{ $t("settings.app.soundFeedbackDescription") }}</p>
+          </div>
+          <Switch
+            id="sound-feedback"
+            :model-value="settingsStore.isSoundEffectsEnabled"
+            @update:model-value="handleToggleSoundFeedback"
+          />
+        </div>
+
+        <transition name="feedback-fade">
+          <p
+            v-if="soundFeedbackFeedback.message.value !== ''"
+            class="text-sm"
+            :class="
+              soundFeedbackFeedback.type.value === 'success'
+                ? 'text-green-400'
+                : 'text-red-400'
+            "
+          >
+            {{ soundFeedbackFeedback.message.value }}
           </p>
         </transition>
 

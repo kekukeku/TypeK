@@ -14,6 +14,7 @@ import {
   HALLUCINATION_LEARNED,
 } from "../composables/useTauriEvents";
 import { useI18n } from "vue-i18n";
+import { useSettingsStore } from "../stores/useSettingsStore";
 
 const { t } = useI18n();
 
@@ -221,7 +222,9 @@ function showLearnedNotification(
       ? formatHallucinationLearnedText(termList)
       : formatLearnedText(termList);
   visualMode.value = "learned";
-  void invoke("play_learned_sound").catch(() => {});
+  if (useSettingsStore().isSoundEffectsEnabled) {
+    void invoke("play_learned_sound").catch(() => {});
+  }
   clearLearnedTimer();
   learnedTimer = setTimeout(() => {
     visualMode.value = "collapsing";

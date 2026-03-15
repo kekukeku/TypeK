@@ -435,6 +435,7 @@ pub fn run() {
             plugins::transcription::retranscribe_from_file,
             plugins::sound_feedback::play_start_sound,
             plugins::sound_feedback::play_stop_sound,
+            plugins::sound_feedback::play_error_sound,
             plugins::sound_feedback::play_learned_sound
         ])
         .setup(|app| {
