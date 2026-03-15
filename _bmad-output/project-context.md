@@ -245,7 +245,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 #### SettingsKey 跨視窗同步
 
-- **`SettingsKey` 型別** — 定義 `settings:updated` event 的 `key` 欄位（`events.ts`）：`hotkey` | `apiKey` | `aiPrompt` | `enhancementThreshold` | `llmModel` | `vocabularyAnalysisModel` | `whisperModel` | `muteOnRecording` | `smartDictionaryEnabled` | `locale` | `transcriptionLocale` | `soundEffectsEnabled`
+- **`SettingsKey` 型別** — 定義 `settings:updated` event 的 `key` 欄位（`events.ts`）：`hotkey` | `apiKey` | `aiPrompt` | `enhancementThreshold` | `llmModel` | `vocabularyAnalysisModel` | `whisperModel` | `muteOnRecording` | `smartDictionaryEnabled` | `locale` | `transcriptionLocale` | `soundEffectsEnabled` | `promptMode`
 - **智慧字典開關** — `isSmartDictionaryEnabled`（macOS 預設啟用，Windows 預設關閉——因 Windows 尚未支援 `read_focused_text_field` AX API）
 - **字典分析模型獨立** — `selectedVocabularyAnalysisModelId` 與 `selectedLlmModelId` 分開儲存和選擇，各自有獨立的模型清單和設定 UI
 
@@ -256,7 +256,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - **Vue 元件翻譯** — `const { t } = useI18n()` + template 中 `$t('key')` / `{{ t('key') }}`
 - **lib/store 層翻譯** — `i18n.global.t('key', params)` — 因為不在 Vue 元件 setup 中，不能用 `useI18n()`
 - **翻譯檔案** — `src/i18n/locales/{locale}.json`，key 結構按功能分組（`settings.*`, `dashboard.*`, `errors.*`, `voiceFlow.*` 等），5 個檔案的 key 集合必須完全一致
-- **AI Prompt 多語言** — `src/i18n/prompts.ts` 集中管理各語言預設 prompt（prompt 過長不適合 JSON），`getDefaultPromptForLocale(locale)` 取得對應語言版本
+- **AI Prompt 多語言** — `src/i18n/prompts.ts` 管理三層 prompt map：`LEGACY_DEFAULT_PROMPTS`（遷移用）、`MINIMAL_PROMPTS`、`ACTIVE_PROMPTS`。函式：`getMinimalPromptForLocale()`、`getPromptForModeAndLocale(mode, locale)`、`isKnownDefaultPrompt()`
 - **語言偵測** — `detectSystemLocale()` 5 層匹配：精確 → script subtag（`zh-Hant` → `zh-TW`）→ 語言前綴 → 裸 `zh` → fallback `zh-TW`（保護既有中文使用者升級路徑）
 - **HTML lang 屬性** — `document.documentElement.lang` 隨 locale 更新（zh-TW → `zh-Hant`、zh-CN → `zh-Hans`）
 
@@ -287,18 +287,18 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - **型別** — `TranscriptionLocale = SupportedLocale | "auto"`（定義於 `languageConfig.ts`）
 - **UI locale vs 轉錄 locale** — `selectedLocale`（UI 語言）和 `selectedTranscriptionLocale`（Whisper 語言）獨立儲存，使用者可選不同語言組合（如 UI 繁中 + Whisper 英文）
 - **`selectedTranscriptionLocale` state** — 存在 `useSettingsStore`，持久化 key `selectedTranscriptionLocale`，首次遷移預設為 UI locale
-- **`saveTranscriptionLocale(locale)`** — 儲存轉錄語言，觸發 prompt auto-switch + `settings:updated` event
+- **`saveTranscriptionLocale(locale)`** — 儲存轉錄語言 + `settings:updated` event
 - **`getWhisperLanguageCode()`** — 回傳 `string | null`，根據 `selectedTranscriptionLocale` 解析：`"auto"` → `null`（Whisper 自動偵測），具體語言 → 對應 Whisper code
 - **`getWhisperCodeForTranscriptionLocale(locale)`** — 純函式版本（`languageConfig.ts`），`"auto"` → `null`
 - **`TRANSCRIPTION_LANGUAGE_OPTIONS`** — 含 `auto` + 5 語言的下拉選單選項陣列（`TranscriptionLanguageOption[]`）
 - **`getEffectivePromptLocale()`** — 內部 helper，解析 prompt 預設值應用哪個 locale：transcription 為 auto 時跟 UI locale，否則跟 transcription locale
 
-#### Prompt 語言連動規則（⚠️ 關鍵行為）
+#### Prompt Mode 機制（⚠️ 關鍵行為）
 
-- **Prompt 跟隨轉錄語言** — 切換轉錄語言時，若當前 prompt 等於舊語言預設值，自動更新為新語言預設；已自訂則保留
-- **Auto 模式下跟隨 UI 語言** — 轉錄語言為 `auto` 時，切換 UI 語言也會觸發 prompt 更新（同上條件）
-- **⚠️ 僅記憶體更新，不自動持久化** — prompt auto-switch 只修改 `aiPrompt.value`（記憶體），**不呼叫** `store.set("aiPrompt")`。使用者必須在設定頁面手動按「儲存」才會持久化。這是為了避免系統未經使用者同意就覆蓋 prompt
-- **`refreshCrossWindowSettings()` 順序** — 必須先載入 `selectedLocale` + `selectedTranscriptionLocale`，再計算 `aiPrompt` fallback（因為 `getEffectivePromptLocale()` 依賴這兩個值）
+- **三種模式** — `PromptMode = "minimal" | "active" | "custom"`，持久化 key `promptMode`，預設 `"active"`
+- **preset 模式（minimal/active）** — `getAiPrompt()` 即時計算，呼叫 `getPromptForModeAndLocale(mode, locale)` 自動跟隨 locale 切換，無需手動同步
+- **custom 模式** — 使用者自訂 prompt，切語言不影響 prompt 內容
+- **`refreshCrossWindowSettings()` 順序** — 必須先載入 `selectedLocale` + `selectedTranscriptionLocale`，再載入 `promptMode`，最後計算 `aiPrompt` fallback（因為 `getEffectivePromptLocale()` 依賴這些值）
 
 #### Tailwind CSS v4
 
@@ -393,7 +393,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 | `auto-updater.test.ts` | 自動更新流程（UpdateCheckResult） |
 | `use-voice-flow-store.test.ts` | 錄音→轉錄→AI 整理流程狀態（mock Tauri invoke） |
 | `use-history-store.test.ts` | 歷史記錄 CRUD + 統計查詢 |
-| `use-settings-store.test.ts` | 設定讀寫（hotkey, API Key, prompt） |
+| `use-settings-store.test.ts` | 設定讀寫（hotkey, API Key, prompt, prompt mode 遷移） |
 | `use-settings-store-autostart.test.ts` | 開機自啟動邏輯 |
 | `api-pricing.test.ts` | API 費用計算邏輯 |
 | `format-utils.test.ts` | 時間/文字格式化工具 |
@@ -465,7 +465,7 @@ src/
 ├── i18n/                    # 多語言國際化
 │   ├── index.ts             # createI18n() instance（非 singleton，各 WebView 獨立）
 │   ├── languageConfig.ts    # SupportedLocale、TranscriptionLocale 型別、LANGUAGE_OPTIONS、TRANSCRIPTION_LANGUAGE_OPTIONS、detectSystemLocale()、getWhisperCodeForTranscriptionLocale()
-│   ├── prompts.ts           # 各語言預設 AI Prompt（getDefaultPromptForLocale）
+│   ├── prompts.ts           # 三層 AI Prompt map（getMinimalPromptForLocale, getPromptForModeAndLocale, isKnownDefaultPrompt）
 │   └── locales/             # 翻譯 JSON 檔（5 語言，key 結構必須一致）
 │       ├── zh-TW.json       # 繁體中文（基準語言）
 │       ├── en.json          # English（vue-i18n fallbackLocale）
@@ -488,7 +488,7 @@ src/
 │   ├── apiPricing.ts        # API 費用上限計算（Whisper + LLM）
 │   └── utils.ts             # cn() shadcn-vue 工具函式
 ├── stores/               # Pinia stores
-│   ├── useSettingsStore.ts      # 快捷鍵 / API Key / AI Prompt / 開機啟動 / UI locale / 轉錄 locale / Whisper 語言 / 字典分析模型
+│   ├── useSettingsStore.ts      # 快捷鍵 / API Key / AI Prompt / Prompt Mode / 開機啟動 / UI locale / 轉錄 locale / Whisper 語言 / 字典分析模型
 │   ├── useHistoryStore.ts       # 歷史記錄 CRUD + Dashboard 統計 + 分頁
 │   ├── useVocabularyStore.ts    # 詞彙字典 CRUD + 權重系統 + AI 推薦詞管理
 │   ├── useHallucinationStore.ts   # 幻覺詞庫 CRUD + 偵測查詢 + 舊版 builtin 清理
@@ -498,7 +498,7 @@ src/
 │   ├── HistoryView.vue      # 歷史記錄搜尋與管理
 │   ├── DictionaryView.vue   # 詞彙字典 CRUD
 │   ├── HallucinationView.vue  # 幻覺詞庫管理（自動學習/手動新增兩類）
-│   └── SettingsView.vue     # 快捷鍵 / API Key / AI Prompt 設定
+│   └── SettingsView.vue     # 快捷鍵 / API Key / AI Prompt / Prompt Mode 切換 設定
 ├── types/                # TypeScript 型別定義
 │   ├── index.ts             # HudStatus（含 cancelled）, TriggerMode, HudTargetPosition 等共用型別
 │   ├── transcription.ts     # TranscriptionRecord, DashboardStats, ApiUsageRecord, DailyUsageTrend
@@ -628,8 +628,8 @@ src/
 - **❌ 字串解析提取結構化資訊** — 禁止用 regex 從 `error.message` 提取 status code 等資訊（如 `match(/：(\d+)/)`），必須用 Error class 屬性（如 `EnhancerApiError.statusCode`）
 - **❌ 在 lib 層使用 `useI18n()`** — `useI18n()` 只能在 Vue 元件 `<script setup>` 中使用，lib/store 層必須用 `i18n.global.t()`
 - **❌ 新增翻譯鍵但不同步所有 locale 檔案** — 5 個 locale JSON 的 key 結構必須完全一致，新增鍵時必須同時更新所有檔案
-- **❌ 語言切換時自動持久化 prompt** — prompt auto-switch 只寫記憶體（`aiPrompt.value`），**禁止**呼叫 `store.set("aiPrompt")`。使用者必須手動儲存，避免系統未經同意覆蓋自訂 prompt
-- **❌ `refreshCrossWindowSettings` 中先算 prompt 再載 transcription locale** — 必須先載入 `selectedLocale` + `selectedTranscriptionLocale`，再計算 `aiPrompt` fallback，否則 `getEffectivePromptLocale()` 會用到舊值
+- **❌ preset 模式下手動持久化 prompt 文字** — `promptMode` 為 `minimal` 或 `active` 時，prompt 由 `getAiPrompt()` 即時計算，禁止額外呼叫 `store.set("aiPrompt")`
+- **❌ `refreshCrossWindowSettings` 中先算 prompt 再載 locale/promptMode** — 必須先載入 `selectedLocale` + `selectedTranscriptionLocale` + `promptMode`，再計算 `aiPrompt` fallback，否則 `getEffectivePromptLocale()` 會用到舊值
 - **❌ 硬編碼模型 ID** — 模型 ID 必須從 `modelRegistry.ts` 的 type union（`LlmModelId` / `VocabularyAnalysisModelId` / `WhisperModelId`）取值，禁止字串硬編碼。新增/移除模型時必須同時更新 type、清單、預設值
 - **❌ 忽略下架模型遷移** — 新模型取代舊模型時必須在 `DECOMMISSIONED_MODEL_MAP` 加入舊 ID → 新 ID 映射，否則舊版使用者升級後設定會 fallback 到預設而非指定替代
 - **❌ 字典分析使用 enhancer 模型清單** — 字典分析（`vocabularyAnalyzer.ts`）和文字整理（`enhancer.ts`）使用完全獨立的模型清單（`VOCABULARY_ANALYSIS_MODEL_LIST` vs `LLM_MODEL_LIST`）和 ID 型別（`VocabularyAnalysisModelId` vs `LlmModelId`），不可混用

@@ -128,6 +128,7 @@
 | 表單輸入 | 原生 `<input>` / `<select>` / `<textarea>` | `Input` / `Select` / `Textarea` |
 | 表格 | 原生 `<table>` | `Table` + `TableHeader` + `TableBody` 等 |
 | 開關 | 原生 checkbox | `Switch` |
+| 選項組 | 原生 `<input type="radio">` | `RadioGroup` + `RadioGroupItem` |
 
 ### 元件 API 規範
 
@@ -136,6 +137,7 @@
 - **Select 綁定**：`:model-value` + `@update:model-value`
 - **Label 無障礙**：Label 必須加 `for` 屬性，對應控制項加 `id`
 - **Badge variant**：用 `variant="secondary"` 等 prop，不用 class 覆蓋整套樣式
+- **RadioGroup 綁定**：`:model-value` + `@update:model-value`，payload 型別為 `AcceptableValue`（需 runtime narrowing）
 - **RouterLink 在 Menu 中**：`<SidebarMenuButton as-child>` 包裹 `<RouterLink>`
 
 ### 樣式規則
@@ -152,7 +154,7 @@
 | `*Record` | SQLite 資料行 | `TranscriptionRecord` |
 | `*Config` | 設定物件 | `HotkeyConfig` |
 | `*Entry` | 字典/列表項目 | `VocabularyEntry` |
-| `*Dto` | Store 間傳遞 | `SettingsDto` |
+| `*Dto` | Store 間傳遞 | — |
 | `*Handle` | 資源控制 | `AudioAnalyserHandle` |
 
 ## SQLite 映射規則
