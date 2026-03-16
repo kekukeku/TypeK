@@ -3,7 +3,7 @@
  *
  * 二層偵測邏輯（純物理信號）：
  *  Layer 1: 語速異常（錄音 < 1 秒但文字 > 10 字）
- *  Layer 2: 無人聲偵測（靜音 / 極低 RMS / 低 RMS + 高 NSP）
+ *  Layer 2: 無人聲偵測（靜音 / 低 RMS + 高 NSP 聯合判斷）
  */
 
 // ── 常數 ──
@@ -14,11 +14,9 @@ export const SPEED_ANOMALY_MAX_DURATION_MS = 1000;
 export const SPEED_ANOMALY_MIN_CHARS = 10;
 /** Layer 2a 靜音峰值能量門檻（0.0 = 完全靜音, 1.0 = 最大音量） */
 export const SILENCE_PEAK_ENERGY_THRESHOLD = 0.02;
-/** Layer 2b 極低 RMS 門檻 — 低於此值幾乎確定無人聲 */
-export const SILENCE_RMS_HARD_THRESHOLD = 0.008;
-/** Layer 2c 低 RMS 門檻 — 搭配高 NSP 聯合判斷（人聲 RMS ≥ 0.03，背景噪音 RMS ≈ 0.005~0.02） */
-export const SILENCE_RMS_SOFT_THRESHOLD = 0.015;
-/** Layer 2c NSP 門檻（Whisper 認為「可能無語音」的信心度） */
+/** Layer 2b 低 RMS 門檻 — 搭配高 NSP 聯合判斷（人聲 RMS ≥ 0.03，背景噪音 RMS ≈ 0.005~0.02） */
+export const SILENCE_RMS_THRESHOLD = 0.015;
+/** Layer 2b NSP 門檻（Whisper 認為「可能無語音」的信心度） */
 export const SILENCE_NSP_THRESHOLD = 0.7;
 
 // ── 型別 ──
@@ -43,7 +41,7 @@ export interface HallucinationDetectionResult {
  * 二層幻覺偵測邏輯（純物理信號）。
  *
  * Layer 1: 語速異常 — 錄音不到 1 秒但 Whisper 回傳超過 10 字，物理上不可能。
- * Layer 2: 無人聲 — 靜音（peak < 0.02）、極低 RMS（< 0.008）、或低 RMS + 高 NSP 聯合判斷。
+ * Layer 2: 無人聲 — 靜音（peak < 0.02）、或低 RMS + 高 NSP 聯合判斷。
  */
 export function detectHallucination(
   params: HallucinationDetectionParams,
@@ -70,14 +68,12 @@ export function detectHallucination(
     };
   }
 
-  // Layer 2: 無人聲偵測（合併靜音 + 背景噪音判斷）
+  // Layer 2: 無人聲偵測
   // 2a: 完全靜音 — 麥克風確認無任何聲音
-  // 2b: 極低 RMS — 幾乎確定無人聲（NSP 可能為 0，Whisper 對幻覺有時很自信）
-  // 2c: 低 RMS + 高 NSP — RMS 在灰色地帶但 Whisper 也認為無語音
+  // 2b: 低 RMS + 高 NSP — Whisper 也認為無語音才攔截（避免小聲說話被誤判）
   if (
     peakEnergyLevel < SILENCE_PEAK_ENERGY_THRESHOLD ||
-    rmsEnergyLevel < SILENCE_RMS_HARD_THRESHOLD ||
-    (rmsEnergyLevel < SILENCE_RMS_SOFT_THRESHOLD &&
+    (rmsEnergyLevel < SILENCE_RMS_THRESHOLD &&
       noSpeechProbability > SILENCE_NSP_THRESHOLD)
   ) {
     return {

@@ -4,8 +4,7 @@ import {
   SPEED_ANOMALY_MAX_DURATION_MS,
   SPEED_ANOMALY_MIN_CHARS,
   SILENCE_PEAK_ENERGY_THRESHOLD,
-  SILENCE_RMS_HARD_THRESHOLD,
-  SILENCE_RMS_SOFT_THRESHOLD,
+  SILENCE_RMS_THRESHOLD,
   SILENCE_NSP_THRESHOLD,
 } from "../../src/lib/hallucinationDetector";
 
@@ -21,8 +20,7 @@ describe("hallucinationDetector.ts", () => {
       expect(SPEED_ANOMALY_MAX_DURATION_MS).toBe(1000);
       expect(SPEED_ANOMALY_MIN_CHARS).toBe(10);
       expect(SILENCE_PEAK_ENERGY_THRESHOLD).toBe(0.02);
-      expect(SILENCE_RMS_HARD_THRESHOLD).toBe(0.008);
-      expect(SILENCE_RMS_SOFT_THRESHOLD).toBe(0.015);
+      expect(SILENCE_RMS_THRESHOLD).toBe(0.015);
       expect(SILENCE_NSP_THRESHOLD).toBe(0.7);
     });
   });
@@ -115,8 +113,8 @@ describe("hallucinationDetector.ts", () => {
       });
     });
 
-    describe("2b: 極低 RMS", () => {
-      it("[P0] rms < 0.008 → 幻覺（即使 NSP=0）", () => {
+    describe("2b: 低 RMS + 高 NSP 聯合判斷", () => {
+      it("[P0] 低 RMS + 低 NSP → 放行（小聲說話不應被誤判）", () => {
         const result = detectHallucination({
           rawText: "MING PAO CANADA // MING PAO TORONTO",
           recordingDurationMs: 1388,
@@ -125,25 +123,10 @@ describe("hallucinationDetector.ts", () => {
           noSpeechProbability: 0.0,
         });
 
-        expect(result.isHallucination).toBe(true);
-        expect(result.reason).toBe("no-speech-detected");
-      });
-
-      it("[P0] rms 恰好等於 hard 門檻 → 不觸發 2b（進入 2c 判斷）", () => {
-        const result = detectHallucination({
-          rawText: "一些文字",
-          recordingDurationMs: 2000,
-          peakEnergyLevel: 0.15,
-          rmsEnergyLevel: SILENCE_RMS_HARD_THRESHOLD,
-          noSpeechProbability: 0.3,
-        });
-
-        // rms = 0.008，不滿足 < 0.008；NSP = 0.3 不滿足 > 0.7 → 放行
+        // RMS 很低但 NSP 也低（Whisper 認為有人說話）→ 放行
         expect(result.isHallucination).toBe(false);
       });
-    });
 
-    describe("2c: 低 RMS + 高 NSP 聯合判斷", () => {
       it("[P0] rms < 0.015 且 NSP > 0.7 → 幻覺", () => {
         const result = detectHallucination({
           rawText: "MING PAO CANADA // MING PAO TORONTO",
@@ -181,12 +164,12 @@ describe("hallucinationDetector.ts", () => {
         expect(result.isHallucination).toBe(false);
       });
 
-      it("[P0] rms 恰好等於 soft 門檻 → 放行", () => {
+      it("[P0] rms 恰好等於門檻 → 放行", () => {
         const result = detectHallucination({
           rawText: "一些文字",
           recordingDurationMs: 2000,
           peakEnergyLevel: 0.15,
-          rmsEnergyLevel: SILENCE_RMS_SOFT_THRESHOLD,
+          rmsEnergyLevel: SILENCE_RMS_THRESHOLD,
           noSpeechProbability: 0.85,
         });
 
@@ -206,13 +189,26 @@ describe("hallucinationDetector.ts", () => {
       });
     });
 
-    it("[P0] 實際案例重現：peak=0.031, rms=0.0066, NSP=0.000 → 攔截", () => {
+    it("[P0] 實際案例：peak=0.031, rms=0.0066, NSP=0.000 → 放行（NSP 低代表 Whisper 認為有語音）", () => {
       const result = detectHallucination({
         rawText: "MING PAO CANADA // MING PAO TORONTO",
         recordingDurationMs: 1388,
         peakEnergyLevel: 0.031,
         rmsEnergyLevel: 0.0066,
         noSpeechProbability: 0.0,
+      });
+
+      // RMS 低但 NSP 也低 → 不符合聯合判斷條件 → 放行
+      expect(result.isHallucination).toBe(false);
+    });
+
+    it("[P0] 實際案例：peak=0.031, rms=0.0066, NSP=0.900 → 攔截（RMS 低 + NSP 高聯合判斷）", () => {
+      const result = detectHallucination({
+        rawText: "MING PAO CANADA // MING PAO TORONTO",
+        recordingDurationMs: 1388,
+        peakEnergyLevel: 0.031,
+        rmsEnergyLevel: 0.0066,
+        noSpeechProbability: 0.9,
       });
 
       expect(result.isHallucination).toBe(true);
