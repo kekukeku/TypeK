@@ -324,11 +324,14 @@
     },
     "upgradeNotice": {
       "title": "SayIt Update Summary",
-      "item1": "AI enhancement now offers three modes: Minimal, Active (similar to Typeless), Custom",
-      "item2": "Recordings auto-saved — play back or re-transcribe from history",
-      "item3": "Whisper hallucination auto-learning reduces false text on silence",
-      "item4": "Press ESC anytime to cancel recording, transcription, or AI enhancement",
-      "item5": "Sound feedback added (toggle in Settings)",
+      "item1": "1. AI enhancement now offers three modes: Minimal, Active (similar to Typeless), Custom",
+      "item2": "2. Recordings auto-saved — play back or re-transcribe from history",
+      "item3": "3. Whisper hallucination auto-learning reduces false text on silence",
+      "item4": "4. Press ESC anytime to cancel recording, transcription, or AI enhancement",
+      "item5": "5. Sound feedback added (toggle in Settings)",
+      "item6": "6. Fixed database migration failure that could cause history to not display",
+      "item7": "7. Fixed hallucination detection false positive: real speech incorrectly flagged as 'no speech detected'",
+      "item8": "8. Fixed update notification not appearing after upgrade",
       "dismiss": "Got it"
     }
   },

@@ -55,6 +55,8 @@ import {
   type WhisperModelId,
 } from "../lib/modelRegistry";
 
+declare const __APP_VERSION__: string;
+
 const STORE_NAME = "settings.json";
 
 export const DEFAULT_ENHANCEMENT_THRESHOLD_ENABLED = false;
@@ -217,16 +219,6 @@ export const useSettingsStore = defineStore("settings", () => {
         // 舊版升級遷移
         if (!trimmedSavedPrompt || isKnownDefaultPrompt(trimmedSavedPrompt)) {
           promptMode.value = "minimal";
-          // 舊版使用預設 prompt → 標記需要顯示升級提示（排除全新安裝）
-          if (trimmedSavedPrompt) {
-            const hasShown = await store.get<boolean>(
-              "hasShownPromptUpgradeNotice",
-            );
-            if (hasShown === null || hasShown === undefined) {
-              // 寫入 false = 「需要顯示但尚未顯示」，任何視窗都可讀到
-              await store.set("hasShownPromptUpgradeNotice", false);
-            }
-          }
         } else {
           promptMode.value = "custom";
         }
@@ -501,14 +493,26 @@ export const useSettingsStore = defineStore("settings", () => {
     }
   }
 
-  /** 只由 Dashboard (main-window.ts) 呼叫，消費升級提示 flag */
+  /** 只由 Dashboard (main-window.ts) 呼叫，比對版本號決定是否顯示升級提示 */
   async function consumeUpgradeNotice() {
     try {
       const store = await load(STORE_NAME);
-      const hasShown = await store.get<boolean>("hasShownPromptUpgradeNotice");
-      if (hasShown === false) {
+      const lastSeenVersion = await store.get<string>("lastSeenVersion");
+
+      if (lastSeenVersion === null || lastSeenVersion === undefined) {
+        // 區分首次安裝 vs 舊版升級：有 API key = 老使用者
+        const existingApiKey = await store.get<string>("groqApiKey");
+        if (existingApiKey) {
+          showPromptUpgradeNotice.value = true;
+        }
+        await store.set("lastSeenVersion", __APP_VERSION__);
+        await store.save();
+        return;
+      }
+
+      if (lastSeenVersion !== __APP_VERSION__) {
         showPromptUpgradeNotice.value = true;
-        await store.set("hasShownPromptUpgradeNotice", true);
+        await store.set("lastSeenVersion", __APP_VERSION__);
         await store.save();
       }
     } catch (err) {

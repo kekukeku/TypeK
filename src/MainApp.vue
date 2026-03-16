@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   BookOpen,
   Download,
@@ -74,6 +75,10 @@ type UpdateUiState = "idle" | "checking" | "downloading" | "ready-to-install" | 
 const updateState = ref<UpdateUiState>("idle");
 const availableVersion = ref("");
 const updateFeedback = useFeedbackMessage();
+const AUTO_CHECK_INITIAL_DELAY_MS = 5_000;
+const AUTO_CHECK_INTERVAL_MS = 15 * 60_000; // 15 分鐘
+let autoCheckTimeoutId: ReturnType<typeof setTimeout> | null = null;
+let autoCheckIntervalId: ReturnType<typeof setInterval> | null = null;
 
 // AlertDialog 控制
 const showManualUpdateDialog = ref(false);
@@ -91,6 +96,8 @@ watch(() => settingsStore.showPromptUpgradeNotice, (shouldShow) => {
 
 // ── 流程 1：自動偵測（靜默檢查 → 靜默下載 → 通知安裝） ──
 async function autoCheckAndDownload() {
+  if (updateState.value !== "idle") return;
+
   try {
     const { checkForAppUpdate, downloadUpdate } = await import("./lib/autoUpdater");
     const result = await checkForAppUpdate();
@@ -103,6 +110,12 @@ async function autoCheckAndDownload() {
     await downloadUpdate();
 
     updateState.value = "ready-to-install";
+
+    // 確保 Dashboard 可見再彈 dialog
+    const currentWindow = getCurrentWindow();
+    await currentWindow.show();
+    await currentWindow.setFocus();
+
     showAutoInstallDialog.value = true;
   } catch (err) {
     console.error("[main-window] Auto update check/download failed:", err);
@@ -241,13 +254,18 @@ onMounted(async () => {
     }
   }
 
-  // 自動檢查更新（靜默）
-  autoCheckAndDownload();
+  // 自動檢查更新：啟動 5 秒後首次檢查，之後每 15 分鐘重查
+  autoCheckTimeoutId = setTimeout(() => {
+    autoCheckAndDownload();
+    autoCheckIntervalId = setInterval(autoCheckAndDownload, AUTO_CHECK_INTERVAL_MS);
+  }, AUTO_CHECK_INITIAL_DELAY_MS);
 });
 
 onUnmounted(() => {
   unlistenVocabularyChanged?.();
   unlistenHallucinationChanged?.();
+  if (autoCheckTimeoutId) clearTimeout(autoCheckTimeoutId);
+  if (autoCheckIntervalId) clearInterval(autoCheckIntervalId);
 });
 </script>
 
@@ -369,6 +387,9 @@ onUnmounted(() => {
             <li>{{ $t("mainApp.upgradeNotice.item3") }}</li>
             <li>{{ $t("mainApp.upgradeNotice.item4") }}</li>
             <li>{{ $t("mainApp.upgradeNotice.item5") }}</li>
+            <li>{{ $t("mainApp.upgradeNotice.item6") }}</li>
+            <li>{{ $t("mainApp.upgradeNotice.item7") }}</li>
+            <li>{{ $t("mainApp.upgradeNotice.item8") }}</li>
           </ul>
         </AlertDialogDescription>
       </AlertDialogHeader>
