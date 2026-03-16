@@ -2,6 +2,15 @@
 
 SayIt 版本更新紀錄。
 
+## [0.8.6](https://github.com/chenjackle45/SayIt/releases/tag/v0.8.6) - 2026-03-16
+
+### Fixed
+
+- 修正歷史紀錄播放錄音在正式版（production build）無聲的問題：macOS 上 convertFileSrc 產生的 asset:// URL 被 CSP 阻擋，改用 Rust IPC 讀取位元組 + Blob URL 播放，dev/production 行為一致
+- 修正快速連點不同紀錄時播放與 UI 狀態不同步的 race condition
+- 播放失敗時新增 Sentry 錯誤回報（原本靜默吞錯）
+- 修正 read_recording_file command 的安全性：改為接受 id 參數，Rust 端組合路徑，避免任意檔案讀取風險
+
 ## [0.8.5](https://github.com/chenjackle45/SayIt/releases/tag/v0.8.5) - 2026-03-16
 
 ### Fixed
