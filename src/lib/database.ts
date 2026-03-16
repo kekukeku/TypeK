@@ -1,6 +1,7 @@
 import Database from "@tauri-apps/plugin-sql";
 
 let db: Database | null = null;
+let initPromise: Promise<Database> | null = null;
 let databaseInitError: string | null = null;
 
 export function getDatabaseInitError(): string | null {
@@ -43,12 +44,25 @@ async function addColumnIfNotExists(
 
 export async function initializeDatabase(): Promise<Database> {
   if (db) return db;
+  // Promise lock：第二個呼叫者等待第一個完成，避免兩視窗同時跑 migration
+  if (initPromise) return initPromise;
 
+  initPromise = doInitializeDatabase();
+  try {
+    return await initPromise;
+  } catch (err) {
+    initPromise = null;
+    throw err;
+  }
+}
+
+async function doInitializeDatabase(): Promise<Database> {
   // 使用 local variable，確保只有 schema 全部建立成功才設定 singleton
   const connection = await Database.load("sqlite:app.db");
 
   await connection.execute("PRAGMA journal_mode = WAL;");
   await connection.execute("PRAGMA synchronous = NORMAL;");
+  await connection.execute("PRAGMA busy_timeout = 5000;");
 
   await connection.execute(`
     CREATE TABLE IF NOT EXISTS transcriptions (
