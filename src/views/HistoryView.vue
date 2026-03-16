@@ -81,6 +81,17 @@ async function handleCopyRawText(record: TranscriptionRecord) {
   }
 }
 
+async function handleDeleteRecord(record: TranscriptionRecord) {
+  try {
+    await historyStore.deleteTranscription(record.id);
+    if (expandedRecordId.value === record.id) {
+      expandedRecordId.value = null;
+    }
+  } catch {
+    // DB 刪除失敗，靜默處理（Sentry 已在 store 層捕獲）
+  }
+}
+
 function cleanupAudio() {
   if (currentAudio) {
     currentAudio.pause();
@@ -107,14 +118,15 @@ async function handlePlayRecording(record: TranscriptionRecord) {
   playingRecordId.value = record.id;
 
   try {
-    const audioData = await invoke<ArrayBuffer>("read_recording_file", {
+    // macOS WKWebView IPC 回傳 number[]，非 macOS 回傳 ArrayBuffer
+    const raw = await invoke<number[]>("read_recording_file", {
       id: record.id,
     });
 
     // 防止 race condition：invoke 回來時已經切換到別的紀錄
     if (playingRecordId.value !== record.id) return;
 
-    const blob = new Blob([audioData], { type: "audio/wav" });
+    const blob = new Blob([new Uint8Array(raw)], { type: "audio/wav" });
     currentBlobUrl = URL.createObjectURL(blob);
     currentAudio = new Audio(currentBlobUrl);
 
@@ -341,6 +353,7 @@ onBeforeUnmount(() => {
                 <Button
                   variant="destructive"
                   size="sm"
+                  @click.stop="handleDeleteRecord(record)"
                 >
                   <Trash2 class="h-3.5 w-3.5 mr-1.5" />
                   {{ $t("history.delete") }}

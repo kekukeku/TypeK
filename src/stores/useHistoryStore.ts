@@ -148,6 +148,14 @@ const UPDATE_ON_RETRY_SUCCESS_SQL = `
   WHERE id = $7
 `;
 
+const DELETE_API_USAGE_BY_TRANSCRIPTION_SQL = `
+  DELETE FROM api_usage WHERE transcription_id = $1
+`;
+
+const DELETE_TRANSCRIPTION_SQL = `
+  DELETE FROM transcriptions WHERE id = $1
+`;
+
 const SELECT_RECENT_SQL = `
   SELECT id, timestamp, raw_text, processed_text,
          recording_duration_ms, transcription_duration_ms, enhancement_duration_ms,
@@ -523,6 +531,23 @@ export const useHistoryStore = defineStore("history", () => {
     }
   }
 
+  async function deleteTranscription(id: string): Promise<void> {
+    const db = getDatabase();
+    try {
+      await db.execute(DELETE_API_USAGE_BY_TRANSCRIPTION_SQL, [id]);
+      await db.execute(DELETE_TRANSCRIPTION_SQL, [id]);
+      transcriptionList.value = transcriptionList.value.filter(
+        (r) => r.id !== id,
+      );
+    } catch (err) {
+      console.error(
+        `[useHistoryStore] deleteTranscription failed: ${extractErrorMessage(err)}`,
+      );
+      captureError(err, { source: "history", step: "delete" });
+      throw err;
+    }
+  }
+
   async function deleteAllRecordingFiles(): Promise<number> {
     const deletedCount = await invoke<number>("delete_all_recordings");
     await clearAllAudioFilePath();
@@ -550,6 +575,7 @@ export const useHistoryStore = defineStore("history", () => {
     refreshDashboard,
     clearAllAudioFilePath,
     clearAudioFilePathByIdList,
+    deleteTranscription,
     deleteAllRecordingFiles,
   };
 });

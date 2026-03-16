@@ -32,7 +32,7 @@
       },
       {
         "label": "main-window",
-        "title": "無為-言",
+        "title": "SayIt-言",
         "url": "main-window.html",
         "width": 960,
         "height": 680,
@@ -51,9 +51,7 @@
       "csp": "default-src 'self'; connect-src 'self' https://api.groq.com; style-src 'self' 'unsafe-inline'; script-src 'self'; media-src 'self' blob: http://asset.localhost",
       "assetProtocol": {
         "enable": true,
-        "scope": [
-          "$APPDATA/recordings/**"
-        ]
+        "scope": ["$APPDATA/recordings/**"]
       }
     }
   },
