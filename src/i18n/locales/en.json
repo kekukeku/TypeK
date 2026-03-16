@@ -320,15 +320,16 @@
     },
     "upgradeNotice": {
       "title": "SayIt Update Summary",
-      "item1": "1. AI enhancement now offers three modes: Minimal, Active (similar to Typeless), Custom",
-      "item2": "2. Recordings auto-saved — play back or re-transcribe from history",
-      "item3": "3. Whisper hallucination auto-learning reduces false text on silence",
-      "item4": "4. Press ESC anytime to cancel recording, transcription, or AI enhancement",
-      "item5": "5. Sound feedback added (toggle in Settings)",
-      "item6": "6. Fixed database migration failure that could cause history to not display",
-      "item7": "7. Fixed hallucination detection false positive: real speech incorrectly flagged as 'no speech detected'",
-      "item8": "8. Fixed update notification not appearing after upgrade",
-      "item9": "9. Fixed \"database is locked\" or \"no such table\" error on first launch after update",
+      "item1": "1. AI enhancement now offers three modes: Minimal, Active, Custom",
+      "item2": "2. Default AI enhancement model switched to Kimi K2 for better quality",
+      "item3": "3. Recordings auto-saved, history supports playback and re-transcription",
+      "item4": "4. Press ESC to cancel recording, transcription, or AI enhancement anytime",
+      "item5": "5. New sound feedback (toggle in settings)",
+      "item6": "6. Fixed AI enhancement answering questions in transcripts instead of formatting text",
+      "item7": "7. Simplified hallucination detection: removed term dictionary, now uses pure energy-based checks to avoid false positives",
+      "item8": "8. Fixed soft speech incorrectly detected as no speech",
+      "item9": "9. Fixed history recording playback silent in production builds",
+      "item10": "10. Fixed database upgrade errors (database is locked, no such table)",
       "dismiss": "Got it"
     }
   }

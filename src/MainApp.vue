@@ -379,6 +379,7 @@ onUnmounted(() => {
             <li>{{ $t("mainApp.upgradeNotice.item7") }}</li>
             <li>{{ $t("mainApp.upgradeNotice.item8") }}</li>
             <li>{{ $t("mainApp.upgradeNotice.item9") }}</li>
+            <li>{{ $t("mainApp.upgradeNotice.item10") }}</li>
           </ul>
         </AlertDialogDescription>
       </AlertDialogHeader>
