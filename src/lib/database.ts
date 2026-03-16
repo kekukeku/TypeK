@@ -140,19 +140,21 @@ export async function initializeDatabase(): Promise<Database> {
   const v3CurrentVersion = v3VersionRows[0]?.version ?? 1;
 
   if (v3CurrentVersion < 3) {
+    // DDL（ALTER TABLE ADD COLUMN）必須在 transaction 外執行
+    // tauri-plugin-sql 驅動下，DDL 在顯式 transaction 內對後續語句不可見
+    await addColumnIfNotExists(
+      connection,
+      "vocabulary",
+      "weight INTEGER NOT NULL DEFAULT 1",
+    );
+    await addColumnIfNotExists(
+      connection,
+      "vocabulary",
+      "source TEXT NOT NULL DEFAULT 'manual'",
+    );
+
     await connection.execute("BEGIN TRANSACTION;");
     try {
-      // vocabulary 表新增 weight + source 欄位
-      await addColumnIfNotExists(
-        connection,
-        "vocabulary",
-        "weight INTEGER NOT NULL DEFAULT 1",
-      );
-      await addColumnIfNotExists(
-        connection,
-        "vocabulary",
-        "source TEXT NOT NULL DEFAULT 'manual'",
-      );
       await connection.execute(
         "CREATE INDEX IF NOT EXISTS idx_vocabulary_weight ON vocabulary(weight DESC);",
       );
@@ -213,18 +215,20 @@ export async function initializeDatabase(): Promise<Database> {
   const v4CurrentVersion = v4VersionRows[0]?.version ?? 1;
 
   if (v4CurrentVersion < 4) {
+    // DDL（ALTER TABLE ADD COLUMN）必須在 transaction 外執行
+    await addColumnIfNotExists(
+      connection,
+      "transcriptions",
+      "audio_file_path TEXT",
+    );
+    await addColumnIfNotExists(
+      connection,
+      "transcriptions",
+      "status TEXT NOT NULL DEFAULT 'success'",
+    );
+
     await connection.execute("BEGIN TRANSACTION;");
     try {
-      await addColumnIfNotExists(
-        connection,
-        "transcriptions",
-        "audio_file_path TEXT",
-      );
-      await addColumnIfNotExists(
-        connection,
-        "transcriptions",
-        "status TEXT NOT NULL DEFAULT 'success'",
-      );
       await connection.execute(
         "CREATE INDEX IF NOT EXISTS idx_transcriptions_status ON transcriptions(status);",
       );
