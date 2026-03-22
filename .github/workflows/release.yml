@@ -22,19 +22,19 @@ jobs:
           - platform: macos-latest
             args: --target aarch64-apple-darwin
             rust_target: aarch64-apple-darwin
-            stable_name: SayIt-mac-arm64.dmg
+            stable_name: TypeK
             dmg_glob: "*.dmg"
             upload_sourcemaps: "true"
           - platform: macos-latest
             args: --target x86_64-apple-darwin
             rust_target: x86_64-apple-darwin
-            stable_name: SayIt-mac-x64.dmg
+            stable_name: TypeK
             dmg_glob: "*.dmg"
             upload_sourcemaps: "false"
           - platform: windows-latest
             args: ""
             rust_target: ""
-            stable_name: SayIt-windows-x64.exe
+            stable_name: TypeK
             dmg_glob: ""
             upload_sourcemaps: "false"
 
@@ -56,8 +56,8 @@ jobs:
 
           echo "RELEASE_TAG=$RAW_TAG" >> "$GITHUB_ENV"
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_ENV"
-          echo "SENTRY_RELEASE=sayit@$RELEASE_VERSION" >> "$GITHUB_ENV"
-          echo "VITE_SENTRY_RELEASE=sayit@$RELEASE_VERSION" >> "$GITHUB_ENV"
+          echo "SENTRY_RELEASE=typek@$RELEASE_VERSION" >> "$GITHUB_ENV"
+          echo "VITE_SENTRY_RELEASE=typek@$RELEASE_VERSION" >> "$GITHUB_ENV"
 
       - uses: actions/setup-node@v4
         with:
@@ -100,7 +100,7 @@ jobs:
           VITE_SENTRY_SOURCEMAPS_ENABLED: ${{ matrix.upload_sourcemaps }}
         with:
           tagName: ${{ env.RELEASE_TAG }}
-          releaseName: "SayIt v${{ env.RELEASE_VERSION }}"
+          releaseName: "TypeK v${{ env.RELEASE_VERSION }}"
           releaseBody: "See the assets to download and install this version."
           releaseDraft: true
           prerelease: false
@@ -133,8 +133,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           DMG=$(find src-tauri/target -path "*/bundle/dmg/*.dmg" | head -1)
-          cp "$DMG" "${{ matrix.stable_name }}"
-          gh release upload "$RELEASE_TAG" "${{ matrix.stable_name }}" --clobber
+          STABLE_NAME="${{ matrix.stable_name }}_${RELEASE_VERSION}_aarch64.dmg"
+          cp "$DMG" "$STABLE_NAME"
+          gh release upload "$RELEASE_TAG" "$STABLE_NAME" --clobber
 
       - name: Upload stable-name asset (Windows)
         if: runner.os == 'Windows'
@@ -143,8 +144,9 @@ jobs:
         shell: pwsh
         run: |
           $exe = Get-ChildItem -Path "src-tauri\target" -Recurse -Filter "*-setup.exe" | Select-Object -First 1
-          Copy-Item $exe.FullName "${{ matrix.stable_name }}"
-          gh release upload "$env:RELEASE_TAG" "${{ matrix.stable_name }}" --clobber
+          $StableName = "${{ matrix.stable_name }}_${env:RELEASE_VERSION}_x64.exe"
+          Copy-Item $exe.FullName "$StableName"
+          gh release upload "$env:RELEASE_TAG" "$StableName" --clobber
 
   publish-release:
     needs: build
