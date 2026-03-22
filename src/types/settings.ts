@@ -30,6 +30,3 @@ export interface HotkeyConfig {
   triggerMode: TriggerMode;
 }
 
-export const PROMPT_MODE_VALUES = ["minimal", "active", "custom"] as const;
-export type PromptMode = (typeof PROMPT_MODE_VALUES)[number];
-export type PresetPromptMode = Exclude<PromptMode, "custom">;

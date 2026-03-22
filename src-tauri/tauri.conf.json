@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicedoc/resources/main/tauri-conf-v2.json",
-  "productName": "SayIt",
-  "version": "0.8.7",
-  "identifier": "com.sayit.app",
+  "productName": "TypeK",
+  "version": "0.9.0",
+  "identifier": "com.typek.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -15,7 +15,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "SayIt",
+        "title": "TypeK",
         "width": 400,
         "height": 100,
         "x": null,
@@ -32,7 +32,7 @@
       },
       {
         "label": "main-window",
-        "title": "SayIt-言",
+        "title": "TypeK",
         "url": "main-window.html",
         "width": 960,
         "height": 680,
@@ -60,7 +60,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://github.com/chenjackle45/SayIt/releases/latest/download/latest.json"
+        "https://github.com/kevin880118/TypeK/releases/latest/download/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDBENjAzMzYyRTMxMTNGQjgKUldTNFB4SGpZak5nRFJoYUpxR0RGMkZyZUhHYStyNzgxWEwxVHR2ZEFZMzh3eFQ1QlpXVEJLVGUK"
     }

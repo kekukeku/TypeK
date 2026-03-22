@@ -1,21 +1,33 @@
 import { createI18n } from "vue-i18n";
 import { FALLBACK_LOCALE } from "./languageConfig";
 import zhTW from "./locales/zh-TW.json";
-import en from "./locales/en.json";
-import ja from "./locales/ja.json";
+import enUS from "./locales/en-US.json";
+import jaJP from "./locales/ja-JP.json";
 import zhCN from "./locales/zh-CN.json";
-import ko from "./locales/ko.json";
+import koKR from "./locales/ko-KR.json";
+import frFR from "./locales/fr-FR.json";
+import esES from "./locales/es-ES.json";
+import ruRU from "./locales/ru-RU.json";
+import thTH from "./locales/th-TH.json";
+import viVN from "./locales/vi-VN.json";
+import arSA from "./locales/ar-SA.json";
 
 const i18n = createI18n({
   legacy: false,
   locale: FALLBACK_LOCALE,
-  fallbackLocale: "en",
+  fallbackLocale: "en-US",
   messages: {
     "zh-TW": zhTW,
-    en,
-    ja,
+    "en-US": enUS,
+    "ja-JP": jaJP,
     "zh-CN": zhCN,
-    ko,
+    "ko-KR": koKR,
+    "fr-FR": frFR,
+    "es-ES": esES,
+    "ru-RU": ruRU,
+    "th-TH": thTH,
+    "vi-VN": viVN,
+    "ar-SA": arSA,
   },
 });
 

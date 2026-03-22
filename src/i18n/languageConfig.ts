@@ -1,4 +1,15 @@
-export type SupportedLocale = "zh-TW" | "en" | "ja" | "zh-CN" | "ko";
+export type SupportedLocale =
+  | "zh-TW"
+  | "en-US"
+  | "ja-JP"
+  | "zh-CN"
+  | "ko-KR"
+  | "fr-FR"
+  | "es-ES"
+  | "ru-RU"
+  | "th-TH"
+  | "vi-VN"
+  | "ar-SA";
 
 export const FALLBACK_LOCALE: SupportedLocale = "zh-TW";
 
@@ -13,38 +24,80 @@ export interface LanguageOption {
 export const LANGUAGE_OPTIONS: LanguageOption[] = [
   {
     locale: "zh-TW",
-    displayName: "\u7E41\u9AD4\u4E2D\u6587",
+    displayName: "\u7E41\u9AD4\u4E2D\u6587", // 繁體中文
     whisperCode: "zh",
     htmlLang: "zh-Hant",
     navigatorPatternList: ["zh-Hant-TW", "zh-Hant", "zh-TW"],
   },
   {
-    locale: "en",
+    locale: "en-US",
     displayName: "English",
     whisperCode: "en",
     htmlLang: "en",
-    navigatorPatternList: ["en"],
+    navigatorPatternList: ["en-US", "en"],
   },
   {
-    locale: "ja",
-    displayName: "\u65E5\u672C\u8A9E",
+    locale: "ja-JP",
+    displayName: "\u65E5\u672C\u8A9E", // 日本語
     whisperCode: "ja",
     htmlLang: "ja",
-    navigatorPatternList: ["ja"],
+    navigatorPatternList: ["ja-JP", "ja"],
   },
   {
     locale: "zh-CN",
-    displayName: "\u7B80\u4F53\u4E2D\u6587",
+    displayName: "\u7B80\u4F53\u4E2D\u6587", // 简体中文
     whisperCode: "zh",
     htmlLang: "zh-Hans",
     navigatorPatternList: ["zh-Hans", "zh-CN"],
   },
   {
-    locale: "ko",
-    displayName: "\uD55C\uAD6D\uC5B4",
+    locale: "ko-KR",
+    displayName: "\uD55C\uAD6D\uC5B4", // 한국어
     whisperCode: "ko",
     htmlLang: "ko",
-    navigatorPatternList: ["ko"],
+    navigatorPatternList: ["ko-KR", "ko"],
+  },
+  {
+    locale: "fr-FR",
+    displayName: "Fran\u00E7ais", // Français
+    whisperCode: "fr",
+    htmlLang: "fr",
+    navigatorPatternList: ["fr-FR", "fr"],
+  },
+  {
+    locale: "es-ES",
+    displayName: "Espa\u00F1ol", // Español
+    whisperCode: "es",
+    htmlLang: "es",
+    navigatorPatternList: ["es-ES", "es"],
+  },
+  {
+    locale: "ru-RU",
+    displayName: "\u0420\u0443\u0441\u0441\u043A\u0438\u0439", // Русский
+    whisperCode: "ru",
+    htmlLang: "ru",
+    navigatorPatternList: ["ru-RU", "ru"],
+  },
+  {
+    locale: "th-TH",
+    displayName: "\u0E44\u0E17\u0E22", // ไทย
+    whisperCode: "th",
+    htmlLang: "th",
+    navigatorPatternList: ["th-TH", "th"],
+  },
+  {
+    locale: "vi-VN",
+    displayName: "Ti\u1EBFng Vi\u1EC7t", // Tiếng Việt
+    whisperCode: "vi",
+    htmlLang: "vi",
+    navigatorPatternList: ["vi-VN", "vi"],
+  },
+  {
+    locale: "ar-SA",
+    displayName: "\u0627\u0644\u0639\u0631\u0628\u064A\u0629", // العربية
+    whisperCode: "ar",
+    htmlLang: "ar",
+    navigatorPatternList: ["ar-SA", "ar"],
   },
 ];
 

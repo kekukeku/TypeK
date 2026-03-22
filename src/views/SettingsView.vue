@@ -31,8 +31,6 @@ import {
   type SupportedLocale,
   type TranscriptionLocale,
 } from "../i18n/languageConfig";
-
-import { PROMPT_MODE_VALUES, type PromptMode } from "../types/settings";
 import {
   Card,
   CardContent,
@@ -259,7 +257,6 @@ let deleteConfirmTimeoutId: ReturnType<typeof setTimeout> | undefined;
 const promptInput = ref("");
 const isSubmittingPrompt = ref(false);
 const promptFeedback = useFeedbackMessage();
-const selectedPromptMode = ref<PromptMode>("minimal");
 const isPresetDirty = ref(false);
 
 const isConfirmingResetPrompt = ref(false);
@@ -268,7 +265,7 @@ const isConfirmingResetPrompt = ref(false);
 watch(
   [() => settingsStore.selectedLocale, () => settingsStore.selectedTranscriptionLocale],
   () => {
-    if (selectedPromptMode.value !== "custom" && !isPresetDirty.value) {
+    if (!isPresetDirty.value) {
       promptInput.value = settingsStore.getAiPrompt();
     }
   },
@@ -330,46 +327,20 @@ async function handleDeleteApiKey() {
 }
 
 async function handleSavePrompt() {
-  const wasModeSwitch = selectedPromptMode.value !== "custom" && isPresetDirty.value;
-  const previousMode = selectedPromptMode.value;
   try {
     isSubmittingPrompt.value = true;
-    // preset 模式下編輯 → 切到 custom
-    if (wasModeSwitch) {
-      await settingsStore.savePromptMode("custom");
-      selectedPromptMode.value = "custom";
-      isPresetDirty.value = false;
-    }
     await settingsStore.saveAiPrompt(promptInput.value);
     promptFeedback.show("success", t("settings.prompt.saved"));
+    isPresetDirty.value = false;
   } catch (err) {
-    if (wasModeSwitch) {
-      await settingsStore.savePromptMode(previousMode).catch(() => {});
-      selectedPromptMode.value = previousMode;
-    }
     promptFeedback.show("error", extractErrorMessage(err));
   } finally {
     isSubmittingPrompt.value = false;
   }
 }
 
-async function handlePromptModeChange(mode: unknown) {
-  if (typeof mode !== "string" || !(PROMPT_MODE_VALUES as readonly string[]).includes(mode)) return;
-  const newMode = mode as PromptMode;
-  const previousMode = selectedPromptMode.value;
-  selectedPromptMode.value = newMode;
-  try {
-    await settingsStore.savePromptMode(newMode);
-    promptInput.value = settingsStore.getAiPrompt();
-    isPresetDirty.value = false;
-  } catch (err) {
-    selectedPromptMode.value = previousMode;
-    promptFeedback.show("error", extractErrorMessage(err));
-  }
-}
-
 function handlePromptInput() {
-  if (selectedPromptMode.value !== "custom" && !isPresetDirty.value) {
+  if (!isPresetDirty.value) {
     isPresetDirty.value = true;
   }
 }
@@ -391,7 +362,6 @@ async function handleResetPrompt() {
   try {
     isSubmittingPrompt.value = true;
     await settingsStore.resetAiPrompt();
-    selectedPromptMode.value = "minimal";
     promptInput.value = settingsStore.getAiPrompt();
     isPresetDirty.value = false;
     promptFeedback.show("success", t("settings.prompt.resetDone"));
@@ -633,7 +603,6 @@ async function handleToggleAutoStart() {
 }
 
 onMounted(async () => {
-  selectedPromptMode.value = settingsStore.promptMode;
   promptInput.value = settingsStore.getAiPrompt();
   isPresetDirty.value = false;
 
@@ -1049,49 +1018,7 @@ onBeforeUnmount(() => {
           {{ $t("settings.prompt.description") }}
         </p>
 
-        <!-- 模式選擇器 -->
-        <div class="space-y-2">
-          <Label>{{ $t("settings.prompt.modeTitle") }}</Label>
-          <RadioGroup
-            :model-value="selectedPromptMode"
-            class="grid grid-cols-3 gap-2"
-            @update:model-value="handlePromptModeChange"
-          >
-            <Label
-              for="mode-minimal"
-              class="flex cursor-pointer items-start gap-2.5 rounded-md border border-border p-3 transition-colors"
-              :class="selectedPromptMode === 'minimal' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'"
-            >
-              <RadioGroupItem id="mode-minimal" value="minimal" class="!size-0 !border-0 !shadow-none overflow-hidden" />
-              <div>
-                <span class="text-sm font-medium">{{ $t("settings.prompt.modeMinimal") }}</span>
-                <p class="text-xs leading-relaxed text-muted-foreground">{{ $t("settings.prompt.modeMinimalDescription") }}</p>
-              </div>
-            </Label>
-            <Label
-              for="mode-active"
-              class="flex cursor-pointer items-start gap-2.5 rounded-md border border-border p-3 transition-colors"
-              :class="selectedPromptMode === 'active' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'"
-            >
-              <RadioGroupItem id="mode-active" value="active" class="!size-0 !border-0 !shadow-none overflow-hidden" />
-              <div>
-                <span class="text-sm font-medium">{{ $t("settings.prompt.modeActive") }}</span>
-                <p class="text-xs leading-relaxed text-muted-foreground">{{ $t("settings.prompt.modeActiveDescription") }}</p>
-              </div>
-            </Label>
-            <Label
-              for="mode-custom"
-              class="flex cursor-pointer items-start gap-2.5 rounded-md border border-border p-3 transition-colors"
-              :class="selectedPromptMode === 'custom' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'"
-            >
-              <RadioGroupItem id="mode-custom" value="custom" class="!size-0 !border-0 !shadow-none overflow-hidden" />
-              <div>
-                <span class="text-sm font-medium">{{ $t("settings.prompt.modeCustom") }}</span>
-                <p class="text-xs leading-relaxed text-muted-foreground">{{ $t("settings.prompt.modeCustomDescription") }}</p>
-              </div>
-            </Label>
-          </RadioGroup>
-        </div>
+
 
         <Textarea
           v-model="promptInput"
@@ -1101,7 +1028,7 @@ onBeforeUnmount(() => {
 
         <div class="flex justify-end gap-2">
           <Button
-            :disabled="isSubmittingPrompt || (selectedPromptMode !== 'custom' && !isPresetDirty)"
+            :disabled="isSubmittingPrompt || !isPresetDirty"
             @click="handleSavePrompt"
           >
             {{ $t("common.save") }}

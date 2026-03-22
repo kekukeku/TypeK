@@ -1,35 +1,36 @@
-# BTalk - 變態輸入法
+# TypeK - 語音輸入法
 
-> 按住就說話，放開感受變態般的輸出速度 — 語音轉書面語桌面工具（科科）
+[閱讀其他語言版本: [English](README_en-US.md) | [日本語](README_ja-JP.md) | [简体中文](README_zh-CN.md) | [한국어](README_ko-KR.md) | [Français](README_fr-FR.md) | [Español](README_es-ES.md) | [Русский](README_ru-RU.md) | [ไทย](README_th-TH.md) | [Tiếng Việt](README_vi-VN.md) | [العربية](README_ar-SA.md)]
+> 按住就說話，放開感受截然不同的輸出品質 — 語音轉書面語桌面工具
 
-BTalk 是一款跨平台桌面語音輸入工具的魔改版本呵呵。在任何應用程式中按住快捷鍵說話，放開後語音經 Groq Whisper API 轉錄，再由 Groq LLM 自動將口語轉為通順的繁體中文書面語，直接貼入游標位置 — 就像有個隱形的秘書替你把廢話改成文言文一樣 😏
+TypeK 是一款跨平台桌面語音輸入工具。在任何應用程式中按住快捷鍵說話，放開後語音經 Groq Whisper API 轉錄，再由 Groq LLM 自動將口語轉為通順的繁體中文書面語，直接貼入游標位置 — 就像有個隱形的文字秘書幫用戶把口語改成書面語一樣。
 
 ## 特色
 
-- **口語到書面語** — AI 自動去除贅詞、重組句構、修正標點，說完即可用。放心，再亂講的話 AI 都能幫你圓場（科科）
-- **全域快捷鍵** — 在任何應用程式中觸發，支援 Hold / Toggle 雙模式。想在任何地方偷偷說話？沒問題呵呵
-- **低延遲** — 基於 Groq 推論引擎，端到端 < 3 秒（含 AI 整理）。快到你根本來不及反悔
-- **自訂詞彙字典** — 確保專有名詞、技術術語正確轉錄。讓 AI 認識你的黑話（開玩笑啦）
-- **歷史記錄與統計** — 自動保存所有轉錄，Dashboard 一覽使用狀況。看看自己一天廢話幾百句 😅
-- **極簡設定** — 只需設定 API Key 即可使用。簡單到不行，根本沒有託詞說不會用
+- **口語到書面語** — AI 自動去除贅詞冗字、重組句構、修正標點、美化修辭，說完即可用。
+- **全域快捷鍵** — 在任何應用程式中觸發，支援 Hold / Toggle 雙模式。
+- **低延遲** — 基於 Groq 推論引擎，端到端 3 秒內（含 AI 整理）。
+- **自訂詞彙字典** — 確保專有名詞、技術術語正確轉錄。
+- **歷史記錄與統計** — 自動保存所有轉錄，Dashboard 一覽使用狀況。
+- **極簡設定** — 只需設定 API Key 即可使用。
 
 ## 安裝
 
 ### 下載
 
-| 平台 | 下載連結 |
+| 平臺 | 下載連結 |
 |------|---------|
-| macOS (Apple Silicon) | [BTalk_0.8.7_aarch64.dmg](https://github.com/biantai34/BTalk/releases/download/v0.8.7/BTalk_0.8.7_aarch64.dmg) |
+| macOS (Apple Silicon) | [TypeK_0.9_aarch64.dmg](https://github.com/kevin880118/TypeK/releases/download/v0.9/TypeK_0.9.aarch64.dmg) |
 
 ### 前置需求
 
-- [Groq API Key](https://console.groq.com/keys)（免費申請，真的免費喔科科）
+- [Groq API Key](https://console.groq.com/keys)（自行註冊免費申請）
 
 ### 快速開始
 
 1. 下載並安裝
-2. 開啟 BTalk → 設定頁面 → 貼上 Groq API Key
-3. 在任何應用程式中按住快捷鍵說話，放開後文字自動貼上（魔法就此發生）
+2. 開啟 TypeK → 設定頁面 → 貼上 Groq API Key
+3. 在任何應用程式中按住快捷鍵說話，放開後文字自動貼上。
 
 ## 技術架構
 
@@ -38,12 +39,12 @@ Tauri v2 (Rust) + Vue 3 + TypeScript
 
   ┌──────────────────────────────────┐
   │        Tauri Backend (Rust)      │
-  │  全域熱鍵 · 剪貼簿 · 音量控制    │
+  │  全域熱鍵 · 剪貼簿 · 音量控制        │
   └───────┬──────────────┬───────────┘
           │ invoke()     │ emit()
   ┌───────▼──┐    ┌──────▼───────────┐
   │   HUD    │    │    Dashboard     │
-  │ 狀態浮窗  │    │ 設定/歷史/統計   │
+  │ 狀態浮窗  │    │ 設定/歷史/統計     │
   └──────────┘    └──────────────────┘
 ```
 
@@ -92,9 +93,10 @@ npx vue-tsc --noEmit
 ## 致謝
 
 原作者：[Jackle Chen](https://jackle.pro)
-負優化者：[好倫](https://bt34.cc)
+前版本優化者：[好倫](https://bt34.cc)
+優化者：[Kevin Kuo](https://github.com/kevin880118)
 
-BTalk 是基於 [SayIt](https://github.com/chenjackle45/SayIt) 的魔改版本，保留了所有精華功能，加上了一點點變態的個性呵呵
+TypeK 是基於 [BTalk](https://github.com/biantai34/BTalk/) 的修改版本，保留了所有精華功能，並適應不同語系的特別需求。
 
 ## License
 
