@@ -21,7 +21,7 @@ TypeK là một công cụ nhập liệu bằng giọng nói đa nền tảng tr
 
 | Hệ Điều Hành | Link tải về |
 |------|---------|
-| macOS (Apple Silicon) | [TypeK_0.9.aarch64.dmg](https://github.com/kevin880118/TypeK/releases/download/v0.9/TypeK_0.9.aarch64.dmg) |
+| macOS (Apple Silicon) | [TypeK_0.9.0_aarch64.dmg](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_aarch64.dmg) |
 
 ### Yêu cầu
 

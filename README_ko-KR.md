@@ -21,7 +21,7 @@ TypeK는 크로스 플랫폼 데스크톱 음성 입력 도구입니다. 모든 
 
 | 플랫폼 | 다운로드 링크 |
 |------|---------|
-| macOS (Apple Silicon) | [TypeK_0.9.aarch64.dmg](https://github.com/kevin880118/TypeK/releases/download/v0.9/TypeK_0.9.aarch64.dmg) |
+| macOS (Apple Silicon) | [TypeK_0.9.0_aarch64.dmg](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_aarch64.dmg) |
 
 ### 요구 사항
 

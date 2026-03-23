@@ -21,7 +21,7 @@ TypeK est un outil de saisie vocale de bureau multiplateforme. Maintenez le racc
 
 | Plateforme | Lien de téléchargement |
 |------|---------|
-| macOS (Apple Silicon) | [TypeK_0.9.aarch64.dmg](https://github.com/kevin880118/TypeK/releases/download/v0.9/TypeK_0.9.aarch64.dmg) |
+| macOS (Apple Silicon) | [TypeK_0.9.0_aarch64.dmg](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_aarch64.dmg) |
 
 ### Pré-requis
 
