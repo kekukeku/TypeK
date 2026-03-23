@@ -67,7 +67,7 @@
   },
   "bundle": {
     "active": true,
-    "createUpdaterArtifacts": true,
+    "createUpdaterArtifacts": false,
     "targets": "all",
     "icon": [
       "icons/32x32.png",
@@ -77,8 +77,7 @@
       "icons/icon.ico"
     ],
     "macOS": {
-      "entitlements": "./Entitlements.plist",
-      "signingIdentity": "Developer ID Application: Tai-Cheng Chen (G9J8D2T6DV)"
+      "entitlements": "./Entitlements.plist"
     }
   }
 }
