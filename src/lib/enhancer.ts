@@ -1,7 +1,7 @@
 import { fetch } from "@tauri-apps/plugin-http";
 import type { ChatUsageData, EnhanceResult } from "../types/transcription";
 import { DEFAULT_LLM_MODEL_ID } from "./modelRegistry";
-import { getMinimalPromptForLocale } from "../i18n/prompts";
+import { getDefaultPromptForLocale } from "../i18n/prompts";
 import type { SupportedLocale } from "../i18n/languageConfig";
 import i18n from "../i18n";
 
@@ -21,7 +21,7 @@ export class EnhancerApiError extends Error {
 }
 
 export function getDefaultSystemPrompt(): string {
-  return getMinimalPromptForLocale(i18n.global.locale.value as SupportedLocale);
+  return getDefaultPromptForLocale(i18n.global.locale.value as SupportedLocale);
 }
 
 export interface EnhanceOptions {

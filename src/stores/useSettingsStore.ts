@@ -7,7 +7,6 @@ import {
   type HotkeyConfig,
   type TriggerKey,
   type CustomTriggerKey,
-  type CustomTriggerKey,
   isCustomTriggerKey,
   isPresetTriggerKey,
 } from "../types/settings";
@@ -892,18 +891,10 @@ export const useSettingsStore = defineStore("settings", () => {
       selectedTranscriptionLocale.value =
         savedTranscriptionLocale ?? selectedLocale.value;
 
-      // Prompt mode (with runtime validation)
-      const savedPromptMode = await store.get<string>("promptMode");
-      promptMode.value =
-        savedPromptMode &&
-        (PROMPT_MODE_VALUES as readonly string[]).includes(savedPromptMode)
-          ? (savedPromptMode as PromptMode)
-          : DEFAULT_PROMPT_MODE;
-
       apiKey.value = savedApiKey?.trim() ?? "";
       aiPrompt.value =
         savedPrompt?.trim() ||
-        getMinimalPromptForLocale(getEffectivePromptLocale());
+        getDefaultPromptForLocale(getEffectivePromptLocale());
       isEnhancementThresholdEnabled.value =
         savedThresholdEnabled ?? DEFAULT_ENHANCEMENT_THRESHOLD_ENABLED;
       enhancementThresholdCharCount.value =

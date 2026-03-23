@@ -25,18 +25,21 @@ jobs:
             stable_name: TypeK
             dmg_glob: "*.dmg"
             upload_sourcemaps: "true"
+            arch: "aarch64"
           - platform: macos-latest
             args: --target x86_64-apple-darwin
             rust_target: x86_64-apple-darwin
             stable_name: TypeK
             dmg_glob: "*.dmg"
             upload_sourcemaps: "false"
+            arch: "x64"
           - platform: windows-latest
             args: ""
             rust_target: ""
             stable_name: TypeK
             dmg_glob: ""
             upload_sourcemaps: "false"
+            arch: "x64"
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -125,9 +128,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           DMG=$(find src-tauri/target -path "*/bundle/dmg/*.dmg" | head -1)
-          STABLE_NAME="${{ matrix.stable_name }}_${RELEASE_VERSION}_aarch64.dmg"
-          cp "$DMG" "$STABLE_NAME"
-          gh release upload "$RELEASE_TAG" "$STABLE_NAME" --clobber
+          if [ -n "$DMG" ]; then
+            STABLE_NAME="${{ matrix.stable_name }}_${RELEASE_VERSION}_${{ matrix.arch }}.dmg"
+            cp "$DMG" "$STABLE_NAME"
+            gh release upload "$RELEASE_TAG" "$STABLE_NAME" --clobber
+          fi
 
       - name: Upload stable-name asset (Windows)
         if: runner.os == 'Windows'
