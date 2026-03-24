@@ -22,6 +22,7 @@ TypeK is a cross-platform desktop voice input tool. Hold the shortcut key to spe
 | Platform | Download Link |
 |------|---------|
 | macOS (Apple Silicon) | [TypeK_0.9.0_aarch64.dmg](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_aarch64.dmg) |
+| Windows (x64) | [TypeK_0.9.0_x64.exe](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_x64.exe) |
 
 ### Requirements
 

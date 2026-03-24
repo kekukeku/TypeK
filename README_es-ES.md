@@ -22,6 +22,7 @@ TypeK es una herramienta de entrada de voz de escritorio multiplataforma. Manté
 | Plataforma | Enlace de Descarga |
 |------|---------|
 | macOS (Apple Silicon) | [TypeK_0.9.0_aarch64.dmg](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_aarch64.dmg) |
+| Windows (x64) | [TypeK_0.9.0_x64.exe](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_x64.exe) |
 
 ### Requisitos
 
