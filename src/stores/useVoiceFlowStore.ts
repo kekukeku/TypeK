@@ -999,7 +999,8 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
           audioFilePath,
           status: "failed",
         });
-        void saveTranscriptionRecord(failedRecord);
+        // 故意不將空轉錄儲存至歷史紀錄，避免產生無用的失敗紀錄
+        // void saveTranscriptionRecord(failedRecord);
 
         // 設定重送狀態（空轉錄：主要重送目標）
         if (audioFilePath) {
@@ -1047,7 +1048,8 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
           audioFilePath,
           status: "failed",
         });
-        void saveTranscriptionRecord(failedRecord);
+        // 故意不將幻覺/空字串儲存至歷史紀錄，避免產生莫名的失敗紀錄
+        // void saveTranscriptionRecord(failedRecord);
 
         // 設定重送狀態
         if (audioFilePath) {

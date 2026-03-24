@@ -83,6 +83,25 @@ export function detectHallucination(
     };
   }
 
+  // Layer 3: 常見 Whisper 浮水印/幻覺過濾（如明鏡與點點欄目、訂閱點讚等）
+  const watermarkFilters = [
+    "点赞",
+    "订阅",
+    "转发",
+    "打赏",
+    "明镜与点点栏目",
+    "不吝",
+    "Thank you",
+    "字幕"
+  ];
+  if (watermarkFilters.some(filter => trimmedText.includes(filter))) {
+    return {
+      isHallucination: true,
+      reason: "no-speech-detected",
+      detectedText: trimmedText,
+    };
+  }
+
   // 放行
   return {
     isHallucination: false,

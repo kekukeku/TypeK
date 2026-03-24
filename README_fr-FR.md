@@ -24,6 +24,9 @@ TypeK est un outil de saisie vocale de bureau multiplateforme. Maintenez le racc
 | macOS (Apple Silicon) | [TypeK_0.9.0_aarch64.dmg](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_aarch64.dmg) |
 | Windows (x64) | [TypeK_0.9.0_x64.exe](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_x64.exe) |
 
+> **⚠️ Remarque sur l"installation macOS (Erreur « Application endommagée ») :**
+> Si vous rencontrez une erreur « endommagée » lors de l"ouverture de l"application sur Mac, veuillez télécharger et exécuter le script [Unlock_TypeK.command](https://raw.githubusercontent.com/kekukeku/TypeK/main/%E8%A7%A3%E9%8E%96TypeK.command) pour supprimer automatiquement la restriction de quarantaine, ou ouvrez le Terminal et exécutez : `sudo xattr -cr /Applications/TypeK.app`.
+
 ### Pré-requis
 
 - [Groq API Key](https://console.groq.com/keys) (Demande et enregistrement gratuits)

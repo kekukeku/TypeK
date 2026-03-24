@@ -24,6 +24,9 @@ TypeK là một công cụ nhập liệu bằng giọng nói đa nền tảng tr
 | macOS (Apple Silicon) | [TypeK_0.9.0_aarch64.dmg](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_aarch64.dmg) |
 | Windows (x64) | [TypeK_0.9.0_x64.exe](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_x64.exe) |
 
+> **⚠️ Lưu ý cài đặt macOS (Lỗi "Ứng dụng bị hỏng"):**
+> Nếu bạn thấy lỗi "Bị hỏng" khi mở ứng dụng trên Mac, vui lòng tải xuống và chạy tập lệnh [Unlock_TypeK.command](https://raw.githubusercontent.com/kekukeku/TypeK/main/%E8%A7%A3%E9%8E%96TypeK.command) để tự động xóa giới hạn cách ly hoặc mở Terminal và chạy: `sudo xattr -cr /Applications/TypeK.app`.
+
 ### Yêu cầu
 
 - [Groq API Key](https://console.groq.com/keys) (Đăng ký miễn phí)
@@ -56,6 +59,9 @@ Tauri v2 (Rust) + Vue 3 + TypeScript
 - **Storage** — SQLite (Lịch sử) + tauri-plugin-store (Cài đặt)
 
 ## Phát triển
+
+> **⚠️ Lưu ý cài đặt macOS (Lỗi "Ứng dụng bị hỏng"):**
+> Nếu bạn thấy lỗi "Bị hỏng" khi mở ứng dụng trên Mac, vui lòng tải xuống và chạy tập lệnh [Unlock_TypeK.command](https://raw.githubusercontent.com/kekukeku/TypeK/main/%E8%A7%A3%E9%8E%96TypeK.command) để tự động xóa giới hạn cách ly hoặc mở Terminal và chạy: `sudo xattr -cr /Applications/TypeK.app`.
 
 ### Yêu cầu Môi Trường
 

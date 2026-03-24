@@ -14,7 +14,7 @@ function getSentryEnvironment(): string {
 }
 
 function getSentryRelease(): string {
-  return import.meta.env.VITE_SENTRY_RELEASE?.trim() || `sayit@${__APP_VERSION__}`;
+  return import.meta.env.VITE_SENTRY_RELEASE?.trim() || `TypeK@${__APP_VERSION__}`;
 }
 
 function getTracesSampleRate(): number {

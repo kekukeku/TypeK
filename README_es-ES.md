@@ -24,6 +24,9 @@ TypeK es una herramienta de entrada de voz de escritorio multiplataforma. Manté
 | macOS (Apple Silicon) | [TypeK_0.9.0_aarch64.dmg](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_aarch64.dmg) |
 | Windows (x64) | [TypeK_0.9.0_x64.exe](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_x64.exe) |
 
+> **⚠️ Nota de instalación para macOS (Error de aplicación dañada):**
+> Si ves un error de "Dañada" al abrir la aplicación en Mac, descarga y ejecuta el script [Unlock_TypeK.command](https://raw.githubusercontent.com/kekukeku/TypeK/main/%E8%A7%A3%E9%8E%96TypeK.command) para eliminar automáticamente la restricción de cuarentena, o abre el Terminal y ejecuta: `sudo xattr -cr /Applications/TypeK.app`.
+
 ### Requisitos
 
 - [Groq API Key](https://console.groq.com/keys) (Regístrate y solicítalo gratis)
@@ -56,6 +59,9 @@ Tauri v2 (Rust) + Vue 3 + TypeScript
 - **Almacenamiento** — SQLite (Historial) + tauri-plugin-store (Configuraciones)
 
 ## Desarrollo
+
+> **⚠️ Nota de instalación para macOS (Error de aplicación dañada):**
+> Si ves un error de "Dañada" al abrir la aplicación en Mac, descarga y ejecuta el script [Unlock_TypeK.command](https://raw.githubusercontent.com/kekukeku/TypeK/main/%E8%A7%A3%E9%8E%96TypeK.command) para eliminar automáticamente la restricción de cuarentena, o abre el Terminal y ejecuta: `sudo xattr -cr /Applications/TypeK.app`.
 
 ### Requisitos del Entorno
 

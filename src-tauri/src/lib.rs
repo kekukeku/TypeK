@@ -351,7 +351,7 @@ fn show_main_window(app: &AppHandle) {
     }
 }
 
-const DEFAULT_SENTRY_RELEASE: &str = concat!("sayit@", env!("CARGO_PKG_VERSION"));
+const DEFAULT_SENTRY_RELEASE: &str = concat!("TypeK@", env!("CARGO_PKG_VERSION"));
 
 fn get_sentry_dsn() -> Option<&'static str> {
     option_env!("SENTRY_DSN")
@@ -450,7 +450,7 @@ pub fn run() {
 
             let open_dashboard_item =
                 MenuItem::with_id(app, "open-dashboard", "開啟 Dashboard", true, None::<&str>)?;
-            let quit_item = MenuItem::with_id(app, "quit", "Quit SayIt", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Quit TypeK", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&open_dashboard_item, &quit_item])?;
 
             TrayIconBuilder::new()
@@ -460,7 +460,7 @@ pub fn run() {
                 .icon_as_template(true)
                 .menu(&menu)
                 .show_menu_on_left_click(true)
-                .tooltip("SayIt")
+                .tooltip("TypeK")
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "open-dashboard" => {
                         show_main_window(app);

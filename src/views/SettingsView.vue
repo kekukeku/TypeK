@@ -644,7 +644,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="p-6 space-y-6 text-foreground">
-    <!-- 關於 SayIt -->
+    <!-- 關於 TypeK -->
     <Card>
       <CardHeader class="border-b border-border">
         <CardTitle class="text-base">{{ $t("settings.about.title") }}</CardTitle>
@@ -681,11 +681,11 @@ onBeforeUnmount(() => {
         <Separator />
 
         <div class="flex flex-wrap gap-x-4 gap-y-2">
-          <a href="https://github.com/chenjackle45/SayIt" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
+          <a href="https://github.com/chenjackle45/TypeK" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
             <Github class="size-4" />
             <span>{{ $t("settings.about.sourceCode") }}</span>
           </a>
-          <a href="https://github.com/chenjackle45/SayIt/issues" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
+          <a href="https://github.com/chenjackle45/TypeK/issues" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
             <CircleAlert class="size-4" />
             <span>{{ $t("settings.about.reportIssue") }}</span>
           </a>
