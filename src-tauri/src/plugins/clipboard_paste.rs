@@ -68,36 +68,61 @@ fn simulate_paste_via_cgevent() -> Result<(), String> {
 
 /// 透過 SendInput 模擬 Ctrl+V 按鍵來觸發貼上。
 ///
-/// Windows 不像 macOS 有 CGEvent 殘留問題，SendInput 是標準做法。
+/// 修正：清除預期外的 Ghost Modifiers (Alt, Win, Shift) 防止快捷鍵污染，
+/// 並將 Down 和 Up 拆分，中間加入小延遲，確保現代 UI 應用程式能成功偵測按下事件。
 #[cfg(target_os = "windows")]
 fn simulate_paste_via_keyboard() -> Result<(), String> {
     use std::mem;
+    use std::thread;
+    use std::time::Duration;
     use windows::Win32::UI::Input::KeyboardAndMouse::*;
 
     unsafe {
-        let mut inputs: [INPUT; 4] = mem::zeroed();
+        // 第一階段：釋放所有修飾鍵（強制 KEYUP），防止用戶剛放開觸發快捷鍵
+        // 卻被系統判定為按住，例如 Right Alt 造成的 Alt+Ctrl+V 無法貼上
+        let modifiers = [
+            VK_LMENU, VK_RMENU, VK_LCONTROL, VK_RCONTROL,
+            VK_LSHIFT, VK_RSHIFT, VK_LWIN, VK_RWIN,
+        ];
+        let mut reset_inputs: Vec<INPUT> = Vec::with_capacity(modifiers.len());
+        for &vk in modifiers.iter() {
+            let mut input: INPUT = mem::zeroed();
+            input.r#type = INPUT_KEYBOARD;
+            input.Anonymous.ki.wVk = vk;
+            input.Anonymous.ki.dwFlags = KEYEVENTF_KEYUP;
+            reset_inputs.push(input);
+        }
+        SendInput(&reset_inputs, mem::size_of::<INPUT>() as i32);
 
-        // Ctrl ↓
-        inputs[0].r#type = INPUT_KEYBOARD;
-        inputs[0].Anonymous.ki.wVk = VK_CONTROL;
+        // 第二階段：送出 LCtrl ↓ 和 V ↓
+        let mut down_inputs: [INPUT; 2] = mem::zeroed();
+        down_inputs[0].r#type = INPUT_KEYBOARD;
+        down_inputs[0].Anonymous.ki.wVk = VK_LCONTROL;
 
-        // V ↓
-        inputs[1].r#type = INPUT_KEYBOARD;
-        inputs[1].Anonymous.ki.wVk = VK_V;
+        down_inputs[1].r#type = INPUT_KEYBOARD;
+        down_inputs[1].Anonymous.ki.wVk = VK_V;
 
-        // V ↑
-        inputs[2].r#type = INPUT_KEYBOARD;
-        inputs[2].Anonymous.ki.wVk = VK_V;
-        inputs[2].Anonymous.ki.dwFlags = KEYEVENTF_KEYUP;
+        let sent_down = SendInput(&down_inputs, mem::size_of::<INPUT>() as i32);
+        if sent_down != 2 {
+            return Err(format!("SendInput DOWN returned {}, expected 2", sent_down));
+        }
 
-        // Ctrl ↑
-        inputs[3].r#type = INPUT_KEYBOARD;
-        inputs[3].Anonymous.ki.wVk = VK_CONTROL;
-        inputs[3].Anonymous.ki.dwFlags = KEYEVENTF_KEYUP;
+        // 第三階段：關鍵的微小延遲！讓目標程式的 Message Loop 抓到 DOWN 狀態
+        thread::sleep(Duration::from_millis(20));
 
-        let sent = SendInput(&inputs, mem::size_of::<INPUT>() as i32);
-        if sent != 4 {
-            return Err(format!("SendInput returned {}, expected 4", sent));
+        // 第四階段：送出 V ↑ 和 LCtrl ↑
+        let mut up_inputs: [INPUT; 2] = mem::zeroed();
+        up_inputs[0].r#type = INPUT_KEYBOARD;
+        up_inputs[0].Anonymous.ki.wVk = VK_V;
+        up_inputs[0].Anonymous.ki.dwFlags = KEYEVENTF_KEYUP;
+
+        up_inputs[1].r#type = INPUT_KEYBOARD;
+        up_inputs[1].Anonymous.ki.wVk = VK_LCONTROL;
+        up_inputs[1].Anonymous.ki.dwFlags = KEYEVENTF_KEYUP;
+
+        let sent_up = SendInput(&up_inputs, mem::size_of::<INPUT>() as i32);
+        if sent_up != 2 {
+            return Err(format!("SendInput UP returned {}, expected 2", sent_up));
         }
     }
 
@@ -133,7 +158,10 @@ pub fn paste_text<R: Runtime>(_app: AppHandle<R>, text: String) -> Result<(), Cl
         .map_err(|e| ClipboardError::ClipboardAccess(e.to_string()))?;
     println!("[clipboard-paste] Text copied to clipboard");
 
-    // 2) 等待剪貼簿同步
+    // 2) 等待剪貼簿同步 (Windows 需要增加一點延遲，避免目標軟體剪貼簿鎖定)
+    #[cfg(target_os = "windows")]
+    thread::sleep(Duration::from_millis(150));
+    #[cfg(not(target_os = "windows"))]
     thread::sleep(Duration::from_millis(50));
 
     // 3) 觸發目標 app 的貼上動作
