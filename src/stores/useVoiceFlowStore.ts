@@ -988,7 +988,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
 
       if (isEmptyTranscription(result.rawText)) {
         // 空轉錄 → 寫入 failed 記錄，保留錄音檔
-        const failedRecord = buildTranscriptionRecord({
+        /* const failedRecord = buildTranscriptionRecord({
           id: transcriptionId,
           rawText: result.rawText || "",
           processedText: null,
@@ -1000,7 +1000,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
           status: "failed",
         });
         // 故意不將空轉錄儲存至歷史紀錄，避免產生無用的失敗紀錄
-        // void saveTranscriptionRecord(failedRecord);
+        // void saveTranscriptionRecord(failedRecord); */
 
         // 設定重送狀態（空轉錄：主要重送目標）
         if (audioFilePath) {
