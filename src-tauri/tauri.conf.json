@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicedoc/resources/main/tauri-conf-v2.json",
   "productName": "TypeK",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "identifier": "com.typek.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
