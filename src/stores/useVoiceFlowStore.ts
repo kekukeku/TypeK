@@ -1037,7 +1037,8 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
 
       if (hallucinationDetectionResult.isHallucination) {
         // 寫入 failed 記錄
-        const failedRecord = buildTranscriptionRecord({
+        // 故意不將幻覺/空字串儲存至歷史紀錄，避免產生莫名的失敗紀錄
+        /* const failedRecord = buildTranscriptionRecord({
           id: transcriptionId,
           rawText: result.rawText,
           processedText: null,
@@ -1048,8 +1049,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
           audioFilePath,
           status: "failed",
         });
-        // 故意不將幻覺/空字串儲存至歷史紀錄，避免產生莫名的失敗紀錄
-        // void saveTranscriptionRecord(failedRecord);
+        void saveTranscriptionRecord(failedRecord); */
 
         // 設定重送狀態
         if (audioFilePath) {
