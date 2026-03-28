@@ -21,8 +21,8 @@ TypeK là một công cụ nhập liệu bằng giọng nói đa nền tảng tr
 
 | Hệ Điều Hành | Link tải về |
 |------|---------|
-| macOS (Apple Silicon) | [TypeK_0.9.0_aarch64.dmg](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_aarch64.dmg) |
-| Windows (x64) | [TypeK_0.9.0_x64.exe](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_x64.exe) |
+| macOS (Apple Silicon) | [TypeK_0.9.1_aarch64.dmg](https://github.com/kekukeku/TypeK/releases/download/v0.9.1/TypeK_0.9.1_aarch64.dmg) |
+| Windows (x64) | [TypeK_0.9.1_x64.exe](https://github.com/kekukeku/TypeK/releases/download/v0.9.1/TypeK_0.9.1_x64.exe) |
 
 > **⚠️ Lưu ý cài đặt macOS (Lỗi "Ứng dụng bị hỏng"):**
 > Nếu bạn thấy lỗi "Bị hỏng" khi mở ứng dụng trên Mac, vui lòng tải xuống và chạy tập lệnh [Unlock_TypeK.command](https://raw.githubusercontent.com/kekukeku/TypeK/main/%E8%A7%A3%E9%8E%96TypeK.command) để tự động xóa giới hạn cách ly hoặc mở Terminal và chạy: `sudo xattr -cr /Applications/TypeK.app`.

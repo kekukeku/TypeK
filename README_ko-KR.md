@@ -21,8 +21,8 @@ TypeK는 크로스 플랫폼 데스크톱 음성 입력 도구입니다. 모든 
 
 | 플랫폼 | 다운로드 링크 |
 |------|---------|
-| macOS (Apple Silicon) | [TypeK_0.9.0_aarch64.dmg](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_aarch64.dmg) |
-| Windows (x64) | [TypeK_0.9.0_x64.exe](https://github.com/kekukeku/TypeK/releases/download/v0.9.0/TypeK_0.9.0_x64.exe) |
+| macOS (Apple Silicon) | [TypeK_0.9.1_aarch64.dmg](https://github.com/kekukeku/TypeK/releases/download/v0.9.1/TypeK_0.9.1_aarch64.dmg) |
+| Windows (x64) | [TypeK_0.9.1_x64.exe](https://github.com/kekukeku/TypeK/releases/download/v0.9.1/TypeK_0.9.1_x64.exe) |
 
 > **⚠️ macOS 설치 주의 (앱이 손상됨 오류):**
 > Mac에서 앱을 열 때 "손상됨" 오류가 표시되면 [Unlock_TypeK.command](https://raw.githubusercontent.com/kekukeku/TypeK/main/%E8%A7%A3%E9%8E%96TypeK.command) 스크립트를 다운로드하여 실행하여 격리 제한을 자동으로 해제하거나, 터미널을 열고 다음을 실행하세요: `sudo xattr -cr /Applications/TypeK.app`.
