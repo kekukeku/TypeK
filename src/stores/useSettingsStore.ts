@@ -76,6 +76,7 @@ export const DEFAULT_ENHANCEMENT_THRESHOLD_ENABLED = false;
 export const DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT = 10;
 export const DEFAULT_MUTE_ON_RECORDING = true;
 const DEFAULT_SMART_DICTIONARY_ENABLED = navigator.userAgent.includes("Mac"); // macOS only — Windows 尚未支援 text field 讀取
+const DEFAULT_INPUT_CONTEXT_ENABLED = navigator.userAgent.includes("Mac"); // macOS only — Windows 版 read_input_context 回空內容
 const DEFAULT_SOUND_EFFECTS_ENABLED = true;
 const DEFAULT_PROMPT_MODE: PromptMode = "minimal";
 const DEFAULT_RECORDING_AUTO_CLEANUP_ENABLED = false;
@@ -85,6 +86,19 @@ const DEFAULT_COPY_TRANSCRIPTION_TO_CLIPBOARD = true;
 const DEFAULT_HIDE_DOCK_ICON = false;
 const DEFAULT_START_HIDDEN = false;
 const IS_MACOS = navigator.userAgent.includes("Mac");
+
+/**
+ * 解析 LLM provider：有存過就用存的。預設 provider 曾是 groq，
+ * 從沒存過 provider、但已設好 Groq key 的舊使用者固定留在 groq，
+ * 升版後不會突然要求 Gemini key（docs/plan-input-context.md）。
+ */
+export function resolveLlmProviderId(
+  savedLlmProviderId: LlmProviderId | null | undefined,
+  savedGroqApiKey: string | null | undefined,
+): LlmProviderId {
+  if (savedLlmProviderId) return savedLlmProviderId;
+  return savedGroqApiKey?.trim() ? "groq" : DEFAULT_LLM_PROVIDER_ID;
+}
 
 function getDefaultTriggerKey(): TriggerKey {
   const isMac = navigator.userAgent.includes("Mac");
@@ -147,6 +161,7 @@ export const useSettingsStore = defineStore("settings", () => {
   const isSmartDictionaryEnabled = ref<boolean>(
     DEFAULT_SMART_DICTIONARY_ENABLED,
   );
+  const isInputContextEnabled = ref<boolean>(DEFAULT_INPUT_CONTEXT_ENABLED);
   const customTriggerKeyDomCode = ref<string>("");
   const selectedLocale = ref<SupportedLocale>(FALLBACK_LOCALE);
   const selectedTranscriptionLocale = ref<TranscriptionLocale>(FALLBACK_LOCALE);
@@ -314,7 +329,15 @@ export const useSettingsStore = defineStore("settings", () => {
       // LLM Provider
       const savedLlmProviderId =
         await store.get<LlmProviderId>("llmProviderId");
-      selectedLlmProviderId.value = savedLlmProviderId ?? DEFAULT_LLM_PROVIDER_ID;
+      selectedLlmProviderId.value = resolveLlmProviderId(
+        savedLlmProviderId,
+        savedApiKey,
+      );
+      if (!savedLlmProviderId) {
+        // 推斷結果寫回 store，之後不再推斷（使用者之後補上 Groq key 也不會被切走）
+        await store.set("llmProviderId", selectedLlmProviderId.value);
+        await store.save();
+      }
 
       // OpenAI / Anthropic API keys
       const savedOpenaiApiKey = await store.get<string>("openaiApiKey");
@@ -333,9 +356,10 @@ export const useSettingsStore = defineStore("settings", () => {
         !llmMigratedFromKimiK2 &&
         savedLlmModelId === "moonshotai/kimi-k2-instruct"
       ) {
-        selectedLlmModelId.value = DEFAULT_LLM_MODEL_ID;
+        // 留在 groq：不能借用全域預設（已改為 Gemini），否則 model 與 provider 錯配
+        selectedLlmModelId.value = getDefaultModelIdForProvider("groq");
         selectedLlmProviderId.value = "groq";
-        await store.set("llmModelId", DEFAULT_LLM_MODEL_ID);
+        await store.set("llmModelId", selectedLlmModelId.value);
         await store.set("llmProviderId", "groq");
         await store.set("llmMigratedFromKimiK2", true);
         await store.save();
@@ -380,6 +404,10 @@ export const useSettingsStore = defineStore("settings", () => {
       );
       isSmartDictionaryEnabled.value =
         savedSmartDictionary ?? DEFAULT_SMART_DICTIONARY_ENABLED;
+
+      const savedInputContext = await store.get<boolean>("inputContextEnabled");
+      isInputContextEnabled.value =
+        savedInputContext ?? DEFAULT_INPUT_CONTEXT_ENABLED;
 
       const savedRecordingAutoCleanup = await store.get<boolean>(
         "recordingAutoCleanupEnabled",
@@ -1227,6 +1255,32 @@ export const useSettingsStore = defineStore("settings", () => {
     }
   }
 
+  async function saveInputContextEnabled(enabled: boolean) {
+    try {
+      const store = await load(STORE_NAME);
+      await store.set("inputContextEnabled", enabled);
+      await store.save();
+      isInputContextEnabled.value = enabled;
+
+      const payload: SettingsUpdatedPayload = {
+        key: "inputContextEnabled",
+        value: enabled,
+      };
+      await emitEvent(SETTINGS_UPDATED, payload);
+      console.log(`[useSettingsStore] inputContextEnabled saved: ${enabled}`);
+    } catch (err) {
+      console.error(
+        "[useSettingsStore] saveInputContextEnabled failed:",
+        extractErrorMessage(err),
+      );
+      captureError(err, {
+        source: "settings",
+        step: "save-input-context",
+      });
+      throw err;
+    }
+  }
+
   async function saveSmartDictionaryEnabled(enabled: boolean) {
     try {
       const store = await load(STORE_NAME);
@@ -1407,6 +1461,7 @@ export const useSettingsStore = defineStore("settings", () => {
       const savedSmartDictionary = await store.get<boolean>(
         "smartDictionaryEnabled",
       );
+      const savedInputContext = await store.get<boolean>("inputContextEnabled");
 
       hotkeyConfig.value = {
         triggerKey: savedKey ?? getDefaultTriggerKey(),
@@ -1457,8 +1512,10 @@ export const useSettingsStore = defineStore("settings", () => {
         savedThresholdEnabled ?? DEFAULT_ENHANCEMENT_THRESHOLD_ENABLED;
       enhancementThresholdCharCount.value =
         savedThresholdCharCount ?? DEFAULT_ENHANCEMENT_THRESHOLD_CHAR_COUNT;
-      selectedLlmProviderId.value =
-        savedLlmProviderId ?? DEFAULT_LLM_PROVIDER_ID;
+      selectedLlmProviderId.value = resolveLlmProviderId(
+        savedLlmProviderId,
+        savedApiKey,
+      );
       const effectiveCrossWindowModelId = getEffectiveLlmModelId(
         savedLlmModelId ?? null,
       );
@@ -1485,6 +1542,8 @@ export const useSettingsStore = defineStore("settings", () => {
       isStartHiddenEnabled.value = savedStartHidden ?? DEFAULT_START_HIDDEN;
       isSmartDictionaryEnabled.value =
         savedSmartDictionary ?? DEFAULT_SMART_DICTIONARY_ENABLED;
+      isInputContextEnabled.value =
+        savedInputContext ?? DEFAULT_INPUT_CONTEXT_ENABLED;
 
       const savedRecCleanup = await store.get<boolean>(
         "recordingAutoCleanupEnabled",
@@ -1608,6 +1667,8 @@ export const useSettingsStore = defineStore("settings", () => {
     saveStartHidden,
     isSmartDictionaryEnabled,
     saveSmartDictionaryEnabled,
+    isInputContextEnabled,
+    saveInputContextEnabled,
     isRecordingAutoCleanupEnabled,
     recordingAutoCleanupDays,
     saveRecordingAutoCleanup,

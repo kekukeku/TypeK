@@ -2,10 +2,39 @@ import { describe, expect, it } from "vitest";
 import {
   DECOMMISSIONED_MODEL_MAP,
   DEFAULT_LLM_MODEL_ID,
+  DEFAULT_LLM_PROVIDER_ID,
   findLlmModelConfig,
+  getDefaultModelIdForProvider,
   getEffectiveLlmModelId,
   LLM_MODEL_LIST,
 } from "../../src/lib/modelRegistry";
+
+describe("modelRegistry — 預設模型（docs/plan-input-context.md）", () => {
+  it("[P0] 預設為 Gemini 3.1 Flash-Lite，且與預設 provider 一致", () => {
+    expect(DEFAULT_LLM_PROVIDER_ID).toBe("gemini");
+    expect(DEFAULT_LLM_MODEL_ID).toBe("gemini-3.1-flash-lite");
+    expect(findLlmModelConfig(DEFAULT_LLM_MODEL_ID)?.providerId).toBe(
+      DEFAULT_LLM_PROVIDER_ID,
+    );
+    expect(getDefaultModelIdForProvider(DEFAULT_LLM_PROVIDER_ID)).toBe(
+      DEFAULT_LLM_MODEL_ID,
+    );
+  });
+
+  it("[P0] 預設模型必須是免費專案可日常使用的（freeTier full）", () => {
+    expect(findLlmModelConfig(DEFAULT_LLM_MODEL_ID)?.freeTier).toBe("full");
+  });
+
+  it("[P1] 每個 provider 恰好一個 isDefault", () => {
+    const providerIdList = [...new Set(LLM_MODEL_LIST.map((m) => m.providerId))];
+    for (const providerId of providerIdList) {
+      const defaultCount = LLM_MODEL_LIST.filter(
+        (m) => m.providerId === providerId && m.isDefault,
+      ).length;
+      expect(defaultCount, providerId).toBe(1);
+    }
+  });
+});
 
 describe("modelRegistry — 免費專案可用性標示（gh-71）", () => {
   // 逐模型斷言：全部標 full 也不會意外變綠

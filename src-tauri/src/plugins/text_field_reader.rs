@@ -108,11 +108,99 @@ pub fn read_selection_state() -> SelectionState {
     }
 }
 
+/// AI 整理用的輸入上下文：游標所在 App、視窗標題與游標前後文字。
+/// 讀不到的欄位一律 `None`；密碼欄不讀文字。計畫：docs/plan-input-context.md
+#[derive(serde::Serialize, Clone, Default, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct InputContext {
+    pub app_name: Option<String>,
+    pub window_title: Option<String>,
+    pub text_before_cursor: Option<String>,
+    pub text_after_cursor: Option<String>,
+}
+
+/// 讀取輸入上下文。macOS：請求送到與選取偵測共用的 AX worker，最多等 1.5 秒
+/// （等待本身放在 blocking 執行緒上，不佔 command 主執行緒）；前端另設 300ms 取用上限。
+/// Windows／其他平台：本版回空內容。
+#[tauri::command]
+pub async fn read_input_context() -> InputContext {
+    #[cfg(target_os = "macos")]
+    {
+        tauri::async_runtime::spawn_blocking(macos::read_input_context_impl)
+            .await
+            .unwrap_or_default()
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        InputContext::default()
+    }
+}
+
+/// 游標前文字上限（字元）。前文對判斷同音字與專有名詞最有用，給得比後文多。
+#[cfg(any(target_os = "macos", test))]
+const CONTEXT_BEFORE_CHARS: usize = 300;
+/// 游標後文字上限（字元）。
+#[cfg(any(target_os = "macos", test))]
+const CONTEXT_AFTER_CHARS: usize = 100;
+
+/// 依 AX 選取範圍（`location`／`length`，UTF-16 單位）把欄位全文切成游標前、後兩段，
+/// 前段取最後 `before_limit` 字、後段取最前 `after_limit` 字；選取中的文字不算前後文。
+/// 範圍讀不到時把全文當作游標前文字。與平台無關，抽出來讓 macOS 以外也能跑測試。
+#[cfg(any(target_os = "macos", test))]
+fn split_text_around_selection(
+    full_text: &str,
+    selection: Option<(usize, usize)>,
+    before_limit: usize,
+    after_limit: usize,
+) -> (String, String) {
+    let units: Vec<u16> = full_text.encode_utf16().collect();
+    let (start, end) = match selection {
+        Some((location, length)) => {
+            let start = location.min(units.len());
+            let end = location.saturating_add(length).min(units.len());
+            (start, end)
+        }
+        None => (units.len(), units.len()),
+    };
+
+    let before = String::from_utf16_lossy(&units[..start]);
+    let after = String::from_utf16_lossy(&units[end..]);
+
+    let before_count = before.chars().count();
+    let before = before
+        .chars()
+        .skip(before_count.saturating_sub(before_limit))
+        .collect();
+    let after = after.chars().take(after_limit).collect();
+    (before, after)
+}
+
+/// App 名稱與視窗標題上限（字元）：瀏覽器分頁標題可能很長，且常帶文件名或主旨。
+#[cfg(any(target_os = "macos", test))]
+const CONTEXT_TITLE_CHARS: usize = 120;
+
+/// 取前 `limit` 個字元。
+#[cfg(any(target_os = "macos", test))]
+fn cap_chars(text: &str, limit: usize) -> String {
+    text.chars().take(limit).collect()
+}
+
+/// 空白字串視為讀不到。
+#[cfg(any(target_os = "macos", test))]
+fn non_blank(text: String) -> Option<String> {
+    if text.trim().is_empty() {
+        None
+    } else {
+        Some(text)
+    }
+}
+
 // ========== macOS: AXUIElement ==========
 
 #[cfg(target_os = "macos")]
 mod macos {
-    use core_foundation::base::{CFRelease, CFTypeRef, TCFType};
+    use core_foundation::base::{CFGetTypeID, CFRelease, CFTypeRef, TCFType};
     use core_foundation::string::CFString;
     use std::ffi::c_void;
     use std::os::raw::c_int;
@@ -121,6 +209,8 @@ mod macos {
     type AXError = c_int;
 
     const K_AX_ERROR_SUCCESS: AXError = 0;
+    const K_AX_ERROR_ATTRIBUTE_UNSUPPORTED: AXError = -25205;
+    const K_AX_ERROR_NO_VALUE: AXError = -25212;
 
     // AX attribute name constants
     const K_AX_FOCUSED_APPLICATION_ATTRIBUTE: &str = "AXFocusedApplication";
@@ -129,6 +219,11 @@ mod macos {
     const K_AX_SELECTED_TEXT_RANGE_ATTRIBUTE: &str = "AXSelectedTextRange";
     const K_AX_SELECTED_TEXT_ATTRIBUTE: &str = "AXSelectedText";
     const K_AX_ROLE_ATTRIBUTE: &str = "AXRole";
+    const K_AX_SUBROLE_ATTRIBUTE: &str = "AXSubrole";
+    const K_AX_TITLE_ATTRIBUTE: &str = "AXTitle";
+    const K_AX_FOCUSED_WINDOW_ATTRIBUTE: &str = "AXFocusedWindow";
+    /// 密碼欄的子角色：角色仍是 AXTextField，必須另外擋
+    const K_AX_SECURE_TEXT_FIELD_SUBROLE: &str = "AXSecureTextField";
 
     const CONTEXT_CHARS: usize = 50;
     const FALLBACK_CHARS: usize = 100;
@@ -185,6 +280,16 @@ mod macos {
 
     fn get_ax_string_attribute(element: AXUIElementRef, attribute_name: &str) -> Option<String> {
         let value = get_ax_attribute(element, attribute_name)?;
+        cf_value_into_string(value)
+    }
+
+    /// 接手一個 +1 的 CFTypeRef：是 CFString 才轉成 String，否則釋放後回 None。
+    /// AX 屬性值不保證是字串（例如數值型 AXValue），未驗型別就當 CFString 用會 native crash。
+    fn cf_value_into_string(value: CFTypeRef) -> Option<String> {
+        if unsafe { CFGetTypeID(value) } != CFString::type_id() {
+            unsafe { CFRelease(value) };
+            return None;
+        }
         let cf_string = unsafe { CFString::wrap_under_create_rule(value as *const _) };
         Some(cf_string.to_string())
     }
@@ -355,18 +460,194 @@ mod macos {
         }
     }
 
+    // ========== 輸入上下文（AI 整理用） ==========
+
+    use super::{
+        cap_chars, non_blank, split_text_around_selection, InputContext, CONTEXT_AFTER_CHARS,
+        CONTEXT_BEFORE_CHARS, CONTEXT_TITLE_CHARS,
+    };
+
+    /// 上下文讀取的總 timeout（自送出請求起算）。上下文與選取偵測共用同一條 AX worker，
+    /// 錄音開始時兩個請求幾乎同時送出、依序執行，要涵蓋排在前面的選取偵測最長
+    /// SELECTION_READ_TIMEOUT_MS，再加上本身的讀取。前端另有 300ms 的取用上限。
+    const CONTEXT_READ_TIMEOUT_MS: u64 = 1_500;
+
+    /// 入口：送到共用的 AX worker（不另開執行緒，不和選取偵測並行打進同一個 App），
+    /// 最多等 CONTEXT_READ_TIMEOUT_MS。worker 忙碌（佇列滿）、逾時、已死一律回空內容。
+    pub fn read_input_context_impl() -> InputContext {
+        let Some(sender) = ax_worker_sender() else {
+            return InputContext::default();
+        };
+        let (resp_tx, resp_rx) = sync_channel::<InputContext>(1);
+        if sender.try_send(AxRequest::Context(resp_tx)).is_err() {
+            return InputContext::default();
+        }
+        resp_rx
+            .recv_timeout(Duration::from_millis(CONTEXT_READ_TIMEOUT_MS))
+            .unwrap_or_default()
+    }
+
+    /// 聚焦文字元素對上下文讀取的處理方式。
+    enum FieldTextPolicy {
+        /// 確定是一般文字欄位：讀取欄位文字
+        Read,
+        /// 網頁區域本身（沒有聚焦的子欄位）：不是輸入框，不讀文字，App 與視窗標題照送
+        SkipText,
+        /// 密碼欄或無法判定：四個欄位全部不送（含 App 與視窗標題，登入視窗標題可能帶帳號）
+        Sensitive,
+    }
+
+    /// 上下文讀取的欄位判定：
+    /// - 角色讀不到 → Sensitive
+    /// - 角色是 AXWebArea（resolver 找不到子元素時退回 WebArea 本身）→ SkipText
+    /// - 角色不是 AXTextField／AXTextArea／AXComboBox（含 AXSecureTextField、WebArea 底下的未知子元素）→ Sensitive
+    /// - 子角色是 AXSecureTextField → Sensitive
+    /// - 子角色「不支援／無值」→ 一般文字角色本來就沒有子角色（AXTextArea 常見）→ Read
+    /// - 其他錯誤或值不是字串 → Sensitive
+    fn field_text_policy(element: AXUIElementRef) -> FieldTextPolicy {
+        match get_ax_string_attribute(element, K_AX_ROLE_ATTRIBUTE).as_deref() {
+            Some("AXWebArea") => return FieldTextPolicy::SkipText,
+            Some("AXTextField" | "AXTextArea" | "AXComboBox") => {}
+            _ => return FieldTextPolicy::Sensitive,
+        }
+
+        let attr = CFString::new(K_AX_SUBROLE_ATTRIBUTE);
+        let mut value: CFTypeRef = std::ptr::null();
+        let err =
+            unsafe { AXUIElementCopyAttributeValue(element, attr.as_CFTypeRef(), &mut value) };
+        if err != K_AX_ERROR_SUCCESS {
+            if !value.is_null() {
+                unsafe { CFRelease(value) };
+            }
+            return if err == K_AX_ERROR_ATTRIBUTE_UNSUPPORTED || err == K_AX_ERROR_NO_VALUE {
+                FieldTextPolicy::Read
+            } else {
+                FieldTextPolicy::Sensitive
+            };
+        }
+        if value.is_null() {
+            return FieldTextPolicy::Sensitive;
+        }
+        match cf_value_into_string(value) {
+            Some(subrole) if subrole != K_AX_SECURE_TEXT_FIELD_SUBROLE => FieldTextPolicy::Read,
+            _ => FieldTextPolicy::Sensitive,
+        }
+    }
+
+    /// resolver 找不到文字欄位時的密碼欄補查：聚焦元素的角色或子角色是 AXSecureTextField
+    /// → true。沒有聚焦元素 → false（沒有欄位可言）；有元素但角色讀不到 → 無法判定 → true。
+    fn focused_element_may_be_secure() -> bool {
+        let system_wide = unsafe { AXUIElementCreateSystemWide() };
+        if system_wide.is_null() {
+            return true;
+        }
+        let Some(app) = get_ax_attribute(system_wide, K_AX_FOCUSED_APPLICATION_ATTRIBUTE) else {
+            unsafe { CFRelease(system_wide) };
+            return false;
+        };
+        let element = get_ax_attribute(app, K_AX_FOCUSED_UI_ELEMENT_ATTRIBUTE);
+        unsafe {
+            CFRelease(app);
+            CFRelease(system_wide);
+        }
+        let Some(element) = element else {
+            return false;
+        };
+
+        let role = get_ax_string_attribute(element, K_AX_ROLE_ATTRIBUTE);
+        let subrole = get_ax_string_attribute(element, K_AX_SUBROLE_ATTRIBUTE);
+        unsafe { CFRelease(element) };
+        match role.as_deref() {
+            None => true,
+            Some(role) => {
+                role == K_AX_SECURE_TEXT_FIELD_SUBROLE
+                    || subrole.as_deref() == Some(K_AX_SECURE_TEXT_FIELD_SUBROLE)
+            }
+        }
+    }
+
+    /// 讀 App 名稱與聚焦視窗標題（各自截到 CONTEXT_TITLE_CHARS）。
+    fn read_app_and_window_title(context: &mut InputContext) {
+        let system_wide = unsafe { AXUIElementCreateSystemWide() };
+        if system_wide.is_null() {
+            return;
+        }
+        if let Some(app) = get_ax_attribute(system_wide, K_AX_FOCUSED_APPLICATION_ATTRIBUTE) {
+            context.app_name = get_ax_string_attribute(app, K_AX_TITLE_ATTRIBUTE)
+                .map(|title| cap_chars(&title, CONTEXT_TITLE_CHARS))
+                .and_then(non_blank);
+            if let Some(window) = get_ax_attribute(app, K_AX_FOCUSED_WINDOW_ATTRIBUTE) {
+                context.window_title = get_ax_string_attribute(window, K_AX_TITLE_ATTRIBUTE)
+                    .map(|title| cap_chars(&title, CONTEXT_TITLE_CHARS))
+                    .and_then(non_blank);
+                unsafe { CFRelease(window) };
+            }
+            unsafe { CFRelease(app) };
+        }
+        unsafe { CFRelease(system_wide) };
+    }
+
+    /// 在 AX worker 上執行。先判定聚焦欄位：敏感就整包回空，連 App 與視窗標題都不讀。
+    fn input_context_blocking() -> InputContext {
+        let mut context = InputContext::default();
+
+        let Some(field) = resolve_focused_text_element() else {
+            // 沒有聚焦的文字欄位（例如焦點在按鈕上）：App 與視窗標題照送。
+            // 例外：resolver 只收文字輸入角色，角色本身就是 AXSecureTextField 的密碼欄會落到這裡
+            if !focused_element_may_be_secure() {
+                read_app_and_window_title(&mut context);
+            }
+            return context;
+        };
+
+        match field_text_policy(field.target_element) {
+            FieldTextPolicy::Sensitive => {}
+            FieldTextPolicy::SkipText => read_app_and_window_title(&mut context),
+            FieldTextPolicy::Read => {
+                read_app_and_window_title(&mut context);
+                let selection = read_selected_text_range(field.target_element)
+                    .filter(|range| range.location >= 0 && range.length >= 0)
+                    .map(|range| (range.location as usize, range.length as usize));
+                if let Some(text) =
+                    get_ax_string_attribute(field.target_element, K_AX_VALUE_ATTRIBUTE)
+                {
+                    let (before, after) = split_text_around_selection(
+                        &text,
+                        selection,
+                        CONTEXT_BEFORE_CHARS,
+                        CONTEXT_AFTER_CHARS,
+                    );
+                    context.text_before_cursor = non_blank(before);
+                    context.text_after_cursor = non_blank(after);
+                }
+            }
+        }
+        field.cleanup();
+        context
+    }
+
     // ========== 選取狀態偵測（#24/#25 編輯模式判定） ==========
 
     use super::SelectionState;
     use std::sync::atomic::{AtomicBool, Ordering};
+    use std::panic::catch_unwind;
     use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
     use std::sync::{Mutex, OnceLock};
     use std::time::Duration;
 
-    type SelectionRespTx = SyncSender<SelectionState>;
+    /// 送給共用 AX worker 的請求：選取偵測（編輯模式判定）或輸入上下文（AI 整理）。
+    /// 兩者跑在同一條執行緒上依序執行，不會同時打進同一個 App 的 AX server。
+    enum AxRequest {
+        Selection(SyncSender<SelectionState>),
+        Context(SyncSender<InputContext>),
+    }
+
+    /// 佇列容量：錄音開始時選取偵測與上下文幾乎同時送出，要能同時排進去。
+    /// worker 卡死時佇列很快填滿，之後的請求 try_send 失敗、立刻降級，不會無上界堆積。
+    const AX_WORKER_QUEUE_CAPACITY: usize = 2;
 
     static SELECTION_IN_FLIGHT: AtomicBool = AtomicBool::new(false);
-    static SELECTION_WORKER: OnceLock<Option<Mutex<SyncSender<SelectionRespTx>>>> = OnceLock::new();
+    static AX_WORKER: OnceLock<Option<Mutex<SyncSender<AxRequest>>>> = OnceLock::new();
 
     /// 讀取聚焦元素的選取長度（AXSelectedTextRange.length）。
     /// length > 0 = 真的有選取；length == 0 = 只有游標、沒選取
@@ -433,7 +714,7 @@ mod macos {
     /// 一條執行緒、不會隨熱鍵次數無上界累積）。逾時 / 忙碌一律回 unavailable，
     /// 由前端剪貼簿後備接手。
     pub fn read_selection_state_impl() -> SelectionState {
-        let sender = match selection_worker_sender() {
+        let sender = match ax_worker_sender() {
             Some(s) => s,
             None => return SelectionState::unavailable(),
         };
@@ -450,10 +731,10 @@ mod macos {
         outcome
     }
 
-    fn selection_read_once(sender: &SyncSender<SelectionRespTx>) -> SelectionState {
+    fn selection_read_once(sender: &SyncSender<AxRequest>) -> SelectionState {
         let (resp_tx, resp_rx) = sync_channel::<SelectionState>(1);
-        if sender.try_send(resp_tx).is_err() {
-            // worker 還卡在上一個請求（目標 App 的 AX server 無回應）
+        if sender.try_send(AxRequest::Selection(resp_tx)).is_err() {
+            // worker 卡在先前的請求、佇列已滿（目標 App 的 AX server 無回應）
             return SelectionState::unavailable();
         }
         resp_rx
@@ -461,27 +742,41 @@ mod macos {
             .unwrap_or_else(|_| SelectionState::unavailable())
     }
 
-    fn selection_worker_sender() -> Option<SyncSender<SelectionRespTx>> {
-        let cell = SELECTION_WORKER.get_or_init(spawn_selection_worker);
+    fn ax_worker_sender() -> Option<SyncSender<AxRequest>> {
+        let cell = AX_WORKER.get_or_init(spawn_ax_worker);
         let mutex = cell.as_ref()?;
         let guard = mutex.lock().ok()?;
         Some(guard.clone())
     }
 
-    fn spawn_selection_worker() -> Option<Mutex<SyncSender<SelectionRespTx>>> {
-        let (req_tx, req_rx) = sync_channel::<SelectionRespTx>(1);
+    fn spawn_ax_worker() -> Option<Mutex<SyncSender<AxRequest>>> {
+        let (req_tx, req_rx) = sync_channel::<AxRequest>(AX_WORKER_QUEUE_CAPACITY);
         std::thread::Builder::new()
             .name("ax-selection-reader".into())
-            .spawn(move || selection_worker_loop(req_rx))
+            .spawn(move || ax_worker_loop(req_rx))
             .ok()?;
         Some(Mutex::new(req_tx))
     }
 
-    fn selection_worker_loop(req_rx: Receiver<SelectionRespTx>) {
-        while let Ok(resp_tx) = req_rx.recv() {
-            let result = selection_probe_blocking();
+    /// 單一常駐 worker。dev build 下單次讀取 panic 只讓該請求回降級值（resp_tx 被 drop，
+    /// 呼叫端 recv 立刻失敗），worker 繼續服務下一個請求。
+    /// 注意：release profile 設 `panic = "abort"`，正式版 panic 會直接結束程式，
+    /// catch_unwind 不構成防護；讀取路徑本身不得有 unwrap／未 clamp 的索引。
+    fn ax_worker_loop(req_rx: Receiver<AxRequest>) {
+        while let Ok(request) = req_rx.recv() {
             // 呼叫端可能已逾時離開（receiver drop）：try_send 失敗直接丟棄
-            let _ = resp_tx.try_send(result);
+            match request {
+                AxRequest::Selection(resp_tx) => {
+                    if let Ok(result) = catch_unwind(selection_probe_blocking) {
+                        let _ = resp_tx.try_send(result);
+                    }
+                }
+                AxRequest::Context(resp_tx) => {
+                    if let Ok(result) = catch_unwind(input_context_blocking) {
+                        let _ = resp_tx.try_send(result);
+                    }
+                }
+            }
         }
     }
 
@@ -967,7 +1262,75 @@ mod windows_impl {
 
 #[cfg(test)]
 mod tests {
-    use super::is_single_non_degenerate_range;
+    use super::{
+        cap_chars, is_single_non_degenerate_range, non_blank, split_text_around_selection,
+        CONTEXT_AFTER_CHARS, CONTEXT_BEFORE_CHARS, CONTEXT_TITLE_CHARS,
+    };
+
+    // 測試一律引用正式上限常數：非 macOS 的 test target 只靠這裡用到它們，
+    // 否則 `clippy --all-targets -D warnings` 會報 dead_code
+    const BEFORE: usize = CONTEXT_BEFORE_CHARS;
+    const AFTER: usize = CONTEXT_AFTER_CHARS;
+
+    #[test]
+    fn test_split_cursor_in_middle() {
+        let (before, after) =
+            split_text_around_selection("今天開會討論預算", Some((4, 0)), BEFORE, AFTER);
+        assert_eq!(before, "今天開會");
+        assert_eq!(after, "討論預算");
+    }
+
+    #[test]
+    fn test_split_excludes_selected_text() {
+        let (before, after) = split_text_around_selection("abcXYZdef", Some((3, 3)), BEFORE, AFTER);
+        assert_eq!(before, "abc");
+        assert_eq!(after, "def");
+    }
+
+    #[test]
+    fn test_split_applies_production_limits() {
+        assert_eq!((BEFORE, AFTER), (300, 100));
+        let text: String = "一".repeat(500) + &"二".repeat(500);
+        let (before, after) = split_text_around_selection(&text, Some((500, 0)), BEFORE, AFTER);
+        assert_eq!(before, "一".repeat(BEFORE));
+        assert_eq!(after, "二".repeat(AFTER));
+    }
+
+    #[test]
+    fn test_split_uses_utf16_offsets() {
+        // emoji 在 UTF-16 佔兩個單位：游標在 emoji 之後是 location 3，不是 2
+        let (before, after) = split_text_around_selection("a😀b", Some((3, 0)), BEFORE, AFTER);
+        assert_eq!(before, "a😀");
+        assert_eq!(after, "b");
+    }
+
+    #[test]
+    fn test_split_without_range_treats_all_as_before() {
+        let (before, after) = split_text_around_selection("hello", None, 3, AFTER);
+        assert_eq!(before, "llo");
+        assert_eq!(after, "");
+    }
+
+    #[test]
+    fn test_split_clamps_out_of_range_location() {
+        let (before, after) = split_text_around_selection("abc", Some((99, 5)), BEFORE, AFTER);
+        assert_eq!(before, "abc");
+        assert_eq!(after, "");
+    }
+
+    #[test]
+    fn test_cap_chars_applies_title_limit() {
+        assert_eq!(CONTEXT_TITLE_CHARS, 120);
+        let long_title = "標".repeat(200);
+        assert_eq!(cap_chars(&long_title, CONTEXT_TITLE_CHARS).chars().count(), 120);
+        assert_eq!(cap_chars("Slack", CONTEXT_TITLE_CHARS), "Slack");
+    }
+
+    #[test]
+    fn test_non_blank() {
+        assert_eq!(non_blank("  \n".to_string()), None);
+        assert_eq!(non_blank(" a ".to_string()), Some(" a ".to_string()));
+    }
 
     #[test]
     fn test_single_range_with_distinct_endpoints_is_selection() {

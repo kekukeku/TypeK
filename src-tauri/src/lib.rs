@@ -494,6 +494,7 @@ pub fn run() {
             plugins::text_field_reader::read_focused_text_field,
             plugins::text_field_reader::read_selected_text,
             plugins::text_field_reader::read_selection_state,
+            plugins::text_field_reader::read_input_context,
             plugins::audio_recorder::get_default_input_device_name,
             plugins::audio_recorder::list_audio_input_devices,
             plugins::audio_recorder::start_audio_preview,

@@ -807,6 +807,18 @@ async function handleToggleSmartDictionary(newValue: boolean) {
   }
 }
 
+// ── 上下文感知 ──────────────────────────────────────────────
+const inputContextFeedback = useFeedbackMessage();
+
+async function handleToggleInputContext(newValue: boolean) {
+  try {
+    await settingsStore.saveInputContextEnabled(newValue);
+    inputContextFeedback.show("success", t("common.save"));
+  } catch (err) {
+    inputContextFeedback.show("error", extractErrorMessage(err));
+  }
+}
+
 // ── 錄音儲存管理 ──────────────────────────────────────────
 const recordingCleanupFeedback = useFeedbackMessage();
 const recordingAutoCleanupEnabled = ref(false);
@@ -1007,6 +1019,7 @@ onBeforeUnmount(() => {
   transcriptionLocaleFeedback.clearTimer();
   autoStartFeedback.clearTimer();
   smartDictionaryFeedback.clearTimer();
+  inputContextFeedback.clearTimer();
   recordingCleanupFeedback.clearTimer();
   providerFeedback.clearTimer();
   clearTimeout(deleteConfirmTimeoutId);
@@ -1810,6 +1823,45 @@ onBeforeUnmount(() => {
             "
           >
             {{ smartDictionaryFeedback.message.value }}
+          </p>
+        </transition>
+      </CardContent>
+    </Card>
+
+    <!-- 上下文感知（macOS: AXUIElement；Windows 尚未支援，不顯示免得開了沒效果） -->
+    <Card v-if="isMac">
+      <CardHeader class="border-b border-border">
+        <CardTitle class="text-base">{{ $t("settings.inputContext.title") }}</CardTitle>
+      </CardHeader>
+      <CardContent class="space-y-4">
+        <p class="text-sm text-muted-foreground leading-relaxed">
+          {{ $t("settings.inputContext.description") }}
+        </p>
+
+        <div class="flex items-center justify-between">
+          <Label for="input-context-toggle">{{ $t("settings.inputContext.title") }}</Label>
+          <Switch
+            id="input-context-toggle"
+            :model-value="settingsStore.isInputContextEnabled"
+            @update:model-value="handleToggleInputContext"
+          />
+        </div>
+
+        <p class="text-xs text-muted-foreground">
+          {{ $t("settings.inputContext.privacyNote") }}
+        </p>
+
+        <transition name="feedback-fade">
+          <p
+            v-if="inputContextFeedback.message.value !== ''"
+            class="text-sm"
+            :class="
+              inputContextFeedback.type.value === 'success'
+                ? 'text-green-400'
+                : 'text-red-400'
+            "
+          >
+            {{ inputContextFeedback.message.value }}
           </p>
         </transition>
       </CardContent>

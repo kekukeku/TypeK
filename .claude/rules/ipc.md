@@ -33,6 +33,7 @@ paths:
 | `read_focused_text_field` | `plugins/text_field_reader.rs` | useVoiceFlowStore | — | `Result<Option<String>, String>` |
 | `read_selected_text` | `plugins/text_field_reader.rs` | useVoiceFlowStore | — | `Result<Option<String>, String>` |
 | `read_selection_state` | `plugins/text_field_reader.rs` | useVoiceFlowStore | — | `SelectionState { kind, text }` |
+| `read_input_context` | `plugins/text_field_reader.rs` | useVoiceFlowStore | —（async，AX 跑在 blocking 執行緒） | `InputContext { appName, windowTitle, textBeforeCursor, textAfterCursor }`（皆可為 null；密碼欄不讀文字；Windows 回空內容） |
 | `mute_system_audio` | `plugins/audio_control.rs` | useVoiceFlowStore | `state: State<AudioControlState>` | `Result<(), String>` |
 | `restore_system_audio` | `plugins/audio_control.rs` | useVoiceFlowStore | `state: State<AudioControlState>` | `Result<(), String>` |
 | `get_default_input_device_name` | `plugins/audio_recorder.rs` | SettingsView | — | `Option<String>` |

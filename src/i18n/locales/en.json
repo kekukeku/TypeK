@@ -221,6 +221,11 @@
       "privacyNote": "When enabled, the system reads text near the cursor for AI analysis. No original text is stored",
       "analysisModelUpdated": "Dictionary analysis model updated"
     },
+    "inputContext": {
+      "title": "Context Awareness",
+      "description": "When polishing, AI refers to the app you're using, the window title and the text around your cursor to pick the right homophones and proper nouns",
+      "privacyNote": "When enabled, each polish sends the app name, window title and up to 400 characters around the cursor to your chosen AI service. Password fields are never read, and no original text is stored"
+    },
     "stt": {
       "title": "Speech to Text"
     },

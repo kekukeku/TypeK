@@ -221,6 +221,11 @@
       "privacyNote": "启用后，系统会读取光标附近的文字用于 AI 分析，不存储原文",
       "analysisModelUpdated": "字典分析模型已更新"
     },
+    "inputContext": {
+      "title": "上下文感知",
+      "description": "AI 整理时参考你正在使用的 App、窗口标题与光标前后文字，更准确判断同音字与专有名词",
+      "privacyNote": "启用后，每次整理会把 App 名称、窗口标题与光标前后最多 400 字发送到你选的 AI 服务；密码栏不读取，也不存储原文"
+    },
     "stt": {
       "title": "语音转录"
     },

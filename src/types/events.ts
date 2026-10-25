@@ -28,6 +28,7 @@ export type SettingsKey =
   | "whisperModel"
   | "muteOnRecording"
   | "smartDictionaryEnabled"
+  | "inputContextEnabled"
   | "locale"
   | "transcriptionLocale"
   | "soundEffectsEnabled"

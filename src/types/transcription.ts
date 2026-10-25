@@ -49,6 +49,14 @@ export interface ChatUsageData {
   totalTimeMs?: number;
 }
 
+/** `read_input_context` 回傳的輸入上下文（Rust `InputContext`），讀不到的欄位為 null。 */
+export interface InputContextDto {
+  appName: string | null;
+  windowTitle: string | null;
+  textBeforeCursor: string | null;
+  textAfterCursor: string | null;
+}
+
 export interface EnhanceResult {
   text: string;
   usage: ChatUsageData | null;

@@ -757,3 +757,29 @@ describe("useSettingsStore", () => {
     });
   });
 });
+
+describe("resolveLlmProviderId（預設改 Gemini 的舊使用者遷移）", () => {
+  it("[P0] 有存過 provider 就照用", async () => {
+    const { resolveLlmProviderId } = await import(
+      "../../src/stores/useSettingsStore"
+    );
+    expect(resolveLlmProviderId("openai", "gsk_x")).toBe("openai");
+    expect(resolveLlmProviderId("gemini", "")).toBe("gemini");
+  });
+
+  it("[P0] 沒存過 provider、已有 Groq key 的舊使用者留在 groq", async () => {
+    const { resolveLlmProviderId } = await import(
+      "../../src/stores/useSettingsStore"
+    );
+    expect(resolveLlmProviderId(null, "gsk_x")).toBe("groq");
+    expect(resolveLlmProviderId(undefined, " gsk_x ")).toBe("groq");
+  });
+
+  it("[P0] 全新安裝（沒有 provider 也沒有 Groq key）用新預設 gemini", async () => {
+    const { resolveLlmProviderId } = await import(
+      "../../src/stores/useSettingsStore"
+    );
+    expect(resolveLlmProviderId(null, null)).toBe("gemini");
+    expect(resolveLlmProviderId(undefined, "   ")).toBe("gemini");
+  });
+});

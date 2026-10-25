@@ -25,6 +25,7 @@ import type {
   TranscriptionRecord,
   ChatUsageData,
   ApiUsageRecord,
+  InputContextDto,
 } from "../types/transcription";
 import {
   calculateWhisperCostCeiling,
@@ -158,6 +159,11 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
   const WINDOWS_SELECTION_PROBE_BUDGET_MS = 500;
   let windowsSelectionProbe: Promise<void> | null = null;
   let windowsSelectionProbeIssuedAt = 0;
+  // 輸入上下文（App、視窗、游標前後文字）：錄音開始時趁焦點還在目標 App 讀，
+  // AI 整理前取用；每輪錄音開始或取消時清掉，不會跨錄音沿用
+  let inputContextProbe: Promise<InputContextDto | null> | null = null;
+  // 錄音期間通常早已讀完；這裡只是 AX 卡住時的上限，逾時就不帶上下文
+  const INPUT_CONTEXT_WAIT_MS = 300;
   // 本世代的編輯模式已判定：之後才落地的探測結果不得再改寫（拒收晚到）
   let windowsSelectionDecidedEpoch = -1;
   const isRetryAttempt = ref<boolean>(false);
@@ -955,6 +961,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     recordingEpoch += 1;
     pendingClipboardSelectionCheck = false;
     pendingSelectionCapture = null;
+    inputContextProbe = null;
 
     // Toggle prompt mode: minimal ↔ active
     const settingsStore = useSettingsStore();
@@ -1038,11 +1045,29 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     recordingEpoch += 1;
     pendingClipboardSelectionCheck = false;
     pendingSelectionCapture = null;
+    inputContextProbe = null;
 
     // 重置 toggle 模式狀態
     void invoke("reset_hotkey_state").catch(() => {});
 
     transitionTo("cancelled", t("voiceFlow.cancelled"));
+  }
+
+  /** 取用本輪錄音的輸入上下文（取用即清空），最多等 INPUT_CONTEXT_WAIT_MS。 */
+  async function takeInputContext(): Promise<InputContextDto | null> {
+    const probe = inputContextProbe;
+    inputContextProbe = null;
+    if (!probe) return null;
+
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<null>((resolve) => {
+      timeoutId = setTimeout(() => resolve(null), INPUT_CONTEXT_WAIT_MS);
+    });
+    try {
+      return await Promise.race([probe, timeout]);
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   async function handleStartRecording() {
@@ -1100,6 +1125,11 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
         }
       })
       .catch(() => {});
+
+    // 輸入上下文（非阻塞）：與選取偵測同時機，焦點還在目標 App
+    inputContextProbe = useSettingsStore().isInputContextEnabled
+      ? invoke<InputContextDto>("read_input_context").catch(() => null)
+      : null;
 
     try {
       playSoundIfEnabled("play_start_sound");
@@ -1399,22 +1429,44 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
         transitionTo("enhancing", t("voiceFlow.enhancing"));
         const enhancementStartTime = performance.now();
 
+        // 本輪世代：下面的等待期間若 ESC 取消後立刻重錄，世代會變，
+        // 舊流程必須放棄，不能拿新一輪的 abortController 繼續處理舊逐字稿
+        const enhanceEpoch = recordingEpoch;
+        const isStaleFlow = () =>
+          isAborted.value || enhanceEpoch !== recordingEpoch;
+        // 缺 LLM key 時 HUD 要看得出原因（新安裝預設 Gemini，可能只填了 Groq key）
+        let isLlmApiKeyMissing = false;
+
         try {
+          const enhancementTermList =
+            await vocabularyStore.getTopTermListByWeight(50);
+          // 取 probe 前同步檢查：過期流程不能把新一輪錄音的上下文取走
+          if (isStaleFlow()) return;
+          const inputContext = await takeInputContext();
+          if (isStaleFlow()) return;
+          writeInfoLog(
+            `useVoiceFlowStore: input context ${inputContext ? `app=${inputContext.appName ?? "-"}, before=${inputContext.textBeforeCursor?.length ?? 0}, after=${inputContext.textAfterCursor?.length ?? 0}` : "none"}`,
+          );
+
+          // 所有等待結束後才取 key：refresh 之後同步讀出 key 與 model（中間沒有 await），
+          // 確保兩者來自同一份設定，跨視窗切換 provider 不會讓 key 送錯平台
           await settingsStore.refreshLlmApiKey();
+          if (isStaleFlow()) return;
           const llmApiKey = settingsStore.getLlmApiKey();
+          const llmModelId = settingsStore.selectedLlmModelId;
           if (!llmApiKey) {
+            isLlmApiKeyMissing = true;
             throw new Error(t("errors.apiKeyMissing"));
           }
 
-          const enhancementTermList =
-            await vocabularyStore.getTopTermListByWeight(50);
           const enhanceOptions = {
             systemPrompt: settingsStore.getAiPrompt(),
             vocabularyTermList:
               enhancementTermList.length > 0 ? enhancementTermList : undefined,
-            modelId: settingsStore.selectedLlmModelId,
+            modelId: llmModelId,
             signal: abortController?.signal,
             transcriptLocale: getEffectiveTranscriptLocale(),
+            inputContext,
           };
 
           let enhanceResult = await enhanceText(
@@ -1422,7 +1474,8 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
             llmApiKey,
             enhanceOptions,
           );
-          if (isAborted.value) return;
+          // 新一輪錄音會清掉 isAborted，只看它擋不住舊流程貼出上一輪的結果
+          if (isStaleFlow()) return;
 
           // 增強後長度爆炸偵測（含重試機制）
           let retryCount = 0;
@@ -1442,7 +1495,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
               llmApiKey,
               enhanceOptions,
             );
-            if (isAborted.value) return;
+            if (isStaleFlow()) return;
           }
 
           // 重試後仍異常（長度爆炸）或語意飄走（#43）→ fallback 到 rawText
@@ -1494,7 +1547,8 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
             )}, enhancementDurationMs=${Math.round(enhancementDurationMs)}${retryCount > 0 ? `, enhancementRetryCount=${retryCount}` : ""}`,
           );
         } catch (enhanceError) {
-          if (isAborted.value) return;
+          // 舊 LLM 呼叫被新一輪的 abort 打斷時也走到這裡：不能把上一輪逐字稿貼出去
+          if (isStaleFlow()) return;
           const fallbackEnhancementDurationMs =
             performance.now() - enhancementStartTime;
           const enhanceErrorDetail = getEnhancementErrorMessage(enhanceError);
@@ -1520,7 +1574,9 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
 
           await completePasteFlow({
             text: result.rawText,
-            successMessage: t("voiceFlow.pasteSuccessUnenhanced"),
+            successMessage: isLlmApiKeyMissing
+              ? `${t("voiceFlow.pasteSuccessUnenhanced")} · ${t("errors.apiKeyMissing")}`
+              : t("voiceFlow.pasteSuccessUnenhanced"),
             record: fallbackRecord,
             chatUsage: null,
           });

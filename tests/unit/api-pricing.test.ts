@@ -51,27 +51,35 @@ describe("apiPricing.ts", () => {
   // ==========================================================================
 
   describe("calculateChatCostCeiling", () => {
+    const QWEN_MODEL_ID = "qwen/qwen3.6-27b";
+
     it("[P0] 0 tokens 應回傳 0", () => {
       expect(calculateChatCostCeiling(0)).toBe(0);
     });
 
     it("[P0] 1000 tokens 應按 output 價格上限計算", () => {
-      // 預設模型 Qwen3.6 27B: max(input=0.60, output=3.00) = 3.00/M
+      // Qwen3.6 27B: max(input=0.60, output=3.00) = 3.00/M
       // 1000 * 0.000003 = 0.003
-      const cost = calculateChatCostCeiling(1000);
+      const cost = calculateChatCostCeiling(1000, QWEN_MODEL_ID);
       expect(cost).toBeCloseTo(0.003, 6);
     });
 
     it("[P0] 1M tokens 應回傳 $3.00", () => {
-      // 預設模型 Qwen3.6 27B: 1M * 3.00/M = 3.00
-      const cost = calculateChatCostCeiling(1_000_000);
+      // Qwen3.6 27B: 1M * 3.00/M = 3.00
+      const cost = calculateChatCostCeiling(1_000_000, QWEN_MODEL_ID);
       expect(cost).toBeCloseTo(3.0, 4);
     });
 
     it("[P1] 150 tokens 應正確計算", () => {
-      // 預設模型 Qwen3.6 27B: 150 * 0.000003 = 0.00045
-      const cost = calculateChatCostCeiling(150);
+      // Qwen3.6 27B: 150 * 0.000003 = 0.00045
+      const cost = calculateChatCostCeiling(150, QWEN_MODEL_ID);
       expect(cost).toBeCloseTo(0.00045, 6);
+    });
+
+    it("[P1] 未指定 model 時用預設模型（Gemini 3.1 Flash-Lite）的價格", () => {
+      // max(input=0.25, output=1.50) = 1.50/M
+      const cost = calculateChatCostCeiling(1_000_000);
+      expect(cost).toBeCloseTo(1.5, 4);
     });
 
     it("[P1] 未知 model id 應以全 registry 最貴 output 價當上限", () => {

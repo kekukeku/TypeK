@@ -2,7 +2,9 @@
 
 export type LlmProviderId = "groq" | "openai" | "anthropic" | "gemini";
 
-export const DEFAULT_LLM_PROVIDER_ID: LlmProviderId = "groq";
+// 預設 Gemini：繁中整理品質較穩、免費額度足夠（docs/plan-input-context.md）。
+// 舊使用者的 provider 由 useSettingsStore.loadSettings 遷移固定，不受此值影響
+export const DEFAULT_LLM_PROVIDER_ID: LlmProviderId = "gemini";
 
 // ── LLM 模型（文字整理用）────────────────────────────────
 
@@ -56,7 +58,7 @@ export interface WhisperModelConfig {
 
 // ── 預設值 ────────────────────────────────────────────────
 
-export const DEFAULT_LLM_MODEL_ID: LlmModelId = "qwen/qwen3.6-27b";
+export const DEFAULT_LLM_MODEL_ID: LlmModelId = "gemini-3.1-flash-lite";
 export const DEFAULT_WHISPER_MODEL_ID: WhisperModelId = "whisper-large-v3";
 
 // ── 已下架模型 ID 映射（舊 → 新，用於自動遷移）──────────
@@ -141,7 +143,7 @@ export const LLM_MODEL_LIST: LlmModelConfig[] = [
     outputCostPerMillion: 9.0,
     freeQuotaRpd: 0,
     freeQuotaTpd: 0,
-    isDefault: true,
+    isDefault: false,
   },
   {
     id: "gemini-3.1-flash-lite",
@@ -154,7 +156,8 @@ export const LLM_MODEL_LIST: LlmModelConfig[] = [
     outputCostPerMillion: 1.5,
     freeQuotaRpd: 0,
     freeQuotaTpd: 0,
-    isDefault: false,
+    // 免費專案可日常使用（freeTier full），3.5 Flash 免費專案常 429
+    isDefault: true,
   },
   // ── OpenAI（付費）──
   {

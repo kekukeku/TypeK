@@ -221,6 +221,11 @@
       "privacyNote": "啟用後，系統會讀取游標附近的文字用於 AI 分析，不儲存原文",
       "analysisModelUpdated": "字典分析模型已更新"
     },
+    "inputContext": {
+      "title": "上下文感知",
+      "description": "AI 整理時參考你正在使用的 App、視窗標題與游標前後文字，更準確判斷同音字與專有名詞",
+      "privacyNote": "啟用後，每次整理會把 App 名稱、視窗標題與游標前後最多 400 字送到你選的 AI 服務；密碼欄不讀取，也不儲存原文"
+    },
     "stt": {
       "title": "語音轉錄"
     },
