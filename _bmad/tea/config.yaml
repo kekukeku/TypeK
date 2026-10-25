@@ -19,8 +19,8 @@ test_review_output: _bmad-output/test-artifacts/_bmad-output/test-artifacts/test
 trace_output: _bmad-output/test-artifacts/_bmad-output/test-artifacts/traceability
 
 # Core Configuration Values
-user_name: Jackle
+user_name: Kevin
 communication_language: 繁體中文
 document_output_language: 繁體中文
 output_folder: "{project-root}/_bmad-output"
-project_name: sayit
+project_name: typek

@@ -1,6 +1,8 @@
 # Changelog
 
-SayIt 版本更新紀錄。
+TypeK 版本更新紀錄。
+
+> TypeK 是 SayIt 的 fork。0.14.1 以前（含）的條目是 SayIt 時期的紀錄，保留原文。
 
 ## [0.14.1] - 2026-09-12
 

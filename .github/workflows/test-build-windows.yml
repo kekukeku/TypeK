@@ -60,7 +60,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: SayIt-${{ inputs.version }}-windows-x64-setup
+          name: TypeK-${{ inputs.version }}-windows-x64-setup
           path: src-tauri/target/release/bundle/nsis/*-setup.exe
           if-no-files-found: error
           retention-days: 14

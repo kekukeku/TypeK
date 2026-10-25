@@ -48,10 +48,10 @@ describe("buildExportFile / serializeExport", () => {
   });
 });
 
-describe("parseImportContent — SayIt JSON", () => {
+describe("parseImportContent — TypeK JSON", () => {
   it("依副檔名 .json 解析並保留 weight/source", () => {
     const json = JSON.stringify({
-      format: "sayit-dictionary",
+      format: "typek-dictionary",
       version: 1,
       terms: [
         { term: "Vue.js", weight: 8, source: "ai" },
@@ -62,6 +62,17 @@ describe("parseImportContent — SayIt JSON", () => {
     expect(result).toEqual([
       { term: "Vue.js", weight: 8, source: "ai" },
       { term: "Pinia", weight: 3, source: "manual" },
+    ]);
+  });
+
+  it("fork 前 SayIt 匯出的舊格式（sayit-dictionary）仍可匯入", () => {
+    const json = JSON.stringify({
+      format: "sayit-dictionary",
+      version: 1,
+      terms: [{ term: "未來誌", weight: 5, source: "manual" }],
+    });
+    expect(parseImportContent("sayit-dictionary-2026.json", json)).toEqual([
+      { term: "未來誌", weight: 5, source: "manual" },
     ]);
   });
 

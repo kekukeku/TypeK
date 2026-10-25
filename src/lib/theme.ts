@@ -8,7 +8,7 @@ import { listenToEvent, THEME_OS_CHANGED } from "../composables/useTauriEvents";
 const STORE_NAME = "settings.json";
 const THEME_STORE_KEY = "themeMode";
 // 同步快取，供 HTML inline script 在首次繪製前讀取，避免閃色
-const THEME_LOCAL_KEY = "sayit-theme-mode";
+const THEME_LOCAL_KEY = "typek-theme-mode";
 export const DEFAULT_THEME_MODE: ThemeMode = "system";
 
 let mediaQuery: MediaQueryList | null = null;

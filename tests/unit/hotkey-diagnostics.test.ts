@@ -24,7 +24,7 @@ const base: HotkeyDiagnosticsInput = {
 describe("useHotkeyDiagnostics（gh-30 一鍵回報）", () => {
   it("[P0] 診斷文字含版本、平台、觸發鍵設定、失敗種類與全部日誌行", () => {
     const text = buildHotkeyDiagnosticsText(base);
-    expect(text).toContain("SayIt v0.13.1 · Windows · UI zh-TW");
+    expect(text).toContain("TypeK v0.13.1 · Windows · UI zh-TW");
     expect(text).toContain("mode=toggle · key=右 Alt");
     expect(text).toContain("Failure: timeout");
     for (const line of base.logLines) expect(text).toContain(line);
@@ -45,7 +45,7 @@ describe("useHotkeyDiagnostics（gh-30 一鍵回報）", () => {
   it("[P0] URL 在預算內時不丟行，且是完整編碼後的長度", () => {
     const { url, droppedLines } = buildGitHubIssueUrl(base);
     expect(droppedLines).toBe(0);
-    expect(url.startsWith("https://github.com/chenjackle45/SayIt/issues/new?title=")).toBe(true);
+    expect(url.startsWith("https://github.com/kekukeku/TypeK/issues/new?title=")).toBe(true);
     expect(url).toContain(encodeURIComponent("Failure: timeout"));
     expect(url.length).toBeLessThanOrEqual(8000);
   });

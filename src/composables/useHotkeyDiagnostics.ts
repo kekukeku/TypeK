@@ -24,7 +24,7 @@ export interface HotkeyDiagnosticsInput {
 }
 
 export const ISSUE_URL_BUDGET_CHARS = 8000;
-const ISSUES_NEW_URL = "https://github.com/chenjackle45/SayIt/issues/new";
+const ISSUES_NEW_URL = "https://github.com/kekukeku/TypeK/issues/new";
 
 /** 從 userAgent 取平台摘要，不放整串 UA */
 export function summarizePlatform(userAgent: string): string {
@@ -40,7 +40,7 @@ function headerLines(input: HotkeyDiagnosticsInput): string[] {
       ? `${input.failureKind} (${input.failureReason})`
       : input.failureKind;
   return [
-    `SayIt v${input.appVersion} · ${summarizePlatform(input.userAgent)} · UI ${input.uiLocale}`,
+    `TypeK v${input.appVersion} · ${summarizePlatform(input.userAgent)} · UI ${input.uiLocale}`,
     `Trigger: mode=${input.triggerMode} · key=${input.triggerKeyLabel}`,
     `Failure: ${failure}`,
     "",

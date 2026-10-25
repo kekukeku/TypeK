@@ -23,7 +23,7 @@ pub static FILE_LOG_ENABLED: AtomicBool = AtomicBool::new(false);
 static LOG_GATE: Mutex<()> = Mutex::new(());
 
 /// plugin-log 的 LogDir 檔名基底（不含副檔名）。active 檔為 `{LOG_FILE_NAME}.log`。
-pub const LOG_FILE_NAME: &str = "sayit";
+pub const LOG_FILE_NAME: &str = "typek";
 
 /// 自訂鍵錄製診斷用的記憶體環狀緩衝（gh-30）。與檔案日誌開關無關，關 app 即消失。
 /// 只收訊息以 `HOTKEY_DIAG_PREFIXES` 開頭的日誌：這些行只有鍵碼、修飾鍵、階段與固定文字，
@@ -194,7 +194,7 @@ mod tests {
 
     fn temp_dir(tag: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!(
-            "sayit-logging-test-{tag}-{}",
+            "typek-logging-test-{tag}-{}",
             std::process::id()
         ));
         let _ = fs::remove_dir_all(&dir);
@@ -205,15 +205,15 @@ mod tests {
     #[test]
     fn clear_truncates_active_removes_rotated_keeps_others() {
         let dir = temp_dir("clear");
-        fs::write(dir.join("sayit.log"), "逐字稿一行").unwrap();
-        fs::write(dir.join("sayit_2026-09-10.log"), "舊輪替").unwrap();
+        fs::write(dir.join("typek.log"), "逐字稿一行").unwrap();
+        fs::write(dir.join("typek_2026-09-10.log"), "舊輪替").unwrap();
         fs::write(dir.join("notes.txt"), "不相關").unwrap();
         fs::write(dir.join("other.log"), "別的程式的檔").unwrap();
 
         clear_log_files(&dir).unwrap();
 
-        assert_eq!(fs::read_to_string(dir.join("sayit.log")).unwrap(), "");
-        assert!(!dir.join("sayit_2026-09-10.log").exists());
+        assert_eq!(fs::read_to_string(dir.join("typek.log")).unwrap(), "");
+        assert!(!dir.join("typek_2026-09-10.log").exists());
         assert_eq!(fs::read_to_string(dir.join("notes.txt")).unwrap(), "不相關");
         assert_eq!(
             fs::read_to_string(dir.join("other.log")).unwrap(),
@@ -226,7 +226,7 @@ mod tests {
     fn append_handle_writes_from_offset_zero_after_truncate() {
         // 模擬 plugin 持有的 append handle：截斷後再寫，內容不得有 NUL 洞
         let dir = temp_dir("append");
-        let path = dir.join("sayit.log");
+        let path = dir.join("typek.log");
         let mut handle = fs::OpenOptions::new()
             .create(true)
             .append(true)
@@ -243,7 +243,7 @@ mod tests {
 
     #[test]
     fn clear_on_missing_dir_is_ok() {
-        let dir = std::env::temp_dir().join("sayit-logging-test-missing-dir-does-not-exist");
+        let dir = std::env::temp_dir().join("typek-logging-test-missing-dir-does-not-exist");
         assert!(clear_log_files(&dir).is_ok());
     }
 
@@ -284,7 +284,7 @@ mod tests {
     #[test]
     fn disable_waits_for_in_flight_write_then_clears() {
         let dir = temp_dir("gate");
-        let path = dir.join("sayit.log");
+        let path = dir.join("typek.log");
         FILE_LOG_ENABLED.store(true, Ordering::SeqCst);
         let (entered_tx, entered_rx) = mpsc::channel();
         let (release_tx, release_rx) = mpsc::channel();
@@ -369,9 +369,9 @@ mod tests {
         HOTKEY_DIAG_BUFFER.lock().unwrap().clear();
         let logger = GatedLogger::new(Box::new(NullLog));
 
-        feed(&logger, "sayit", "[transcription] Response: \"這是逐字稿\"");
+        feed(&logger, "typek", "[transcription] Response: \"這是逐字稿\"");
         feed(&logger, "webview", "[SettingsView] hotkey recording: listeners ready");
-        feed(&logger, "sayit", "[hotkey-listener] recording: vk=0x4B down=true");
+        feed(&logger, "typek", "[hotkey-listener] recording: vk=0x4B down=true");
         feed(&logger, "webview", "[VoiceFlow] enhancement done");
 
         let snap = get_hotkey_recording_diagnostics();
@@ -385,7 +385,7 @@ mod tests {
 
         // 上限：塞滿後淘汰最舊
         for i in 0..(HOTKEY_DIAG_CAPACITY + 5) {
-            feed(&logger, "sayit", &format!("[hotkey-listener] filler {i}"));
+            feed(&logger, "typek", &format!("[hotkey-listener] filler {i}"));
         }
         let snap = get_hotkey_recording_diagnostics();
         assert_eq!(snap.len(), HOTKEY_DIAG_CAPACITY);

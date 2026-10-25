@@ -86,14 +86,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  AtSign,
   Bug,
   CircleAlert,
-  Facebook,
   FolderOpen,
   Github,
-  Globe,
-  Instagram,
   Mic,
   RefreshCw,
   Trash2,
@@ -1030,7 +1026,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="p-6 space-y-6 text-foreground">
-    <!-- 關於 SayIt -->
+    <!-- 關於 TypeK -->
     <Card>
       <CardHeader class="border-b border-border">
         <CardTitle class="text-base">{{ $t("settings.about.title") }}</CardTitle>
@@ -1041,37 +1037,18 @@ onBeforeUnmount(() => {
             {{ $t("settings.about.description") }}
           </p>
           <p class="text-sm text-muted-foreground">
-            {{ $t("settings.about.author") }}<a href="https://jackle.pro" target="_blank" rel="noopener noreferrer" class="font-medium text-foreground hover:text-primary transition-colors">Jackle Chen</a>
+            {{ $t("settings.about.author") }}<a href="https://github.com/kekukeku" target="_blank" rel="noopener noreferrer" class="font-medium text-foreground hover:text-primary transition-colors">kekukeku</a>
           </p>
-        </div>
-
-        <div class="flex flex-wrap gap-x-4 gap-y-2">
-          <a href="https://jackle.pro" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
-            <Globe class="size-4" />
-            <span>{{ $t("settings.about.website") }}</span>
-          </a>
-          <a href="https://www.facebook.com/jackle45" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
-            <Facebook class="size-4" />
-            <span>Facebook</span>
-          </a>
-          <a href="https://www.instagram.com/jackle9527" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
-            <Instagram class="size-4" />
-            <span>Instagram</span>
-          </a>
-          <a href="https://www.threads.com/@jackle9527" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
-            <AtSign class="size-4" />
-            <span>Threads</span>
-          </a>
         </div>
 
         <Separator />
 
         <div class="flex flex-wrap gap-x-4 gap-y-2">
-          <a href="https://github.com/chenjackle45/SayIt" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
+          <a href="https://github.com/kekukeku/TypeK" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
             <Github class="size-4" />
             <span>{{ $t("settings.about.sourceCode") }}</span>
           </a>
-          <a href="https://github.com/chenjackle45/SayIt/issues" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
+          <a href="https://github.com/kekukeku/TypeK/issues" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
             <CircleAlert class="size-4" />
             <span>{{ $t("settings.about.reportIssue") }}</span>
           </a>

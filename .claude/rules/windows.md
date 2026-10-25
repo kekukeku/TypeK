@@ -12,7 +12,7 @@ paths:
 
 ## 鍵盤 Hook
 
-- **Copilot 鍵 = `VK_F23` (`0x86`)（硬規則）**：低階鍵盤 hook（`mod windows_hook` 在 `src-tauri/src/plugins/hotkey_listener.rs`）必須在取出 `kbd` 後立刻判斷 `if kbd.vkCode == VK_F23 { return CallNextHookEx(...); }` 把信號放行，否則會干擾 Windows 11 Copilot Quick View。**禁止把 F23 開放成 SayIt 自訂熱鍵**。詳見 [`docs/adr-windows-vk-f23.md`](../../docs/adr-windows-vk-f23.md)
+- **Copilot 鍵 = `VK_F23` (`0x86`)（硬規則）**：低階鍵盤 hook（`mod windows_hook` 在 `src-tauri/src/plugins/hotkey_listener.rs`）必須在取出 `kbd` 後立刻判斷 `if kbd.vkCode == VK_F23 { return CallNextHookEx(...); }` 把信號放行，否則會干擾 Windows 11 Copilot Quick View。**禁止把 F23 開放成 TypeK 自訂熱鍵**。詳見 [`docs/adr-windows-vk-f23.md`](../../docs/adr-windows-vk-f23.md)
 - **macOS 本地 `cargo check` 無法驗證 Windows 鍵盤 hook**：`#[cfg(target_os = "windows")]` 區塊在 macOS 不編譯，必須靠 CI 的 windows runner 或實機測試
 - **`windows` crate 0.61 breaking change**：`AttachThreadInput` 從 `Win32::UI::Input::KeyboardAndMouse` 搬到 `Win32::System::Threading`，Cargo.toml features 需含 `Win32_System_Threading`
 
@@ -21,5 +21,5 @@ paths:
 - Windows 貼上走 `simulate_paste_via_keyboard()`（SendInput Ctrl+V）；macOS 走 CGEvent Cmd+V
 - `read_selection_state` 的 Windows 分支**用 UIA 被動讀選取、不模擬任何按鍵**（v0.14.2 起，#79／#80）：恰好一段且起點≠終點才回 `selection`，其餘一律 `no_selection`，**不回 `unavailable`**。選取請求和欄位輪詢共用同一條 UIA 執行緒，但**不經欄位輪詢的 `IN_FLIGHT` 單飛旗標**（否則會被每 500ms 的輪詢擠掉），佇列已滿就直接降級為無選取。前端在 Windows 也**不排程停止後的剪貼簿後備**（那就是模擬 Ctrl+C），改在判定前有界等待（自發出起 500ms）並拒收晚到結果。**Windows 選取流程不得再加回任何自動 Ctrl+C**——舊做法按住 Alt／Shift 時目標程式收到 Alt+Ctrl+C，讀不到選取還多打字元。代價：不提供 TextPattern 的程式在 Windows 進不了編輯模式。計畫：`docs/plan-windows-uia-selection.md`
 - **單顆 Alt 觸發鍵放開前送遮罩鍵**（v0.14.2 起，#70）：`hotkey_listener.rs` 單鍵分支在左右 Alt 放開、放行前呼叫 `send_alt_menu_mask_key()`（`keybd_event` 送 0xE8 按下／放開、帶記號），Windows 就不會把它當成單獨按了 Alt 而啟動選單列。時點與 API 照 AutoHotkey `A_MenuMaskKey`，**不要改成按下時送或改用 SendInput**。和弦與組合鍵不在範圍。計畫：`docs/plan-windows-alt-menu-mask.md`
-- **自家 SendInput 一律帶 `SAYIT_INJECTED_EXTRA_INFO`**（v0.12.1 起，`clipboard_paste.rs`）：`hotkey_listener.rs` 的 hook 在 F23 放行之後、任何狀態處理之前，看到這個 `dwExtraInfo` 就 `CallNextHookEx`。理由：v0.12.0 錄音開始的模擬 Ctrl↓／Ctrl↑ 到 hook 時 `vkCode` 是 `VK_LCONTROL`，左 Ctrl 觸發鍵每次錄音都被立刻停掉。新增任何 `SendInput`／`keybd_event` 都要走 `build_ctrl_chord_inputs()`、`build_alt_menu_mask_calls()` 或同樣填記號；**不要改成過濾 `LLKHF_INJECTED`**，那會讓改鍵工具（AutoHotkey／PowerToys）的使用者觸發鍵失效。計畫：`docs/plan-windows-injected-key-guard.md`
+- **自家 SendInput 一律帶 `TYPEK_INJECTED_EXTRA_INFO`**（v0.12.1 起，`clipboard_paste.rs`）：`hotkey_listener.rs` 的 hook 在 F23 放行之後、任何狀態處理之前，看到這個 `dwExtraInfo` 就 `CallNextHookEx`。理由：v0.12.0 錄音開始的模擬 Ctrl↓／Ctrl↑ 到 hook 時 `vkCode` 是 `VK_LCONTROL`，左 Ctrl 觸發鍵每次錄音都被立刻停掉。新增任何 `SendInput`／`keybd_event` 都要走 `build_ctrl_chord_inputs()`、`build_alt_menu_mask_calls()` 或同樣填記號；**不要改成過濾 `LLKHF_INJECTED`**，那會讓改鍵工具（AutoHotkey／PowerToys）的使用者觸發鍵失效。計畫：`docs/plan-windows-injected-key-guard.md`
 - `selection`／`no_selection` 建構函式 cfg 為 `any(macos, windows)`，`unavailable` 為 `not(windows)`，避免 clippy `-D warnings` 的 dead_code

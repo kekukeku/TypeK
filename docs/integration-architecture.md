@@ -4,13 +4,13 @@
 > 同步來源：`CLAUDE.md` 的 IPC 契約表（authoritative） + `lib.rs:416` 的 `invoke_handler!` macro
 > 掃描日期：2026-05-08 · 版本：0.9.5
 
-本文件描述 SayIt 兩個 part 之間如何協作 — 是 PRD / 新功能設計時必讀的「邊界契約」。
+本文件描述 TypeK 兩個 part 之間如何協作 — 是 PRD / 新功能設計時必讀的「邊界契約」。
 
 ---
 
 ## 一、整合形式總覽
 
-SayIt 採典型 **Tauri 雙向 IPC 模式**，沒有外部 message broker，所有跨端通訊走兩條軌道：
+TypeK 採典型 **Tauri 雙向 IPC 模式**，沒有外部 message broker，所有跨端通訊走兩條軌道：
 
 ```
  ┌─────────────────────────────────────────────────────────────┐

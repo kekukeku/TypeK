@@ -18,10 +18,23 @@ describe("autoUpdater.ts", () => {
     mockInvoke.mockReset().mockResolvedValue(undefined);
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
+    // 以下測試驗證「啟用後」的更新流程；TypeK 預設關閉（見最後一個測試）
+    vi.stubEnv("VITE_AUTO_UPDATE_ENABLED", "true");
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("[P0] 未設定 VITE_AUTO_UPDATE_ENABLED 時不檢查更新、回傳 error", async () => {
+    vi.stubEnv("VITE_AUTO_UPDATE_ENABLED", "");
+
+    const { checkForAppUpdate } = await import("../../src/lib/autoUpdater");
+    const result = await checkForAppUpdate();
+
+    expect(result.status).toBe("error");
+    expect(mockCheck).not.toHaveBeenCalled();
   });
 
   it("[P0] 無更新時應回傳 up-to-date", async () => {

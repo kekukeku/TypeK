@@ -318,7 +318,7 @@ export const useVocabularyStore = defineStore("vocabulary", () => {
     const iso = new Date().toISOString();
     const stamp = iso.slice(0, 10).replace(/-/g, "");
     return {
-      filename: `sayit-dictionary-${stamp}.json`,
+      filename: `typek-dictionary-${stamp}.json`,
       content: serializeExport(entries, iso),
       count: entries.length,
     };

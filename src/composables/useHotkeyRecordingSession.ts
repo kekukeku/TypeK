@@ -18,7 +18,7 @@ import type { RecordingCapturedPayload, RecordingRejectedPayload } from "../type
 const RECORDING_TIMEOUT_MS = 10_000;
 
 export interface HotkeyRecordingSessionOptions {
-  /** Windows 才開：SayIt 視窗有焦點時 hook 收不到鍵（gh-78）。 */
+  /** Windows 才開：TypeK 視窗有焦點時 hook 收不到鍵（gh-78）。 */
   enableDomSource: boolean;
   onCaptured: (payload: RecordingCapturedPayload) => void;
   onRejected: (payload: RecordingRejectedPayload) => void;

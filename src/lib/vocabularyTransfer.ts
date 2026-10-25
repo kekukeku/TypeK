@@ -4,7 +4,7 @@ import type {
   VocabularySource,
 } from "../types/vocabulary";
 
-export const EXPORT_FORMAT = "sayit-dictionary" as const;
+export const EXPORT_FORMAT = "typek-dictionary" as const;
 export const EXPORT_VERSION = 1 as const;
 
 /** 匯入檔案大小上限（位元組），避免一次塞入過大檔案 */
@@ -77,8 +77,8 @@ export function serializeExport(
   return JSON.stringify(buildExportFile(entries, exportedAt), null, 2);
 }
 
-/** 解析 SayIt JSON 匯出檔，回傳正規化詞條（容錯：忽略無效詞條） */
-function parseSayItJson(content: string): VocabularyExportEntry[] {
+/** 解析 TypeK JSON 匯出檔，回傳正規化詞條（容錯：忽略無效詞條） */
+function parseTypeKJson(content: string): VocabularyExportEntry[] {
   let parsed: unknown;
   try {
     parsed = JSON.parse(content);
@@ -107,7 +107,7 @@ function parseSayItJson(content: string): VocabularyExportEntry[] {
 /**
  * 解析純文字 / CSV：一行一個詞。
  * - .txt：整行就是詞（含逗號也保留，例如「Inc, ACME」）
- * - .csv：取第一欄（支援「念法,正確寫法」這類兩欄資料：SayIt 只存詞條本身），去掉包住的引號
+ * - .csv：取第一欄（支援「念法,正確寫法」這類兩欄資料：TypeK 只存詞條本身），去掉包住的引號
  * 用於從 Typeless 等沒有匯出功能的工具遷移 —— 使用者自行整理成文字檔即可。
  * 所有詞條以 source='manual'、weight=1 匯入。
  */
@@ -129,7 +129,7 @@ function looksLikeJson(content: string): boolean {
 
 /**
  * 依檔名與內容判斷格式並解析。
- * - .json 或內容像 JSON → 當作 SayIt 匯出檔
+ * - .json 或內容像 JSON → 當作 TypeK 匯出檔
  * - .csv → 取第一欄；其他（.txt / 純文字）→ 整行一個詞
  * 回傳去重後的詞條陣列；去重後超過 MAX_IMPORT_ENTRIES 拋出 TOO_MANY_ENTRIES。
  */
@@ -140,7 +140,7 @@ export function parseImportContent(
   const isJson = /\.json$/i.test(filename) || looksLikeJson(content);
   const isCsv = /\.csv$/i.test(filename);
   const entries = dedupe(
-    isJson ? parseSayItJson(content) : parsePlainText(content, isCsv),
+    isJson ? parseTypeKJson(content) : parsePlainText(content, isCsv),
   );
   if (entries.length > MAX_IMPORT_ENTRIES) {
     throw new Error("TOO_MANY_ENTRIES");

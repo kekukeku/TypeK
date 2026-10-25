@@ -10,10 +10,22 @@ export interface UpdateCheckResult {
 let pendingUpdate: Update | null = null;
 
 /**
+ * 自動更新開關：建置時 `VITE_AUTO_UPDATE_ENABLED=true` 才啟用。
+ * TypeK 還沒有自己的 updater 簽章金鑰（`tauri signer generate`），
+ * tauri.conf.json 的 endpoints／pubkey 已清空；啟用步驟見 docs/deployment-guide.md §5.4。
+ */
+function isAutoUpdateEnabled(): boolean {
+  return import.meta.env.VITE_AUTO_UPDATE_ENABLED === "true";
+}
+
+/**
  * 檢查 App 更新（僅檢查，不下載）。
  * 找到更新時暫存 Update 物件供後續操作。
  */
 export async function checkForAppUpdate(): Promise<UpdateCheckResult> {
+  if (!isAutoUpdateEnabled()) {
+    return { status: "error", error: "Auto-update is not enabled in TypeK yet" };
+  }
   try {
     const update = await check();
     if (!update) {

@@ -407,7 +407,7 @@ fn show_main_window(app: &AppHandle) {
     }
 }
 
-const DEFAULT_SENTRY_RELEASE: &str = concat!("sayit@", env!("CARGO_PKG_VERSION"));
+const DEFAULT_SENTRY_RELEASE: &str = concat!("typek@", env!("CARGO_PKG_VERSION"));
 
 fn get_sentry_dsn() -> Option<&'static str> {
     option_env!("SENTRY_DSN")
@@ -521,7 +521,7 @@ pub fn run() {
                 let (log_plugin, max_level, logger) = tauri_plugin_log::Builder::new()
                     // 用 targets() 覆蓋預設 targets（Builder 預設含 Stdout + LogDir{None}），
                     // 否則 .target() 會 append → stdout 重複輸出、且預設 LogDir 與本 target
-                    // 同寫 sayit.log 造成雙寫衝突。
+                    // 同寫 typek.log 造成雙寫衝突。
                     .targets([
                         tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout),
                         // 開關只作用在檔案 target：關閉時（不論 debug/release）不寫檔，
@@ -613,7 +613,7 @@ pub fn run() {
 
             let open_dashboard_item =
                 MenuItem::with_id(app, "open-dashboard", "開啟 Dashboard", true, None::<&str>)?;
-            let quit_item = MenuItem::with_id(app, "quit", "Quit SayIt", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Quit TypeK", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&open_dashboard_item, &quit_item])?;
 
             TrayIconBuilder::new()
@@ -623,7 +623,7 @@ pub fn run() {
                 .icon_as_template(true)
                 .menu(&menu)
                 .show_menu_on_left_click(true)
-                .tooltip("SayIt")
+                .tooltip("TypeK")
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "open-dashboard" => {
                         show_main_window(app);

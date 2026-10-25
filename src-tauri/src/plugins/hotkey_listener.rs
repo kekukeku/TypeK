@@ -1214,9 +1214,9 @@ mod windows_hook {
                 if kbd.vkCode == VK_F23 {
                     return CallNextHookEx(None, n_code, w_param, l_param);
                 }
-                // SayIt 自己 SendInput 的 Ctrl+C／Ctrl+V（選取探測、貼上）：
+                // TypeK 自己 SendInput 的 Ctrl+C／Ctrl+V（選取探測、貼上）：
                 // 模擬的 Ctrl↓／Ctrl↑ 不是使用者的觸發鍵動作，也不該被自訂鍵擷取收走
-                if kbd.dwExtraInfo == crate::plugins::clipboard_paste::SAYIT_INJECTED_EXTRA_INFO {
+                if kbd.dwExtraInfo == crate::plugins::clipboard_paste::TYPEK_INJECTED_EXTRA_INFO {
                     return CallNextHookEx(None, n_code, w_param, l_param);
                 }
                 let w = w_param.0 as u32;

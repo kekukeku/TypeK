@@ -3,7 +3,7 @@
 > 由 BMad Document Project 工作流自動產生
 > 掃描層級：**Exhaustive** · 掃描日期：2026-05-08 · 專案版本：0.9.5
 
-本文件以「兩個 part」為視角註解 SayIt 的原始碼結構：
+本文件以「兩個 part」為視角註解 TypeK 的原始碼結構：
 
 - **frontend** — `src/`（Vue 3 + Tauri JS API）
 - **backend** — `src-tauri/`（Tauri v2 Rust runtime）

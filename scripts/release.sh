@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# SayIt 發版腳本
+# TypeK 發版腳本
 # 用法: ./scripts/release.sh 0.2.0
 
 VERSION="${1:-}"
@@ -103,4 +103,4 @@ git push origin "v$VERSION"
 echo ""
 echo "✓ 已推送 v$VERSION"
 echo "→ Release workflow 已觸發，完成後會自動公開 GitHub Release"
-echo "  https://github.com/chenjackle45/SayIt/releases"
+echo "  https://github.com/kekukeku/TypeK/releases"

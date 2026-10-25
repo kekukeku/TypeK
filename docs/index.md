@@ -1,4 +1,4 @@
-# SayIt — Documentation Index
+# TypeK — Documentation Index
 
 > 專案文件總入口 · 由 BMad Document Project 工作流自動產生
 > 掃描層級：**Exhaustive** · 掃描日期：**2026-05-08** · 專案版本：**0.9.5**
@@ -102,7 +102,7 @@
 
 - `planning-artifacts/prd.md` — 產品需求文件
 - `planning-artifacts/epics.md` — Epic 拆分
-- `planning-artifacts/product-brief-sayit-2026-02-28.md` — 產品 brief
+- `planning-artifacts/product-brief-typek-2026-02-28.md` — 產品 brief
 - `planning-artifacts/sprint-change-proposal-2026-03-15.md` — 變更提案
 - `planning-artifacts/implementation-readiness-report-2026-03-01.md` — Implementation readiness
 - `implementation-artifacts/{n}-{m}-{slug}.md` — 17 個 story 完成紀錄

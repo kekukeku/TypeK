@@ -87,9 +87,9 @@ on:
 
 | Platform        | Args                              | Stable Name                  | Sourcemaps |
 | --------------- | --------------------------------- | ---------------------------- | ---------- |
-| macos-latest    | `--target aarch64-apple-darwin`   | `SayIt-mac-arm64.dmg`        | **true**（唯一上傳） |
-| macos-latest    | `--target x86_64-apple-darwin`    | `SayIt-mac-x64.dmg`          | false      |
-| windows-latest  | （空）                             | `SayIt-windows-x64.exe`      | false      |
+| macos-latest    | `--target aarch64-apple-darwin`   | `TypeK-mac-arm64.dmg`        | **true**（唯一上傳） |
+| macos-latest    | `--target x86_64-apple-darwin`    | `TypeK-mac-x64.dmg`          | false      |
+| windows-latest  | （空）                             | `TypeK-windows-x64.exe`      | false      |
 
 ### 3.3 Release metadata 解析
 
@@ -101,8 +101,8 @@ RELEASE_VERSION="${RAW_TAG#v}"
 # 推到 GITHUB_ENV：
 RELEASE_TAG=v0.9.5
 RELEASE_VERSION=0.9.5
-SENTRY_RELEASE=sayit@0.9.5
-VITE_SENTRY_RELEASE=sayit@0.9.5
+SENTRY_RELEASE=typek@0.9.5
+VITE_SENTRY_RELEASE=typek@0.9.5
 ```
 
 ### 3.4 主要 step：`tauri-apps/tauri-action@v0`
@@ -125,8 +125,8 @@ APPLE_TEAM_ID                          ← Apple Developer Team ID
 SENTRY_DSN, VITE_SENTRY_DSN
 SENTRY_ENVIRONMENT=production
 VITE_SENTRY_ENVIRONMENT=production
-SENTRY_RELEASE=sayit@<version>
-VITE_SENTRY_RELEASE=sayit@<version>
+SENTRY_RELEASE=typek@<version>
+VITE_SENTRY_RELEASE=typek@<version>
 VITE_SENTRY_SOURCEMAPS_ENABLED=<matrix.upload_sourcemaps>
 ```
 
@@ -134,7 +134,7 @@ with：
 
 ```yaml
 tagName: ${{ env.RELEASE_TAG }}
-releaseName: "SayIt v${{ env.RELEASE_VERSION }}"
+releaseName: "TypeK v${{ env.RELEASE_VERSION }}"
 releaseBody: "See the assets to download and install this version."
 releaseDraft: true              ← 先建 Draft，最後一個 job 才 publish
 prerelease: false
@@ -157,7 +157,7 @@ npx @sentry/cli releases finalize "$SENTRY_RELEASE" || true
 
 ### 3.6 上傳穩定檔名
 
-GitHub Release 的 default asset 命名為 `SayIt_0.9.5_aarch64.dmg` 等版本號內嵌格式 — 這對「永遠最新版」連結（`releases/latest/download/...`）不友善。
+GitHub Release 的 default asset 命名為 `TypeK_0.9.5_aarch64.dmg` 等版本號內嵌格式 — 這對「永遠最新版」連結（`releases/latest/download/...`）不友善。
 
 額外步驟把 dmg / exe 重新命名後上傳：
 
@@ -232,15 +232,15 @@ tag push 後自動觸發 `release.yml`：
 ```
 1. GitHub Releases 頁面確認 v0.9.5 已 Published
 2. 檢查附件：
-   - SayIt-mac-arm64.dmg（穩定檔名）
-   - SayIt-mac-x64.dmg
-   - SayIt-windows-x64.exe
-   - 自動命名版（SayIt_0.9.5_*.dmg / .exe）
+   - TypeK-mac-arm64.dmg（穩定檔名）
+   - TypeK-mac-x64.dmg
+   - TypeK-windows-x64.exe
+   - 自動命名版（TypeK_0.9.5_*.dmg / .exe）
    - latest.json（updater）
    - 對應的 .sig 檔（updater 簽名）
 3. 下載 .dmg → 開啟 → 確認 Notarization 通過（不會跳「未驗證」警告）
 4. 檢查 Sentry：
-   - Releases 頁面看到 sayit@0.9.5
+   - Releases 頁面看到 typek@0.9.5
    - Sourcemaps 已上傳（前端 stack trace 應該有原始檔名）
 5. 啟動 app → 設定頁面確認版本號顯示 0.9.5
 ```
@@ -252,7 +252,7 @@ tag push 後自動觸發 `release.yml`：
 ### 5.1 Developer ID
 
 - Team：Tai-Cheng Chen (G9J8D2T6DV)
-- Apple ID：chenjackle45@gmail.com
+- Apple ID：（你的 Apple ID，存在 GitHub Secrets `APPLE_ID`）
 - Signing Identity：`Developer ID Application: Tai-Cheng Chen (G9J8D2T6DV)`
 
 ### 5.2 簽署流程（tauri-action 自動處理）
@@ -274,13 +274,17 @@ tag push 後自動觸發 `release.yml`：
 
 ### 5.4 自動更新簽名
 
-`tauri-plugin-updater` 用 minisign 簽名：
+> **TypeK 目前關閉自動更新**（fork 後尚未產生自己的簽章金鑰）：`tauri.conf.json` 的 `plugins.updater.endpoints`、`pubkey` 為空，`bundle.createUpdaterArtifacts` 為 `false`，前端未設定 `VITE_AUTO_UPDATE_ENABLED`（`src/lib/autoUpdater.ts` 只在它等於 `true` 時檢查更新）。
 
-- 私鑰：`~/.tauri/sayit.key`，密碼：`sayit-updater-2026`
-- 公鑰：嵌入 `tauri.conf.json` 的 `plugins.updater.pubkey`
-- Updater endpoint：`https://github.com/chenjackle45/SayIt/releases/latest/download/latest.json`
+`tauri-plugin-updater` 用 minisign 簽名。啟用步驟：
 
-每次 release.yml 跑時：
+1. 產生金鑰：`pnpm tauri signer generate -w ~/.tauri/typek.key`（密碼自訂，**不要寫進 repo 或文件**）
+2. GitHub Secrets 設 `TAURI_SIGNING_PRIVATE_KEY`（私鑰檔內容）與 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+3. 公鑰（`~/.tauri/typek.key.pub` 內容）填進 `tauri.conf.json` 的 `plugins.updater.pubkey`
+4. `plugins.updater.endpoints` 設為 `["https://github.com/kekukeku/TypeK/releases/latest/download/latest.json"]`
+5. `bundle.createUpdaterArtifacts` 改回 `true`，並在 `.github/workflows/release.yml` 的建置環境加上 `VITE_AUTO_UPDATE_ENABLED: "true"`
+
+啟用後每次 release.yml 跑時：
 - tauri-action 用 `TAURI_SIGNING_PRIVATE_KEY` + 密碼產 `latest.json` + 各平台 `.sig` 檔
 - 上傳到 GitHub Release
 
@@ -310,7 +314,7 @@ tag push 後自動觸發 `release.yml`：
 
 ## 七、Sentry Release 規則（硬規則）
 
-1. **Release 名稱固定**：`sayit@<version>`（前端 + 後端必須相同）
+1. **Release 名稱固定**：`typek@<version>`（前端 + 後端必須相同）
 2. **正式版 Sentry release 一律由 release.yml 產生**，前端與 Rust **不可** 各自手動指定不同名稱
 3. **Sourcemap upload 只能走 release.yml 的 mac arm64 job**，不可繞過 workflow 手動上傳
 4. **dev / staging 不上報**：Rust 端 `is_sentry_enabled()` 檢查 `production`；前端 `initSentryFor*()` 檢查 DSN
@@ -321,16 +325,16 @@ tag push 後自動觸發 `release.yml`：
 
 ```
 macOS ARM:
-  https://github.com/chenjackle45/SayIt/releases/latest/download/SayIt-mac-arm64.dmg
+  https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-arm64.dmg
 
 macOS Intel:
-  https://github.com/chenjackle45/SayIt/releases/latest/download/SayIt-mac-x64.dmg
+  https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-x64.dmg
 
 Windows:
-  https://github.com/chenjackle45/SayIt/releases/latest/download/SayIt-windows-x64.exe
+  https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-windows-x64.exe
 
 Updater latest.json:
-  https://github.com/chenjackle45/SayIt/releases/latest/download/latest.json
+  https://github.com/kekukeku/TypeK/releases/latest/download/latest.json
 ```
 
 ---

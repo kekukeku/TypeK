@@ -6,10 +6,9 @@
   },
   "settings": {
     "about": {
-      "title": "关于 SayIt",
-      "description": "按住说话，放开贴上。SayIt 是开源的桌面语音转文字工具，采用 MIT 授权。",
+      "title": "关于 TypeK",
+      "description": "按住说话，放开贴上。TypeK 是以开源项目 SayIt 为基础改作的桌面语音转文字工具，采用 MIT 授权。",
       "author": "作者：",
-      "website": "个人网站",
       "sourceCode": "查看源代码",
       "reportIssue": "反馈问题"
     },
@@ -61,7 +60,7 @@
       "notSet": "未设置",
       "goToConsole": "前往 Groq Console",
       "instruction": "用于语音转录。文字整理也选 Groq 时会共用这把密钥。",
-      "onboarding": "欢迎使用 SayIt！请先设置 Groq API Key 以启用语音输入功能。",
+      "onboarding": "欢迎使用 TypeK！请先设置 Groq API Key 以启用语音输入功能。",
       "show": "显示",
       "hide": "隐藏",
       "saved": "API Key 已保存",
@@ -164,11 +163,11 @@
       "soundFeedbackEnabled": "已启用音效反馈",
       "soundFeedbackDisabled": "已停用音效反馈",
       "hideDockIcon": "隐藏 Dock 图标",
-      "hideDockIconDescription": "从 Dock 移除 SayIt 图标，仅通过菜单栏图标操作",
+      "hideDockIconDescription": "从 Dock 移除 TypeK 图标，仅通过菜单栏图标操作",
       "hideDockIconEnabled": "已隐藏 Dock 图标",
       "hideDockIconDisabled": "已显示 Dock 图标",
       "autoStart": "开机自动启动",
-      "autoStartDescription": "登录系统后自动启动 SayIt",
+      "autoStartDescription": "登录系统后自动启动 TypeK",
       "autoStartEnabled": "已启用开机自启动",
       "autoStartDisabled": "已关闭开机自启动",
       "transcriptionLanguage": "转录语言",
@@ -176,7 +175,7 @@
       "transcriptionLanguageUpdated": "转录语言已更新",
       "autoDetect": "自动检测",
       "startHidden": "启动时隐藏主窗口",
-      "startHiddenDescription": "手动或开机启动后都不显示主窗口，仅保留菜单栏（系统托盘）图标；从图标菜单或再打开一次 SayIt 即可调出",
+      "startHiddenDescription": "手动或开机启动后都不显示主窗口，仅保留菜单栏（系统托盘）图标；从图标菜单或再打开一次 TypeK 即可调出",
       "startHiddenEnabled": "已启用启动时隐藏主窗口",
       "startHiddenDisabled": "已关闭启动时隐藏主窗口"
     },
@@ -328,9 +327,9 @@
   },
   "accessibility": {
     "title": "需要辅助使用权限",
-    "description": "SayIt 需要「辅助使用」权限来监听全局快捷键。若未授权，快捷键功能将无法使用。",
+    "description": "TypeK 需要「辅助使用」权限来监听全局快捷键。若未授权，快捷键功能将无法使用。",
     "step1": "点击下方按钮打开系统设置。",
-    "step2": "在列表中找到 SayIt 并勾选。",
+    "step2": "在列表中找到 TypeK 并勾选。",
     "step3": "回到 App，系统将自动检测并启用。",
     "reinitializing": "检测到权限已授予，正在启用快捷键...",
     "reinitializeError": "快捷键重新初始化失败，请重新启动应用程序。",
@@ -436,22 +435,22 @@
       "checkError": "检查更新时发生错误",
       "updateFailed": "更新失败，请手动下载",
       "autoInstallTitle": "更新已就绪",
-      "autoInstallDescription": "SayIt v{version} 已下载完成。安装后需要重新启动应用程序。",
+      "autoInstallDescription": "TypeK v{version} 已下载完成。安装后需要重新启动应用程序。",
       "later": "稍后",
       "installRestart": "安装并重启",
       "newVersionTitle": "发现新版本",
-      "newVersionDescription": "SayIt v{version} 已可供更新。点击开始更新将自动下载并重新启动应用程序。",
+      "newVersionDescription": "TypeK v{version} 已可供更新。点击开始更新将自动下载并重新启动应用程序。",
       "cancel": "取消",
       "startUpdate": "开始更新"
     },
     "upgradeNotice": {
-      "title": "SayIt 更新摘要",
-      "item1": "Windows 录制自定义触发键不用再先点别的窗口：之前设置窗口在前台时按什么都录不到，现在直接在 SayIt 窗口里按就能录",
+      "title": "TypeK 更新摘要",
+      "item1": "Windows 录制自定义触发键不用再先点别的窗口：之前设置窗口在前台时按什么都录不到，现在直接在 TypeK 窗口里按就能录",
       "dismiss": "了解"
     }
   },
   "featureGuide": {
-    "subtitle": "以下是 SayIt 所有可用的操作功能，帮助你快速上手。",
+    "subtitle": "以下是 TypeK 所有可用的操作功能，帮助你快速上手。",
     "voiceInput": {
       "title": "语音输入",
       "description": "想打字？不用打，直接说。按住快捷键说话，放开后 AI 会自动整理好文字，直接贴到你光标的位置。打消息、写笔记、回邮件都可以用。",

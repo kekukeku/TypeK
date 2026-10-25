@@ -1,11 +1,11 @@
 ---
-name: sayit-release
-description: SayIt 發版流程編排 — 起草 CHANGELOG、同步 5 語系升級彈窗、對齊 upgradeNoticeItemCount、最後呼叫 ./scripts/release.sh。當使用者說「準備發新版」「要 release vX.Y.Z」「準備 release v0.10.0」「要發版了」「更新 CHANGELOG」「要更新升級彈窗」「同步多語系升級提示」之類的話時必須觸發；即使對方沒講「sayit-release」這幾個字、只說「我們來發 v0.11.0」也要觸發。負責 release.sh 之前的所有準備工作，呼叫 release.sh 前一定要先取得使用者明確同意。
+name: typek-release
+description: TypeK 發版流程編排 — 起草 CHANGELOG、同步 5 語系升級彈窗、對齊 upgradeNoticeItemCount、最後呼叫 ./scripts/release.sh。當使用者說「準備發新版」「要 release vX.Y.Z」「準備 release v0.10.0」「要發版了」「更新 CHANGELOG」「要更新升級彈窗」「同步多語系升級提示」之類的話時必須觸發；即使對方沒講「typek-release」這幾個字、只說「我們來發 v0.11.0」也要觸發。負責 release.sh 之前的所有準備工作，呼叫 release.sh 前一定要先取得使用者明確同意。
 ---
 
-# SayIt 發版流程
+# TypeK 發版流程
 
-這個 skill 編排 SayIt 從「準備發新版」到「呼叫 release.sh」之間的所有準備工作。release.sh 自身負責 4 點版本號 bump、commit、tag、push；這個 skill 負責把 release.sh 需要的前置條件全部準備好，並產生使用者體感得到的 release notes（CHANGELOG）和升級彈窗（5 語系 upgradeNotice）。
+這個 skill 編排 TypeK 從「準備發新版」到「呼叫 release.sh」之間的所有準備工作。release.sh 自身負責 4 點版本號 bump、commit、tag、push；這個 skill 負責把 release.sh 需要的前置條件全部準備好，並產生使用者體感得到的 release notes（CHANGELOG）和升級彈窗（5 語系 upgradeNotice）。
 
 ## 為什麼分成 skill + release.sh 兩段
 
@@ -45,7 +45,7 @@ release.sh 的 guard 設計（working tree 乾淨、CHANGELOG 含目標版本區
 
 讀取當前版本：
 ```bash
-jq -r .version /Users/jackle/workspace/say-it/src-tauri/tauri.conf.json
+jq -r .version "$(git rev-parse --show-toplevel)/src-tauri/tauri.conf.json"
 ```
 
 如果使用者已經在指令裡明說（「發 v0.11.0」），直接用。如果沒明說，用 semver 規則推薦：
@@ -61,10 +61,10 @@ jq -r .version /Users/jackle/workspace/say-it/src-tauri/tauri.conf.json
 
 ```bash
 # 上一個 tag 到目前的 commit
-git -C /Users/jackle/workspace/say-it log "$(git -C /Users/jackle/workspace/say-it describe --tags --abbrev=0)..HEAD" --no-merges --pretty='%h %s'
+git -C "$(git rev-parse --show-toplevel)" log "$(git -C "$(git rev-parse --show-toplevel)" describe --tags --abbrev=0)..HEAD" --no-merges --pretty='%h %s'
 
 # 確認 working tree 狀態
-git -C /Users/jackle/workspace/say-it status --short
+git -C "$(git rev-parse --show-toplevel)" status --short
 ```
 
 如果 working tree 不乾淨，先告知使用者「目前有 N 個未 commit 變更，release.sh 會擋下來，要先處理」。讓他決定是先 commit 那些變更、還是先繼續 skill 流程（變更可能會被一起包進這次 release）。
@@ -91,7 +91,7 @@ CHANGELOG.md 在專案根目錄，格式固定。
 | `### Fixed` | bug fix、錯誤行為修正 |
 | `### Improved` | 效能優化、重構、開發體驗（DX）改進、CI/CD 升級 |
 
-不用 `### Changed` / `### Deprecated` / `### Removed` 這些 keep-a-changelog 的其他分類，SayIt 的 CHANGELOG 慣例只用上面三個。
+不用 `### Changed` / `### Deprecated` / `### Removed` 這些 keep-a-changelog 的其他分類，TypeK 的 CHANGELOG 慣例只用上面三個。
 
 ### 從 commit 推斷分類
 
@@ -130,7 +130,7 @@ CHANGELOG.md 在專案根目錄，格式固定。
 ```markdown
 # Changelog
 
-SayIt 版本更新紀錄。
+TypeK 版本更新紀錄。
 
 ## [X.Y.Z] - YYYY-MM-DD     ← 寫在這裡
 
@@ -236,13 +236,13 @@ SayIt 版本更新紀錄。
 
 ```bash
 # 1. 5 個 .json 的 upgradeNotice 區塊都對齊到 N 個 item + title + dismiss
-rg -n '"upgradeNotice"' /Users/jackle/workspace/say-it/src/i18n/locales/ -A $((N+2))
+rg -n '"upgradeNotice"' "$(git rev-parse --show-toplevel)/src/i18n/locales/" -A $((N+2))
 
 # 2. MainApp.vue 的 itemCount 等於 N
-rg -n 'upgradeNoticeItemCount = ' /Users/jackle/workspace/say-it/src/MainApp.vue
+rg -n 'upgradeNoticeItemCount = ' "$(git rev-parse --show-toplevel)/src/MainApp.vue"
 
 # 3. CHANGELOG.md 含 [X.Y.Z] 區塊
-rg -n "^## \[X.Y.Z\]" /Users/jackle/workspace/say-it/CHANGELOG.md
+rg -n "^## \[X.Y.Z\]" "$(git rev-parse --show-toplevel)/CHANGELOG.md"
 ```
 
 任何一項對不上，回去把它修好再走步驟 ⑥。
@@ -262,7 +262,7 @@ rg -n "^## \[X.Y.Z\]" /Users/jackle/workspace/say-it/CHANGELOG.md
 ## 步驟 ⑦ 跑 release.sh
 
 ```bash
-cd /Users/jackle/workspace/say-it && ./scripts/release.sh X.Y.Z
+cd "$(git rev-parse --show-toplevel)" && ./scripts/release.sh X.Y.Z
 ```
 
 ### release.sh 可能擋下來的情況
@@ -298,7 +298,7 @@ docs(release): prepare vX.Y.Z release notes
 
 ### 不要動 Cargo.lock
 
-Cargo.lock 是 release.sh 自動處理的（透過 cargo build 同步 sayit crate 版本）。skill 不要手動編輯 Cargo.lock，那是 hard-block 的保護檔案。
+Cargo.lock 是 release.sh 自動處理的（透過 cargo build 同步 typek crate 版本）。skill 不要手動編輯 Cargo.lock，那是 hard-block 的保護檔案。
 
 ### 分支歸屬
 

@@ -1,4 +1,4 @@
-# SayIt — Claude Code 專案記憶檔
+# TypeK — Claude Code 專案記憶檔
 
 > Tauri v2 + Vue 3 + Rust 語音轉文字桌面應用。單人維護、有社群 PR、macOS／Windows 雙平台發版。
 > 規則分三層（2026-09-11 起）：本檔只放全 repo 都要知道的；`.claude/rules/*.md` 依檔頭 `paths` 自動載入；流程走 `docs/development-process.md`。`_bmad-output/project-context.md` 降為歷史參考，不再新增。

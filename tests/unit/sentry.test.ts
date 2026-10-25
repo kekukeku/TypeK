@@ -31,7 +31,7 @@ describe("Sentry init 接線", () => {
   beforeEach(() => {
     initMock.mockClear();
     vi.stubEnv("PROD", true);
-    vi.stubEnv("VITE_SENTRY_RELEASE", "sayit@test");
+    vi.stubEnv("VITE_SENTRY_RELEASE", "typek@test");
     vi.stubEnv("VITE_SENTRY_DSN", "https://key@example.ingest.sentry.io/1");
   });
   afterEach(() => {

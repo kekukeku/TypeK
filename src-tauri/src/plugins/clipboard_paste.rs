@@ -132,12 +132,12 @@ fn simulate_copy_via_cgevent() -> Result<(), String> {
     Ok(())
 }
 
-/// SayIt 自己用 SendInput 送出的按鍵所帶的記號（`KEYBDINPUT.dwExtraInfo`）。
+/// TypeK 自己用 SendInput 送出的按鍵所帶的記號（`KEYBDINPUT.dwExtraInfo`）。
 /// 低階鍵盤 hook 會在 `KBDLLHOOKSTRUCT.dwExtraInfo` 原樣收到，藉此放行自家事件，
 /// 避免模擬的 Ctrl↓／Ctrl↑ 被當成觸發鍵動作（v0.12.0 左 Ctrl 觸發鍵錄音立刻停止）。
 /// 只認這個記號、不認 `LLKHF_INJECTED`，讓改鍵工具注入的按鍵仍能當觸發鍵。
 #[cfg(any(target_os = "windows", test))]
-pub const SAYIT_INJECTED_EXTRA_INFO: usize = 0x5341_5949; // "SAYI"
+pub const TYPEK_INJECTED_EXTRA_INFO: usize = 0x5459_504B; // "TYPK"
 
 /// 右 Alt 選單列遮罩鍵（#70）：Microsoft 列為 Unassigned、AutoHotkey 推薦的無作用候選。
 #[cfg(any(target_os = "windows", test))]
@@ -151,11 +151,11 @@ const KEYEVENTF_KEYUP_BITS: u32 = 0x0002;
 #[cfg(any(target_os = "windows", test))]
 fn build_alt_menu_mask_calls() -> [(u8, u32, usize); 2] {
     [
-        (ALT_MENU_MASK_VK, 0, SAYIT_INJECTED_EXTRA_INFO),
+        (ALT_MENU_MASK_VK, 0, TYPEK_INJECTED_EXTRA_INFO),
         (
             ALT_MENU_MASK_VK,
             KEYEVENTF_KEYUP_BITS,
-            SAYIT_INJECTED_EXTRA_INFO,
+            TYPEK_INJECTED_EXTRA_INFO,
         ),
     ]
 }
@@ -173,7 +173,7 @@ pub fn send_alt_menu_mask_key() {
     }
 }
 
-/// 組 Ctrl↓ key↓ key↑ Ctrl↑ 四個 INPUT，每個都帶 SayIt 記號。
+/// 組 Ctrl↓ key↓ key↑ Ctrl↑ 四個 INPUT，每個都帶 TypeK 記號。
 #[cfg(target_os = "windows")]
 fn build_ctrl_chord_inputs(
     key: windows::Win32::UI::Input::KeyboardAndMouse::VIRTUAL_KEY,
@@ -197,7 +197,7 @@ fn build_ctrl_chord_inputs(
     inputs[3].Anonymous.ki.dwFlags = KEYEVENTF_KEYUP;
 
     for input in &mut inputs {
-        input.Anonymous.ki.dwExtraInfo = SAYIT_INJECTED_EXTRA_INFO;
+        input.Anonymous.ki.dwExtraInfo = TYPEK_INJECTED_EXTRA_INFO;
     }
 
     inputs
@@ -580,10 +580,10 @@ mod tests {
     #[test]
     fn test_alt_menu_mask_calls_are_paired_and_marked() {
         let calls = build_alt_menu_mask_calls();
-        assert_eq!(calls[0], (0xE8, 0, SAYIT_INJECTED_EXTRA_INFO));
+        assert_eq!(calls[0], (0xE8, 0, TYPEK_INJECTED_EXTRA_INFO));
         assert_eq!(
             calls[1],
-            (0xE8, KEYEVENTF_KEYUP_BITS, SAYIT_INJECTED_EXTRA_INFO)
+            (0xE8, KEYEVENTF_KEYUP_BITS, TYPEK_INJECTED_EXTRA_INFO)
         );
     }
 
@@ -599,15 +599,15 @@ mod tests {
     /// 漏標 Ctrl 會讓左 Ctrl 觸發鍵被模擬的 Ctrl↓／Ctrl↑ 打斷；漏標 C／V 會讓自訂 C／V 觸發鍵被誤觸發。
     #[cfg(target_os = "windows")]
     #[test]
-    fn test_ctrl_chord_inputs_all_carry_sayit_marker() {
+    fn test_ctrl_chord_inputs_all_carry_typek_marker() {
         use windows::Win32::UI::Input::KeyboardAndMouse::{VK_C, VK_V};
 
-        assert_ne!(SAYIT_INJECTED_EXTRA_INFO, 0);
+        assert_ne!(TYPEK_INJECTED_EXTRA_INFO, 0);
         for key in [VK_C, VK_V] {
             let inputs = build_ctrl_chord_inputs(key);
             for (i, input) in inputs.iter().enumerate() {
                 let extra = unsafe { input.Anonymous.ki.dwExtraInfo };
-                assert_eq!(extra, SAYIT_INJECTED_EXTRA_INFO, "input[{i}] for {key:?}");
+                assert_eq!(extra, TYPEK_INJECTED_EXTRA_INFO, "input[{i}] for {key:?}");
             }
         }
     }

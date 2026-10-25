@@ -23,8 +23,8 @@
 
 ```bash
 # 1. clone repo
-git clone https://github.com/chenjackle45/SayIt.git
-cd SayIt
+git clone https://github.com/kekukeku/TypeK.git
+cd TypeK
 
 # 2. 切到正確 Node 版本
 nvm use            # → Node 24
@@ -201,10 +201,10 @@ production / staging 環境自動上報；dev 模式不上報（`get_sentry_envi
 
 ```bash
 # macOS
-sqlite3 ~/Library/Application\ Support/com.sayit.app/app.db
+sqlite3 ~/Library/Application\ Support/com.typek.app/app.db
 
 # Windows
-sqlite3 %APPDATA%\com.sayit.app\app.db
+sqlite3 %APPDATA%\com.typek.app\app.db
 
 # 範例查詢
 > .tables
@@ -216,7 +216,7 @@ sqlite3 %APPDATA%\com.sayit.app\app.db
 
 ### 5.5 Tauri Log
 
-已採用官方 `tauri-plugin-log`：Rust 用 `log::info!`/`log::warn!`/`log::error!`，前端 `console.*` 由 `src/lib/logger.ts` 的 `installConsoleForwarding()` 轉送到同一 pipeline。輸出目標為 Stdout ＋ `LogDir`（`app_log_dir()/sayit*.log`，輪替只留一份）。是否寫檔由 `set_file_logging_enabled` command 控制的 `FILE_LOG_ENABLED` 旗標 + **檔案 target** 的 `.filter` 決定（設定頁「除錯記錄」開關，預設關閉；debug/release 一致，終端輸出不受開關影響）。關閉開關時 Rust 會清掉既有記錄檔（記錄含逐字稿與 AI 整理結果；啟動時的開關由 Rust setup 直接讀 store 套用，前端不再重複套用）。plugin logger 以 `Builder::split()` 取出後包一層 `GatedLogger`：每筆寫入與「關閉→清檔」共用同一把鎖，不會有在途寫入落在清檔之後；代價是 app setup 之前（各 plugin 自身 setup）的日誌不被捕捉。舊的自訂 `debug_log` command 已移除。Log 資料夾可由 `open_log_folder` command 開啟。
+已採用官方 `tauri-plugin-log`：Rust 用 `log::info!`/`log::warn!`/`log::error!`，前端 `console.*` 由 `src/lib/logger.ts` 的 `installConsoleForwarding()` 轉送到同一 pipeline。輸出目標為 Stdout ＋ `LogDir`（`app_log_dir()/typek*.log`，輪替只留一份）。是否寫檔由 `set_file_logging_enabled` command 控制的 `FILE_LOG_ENABLED` 旗標 + **檔案 target** 的 `.filter` 決定（設定頁「除錯記錄」開關，預設關閉；debug/release 一致，終端輸出不受開關影響）。關閉開關時 Rust 會清掉既有記錄檔（記錄含逐字稿與 AI 整理結果；啟動時的開關由 Rust setup 直接讀 store 套用，前端不再重複套用）。plugin logger 以 `Builder::split()` 取出後包一層 `GatedLogger`：每筆寫入與「關閉→清檔」共用同一把鎖，不會有在途寫入落在清檔之後；代價是 app setup 之前（各 plugin 自身 setup）的日誌不被捕捉。舊的自訂 `debug_log` command 已移除。Log 資料夾可由 `open_log_folder` command 開啟。
 
 ---
 

@@ -1,4 +1,4 @@
-# Project Overview — SayIt
+# Project Overview — TypeK
 
 > 「按住說話，放開貼上」— 跨平台桌面語音轉書面語工具
 > 掃描日期：2026-05-08 · 版本：0.9.5
@@ -7,7 +7,7 @@
 
 ## 一、產品定位
 
-SayIt 是一款 **macOS / Windows 跨平台桌面語音輸入工具**，核心價值主張是「**口語到書面語**」：
+TypeK 是一款 **macOS / Windows 跨平台桌面語音輸入工具**，核心價值主張是「**口語到書面語**」：
 
 1. 在任何 App 中按住熱鍵（預設 Fn）說話
 2. 放開後語音經 **Groq Whisper** 轉錄為文字

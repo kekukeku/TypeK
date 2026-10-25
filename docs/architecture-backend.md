@@ -7,7 +7,7 @@
 
 ## 一、Executive Summary
 
-SayIt backend 是一個 **Tauri v2 Rust runtime**，扮演四個角色：
+TypeK backend 是一個 **Tauri v2 Rust runtime**，扮演四個角色：
 
 1. **WebView 容器與視窗管理** — 載入兩個 webview（HUD + Dashboard），配置 macOS 瀏海覆蓋層級 / Windows TOPMOST
 2. **System integration broker** — 全域熱鍵、剪貼簿模擬貼上、系統音量控制、AX API 文字場讀取
@@ -265,7 +265,7 @@ SetWindowPos(HWND_TOPMOST, ...)
 fn run() {
   let _sentry_guard = if is_sentry_enabled() {
     Some(sentry::init((dsn, ClientOptions {
-      release: Some(get_sentry_release().into()),  ← 預設 sayit@<CARGO_PKG_VERSION>
+      release: Some(get_sentry_release().into()),  ← 預設 typek@<CARGO_PKG_VERSION>
       environment: Some(get_sentry_environment().into()),
       send_default_pii: false,                     ← 不發送 PII
       ..Default::default()
@@ -285,7 +285,7 @@ fn run() {
 
 ## 九、Restart 機制（`request_app_restart` + `RunEvent::Exit`）
 
-Tauri 內建 restart 邏輯與 `_exit(0)` 不相容（`_exit` 會 bypass cleanup），因此 SayIt 自製：
+Tauri 內建 restart 邏輯與 `_exit(0)` 不相容（`_exit` 會 bypass cleanup），因此 TypeK 自製：
 
 ```
 1. Frontend invoke('request_app_restart')

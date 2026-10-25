@@ -7,7 +7,7 @@
 
 ## 一、Executive Summary
 
-SayIt frontend 是一個 **Tauri WebView 中執行的雙入口 Vue 3 SPA**：
+TypeK frontend 是一個 **Tauri WebView 中執行的雙入口 Vue 3 SPA**：
 
 - **HUD（`label="main"`）** — 470×100 透明永遠最上層瀏海狀態浮窗，訂閱事件顯示錄音狀態
 - **Dashboard（`label="main-window"`）** — 960×680 可拖拉視窗，提供設定、歷史、字典、統計

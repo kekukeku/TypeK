@@ -1,6 +1,6 @@
-# SayIt 開發流程
+# TypeK 開發流程
 
-> 建立：2026-09-11（參考 NoWayLM 規則體系，依 SayIt 尺度調整：單人維護、有社群 PR、桌面 App 發版、一次一個 session）。
+> 建立：2026-09-11（參考 NoWayLM 規則體系，依 TypeK 尺度調整：單人維護、有社群 PR、桌面 App 發版、一次一個 session）。
 > 這份講「怎麼走」；「怎麼寫」在 `CLAUDE.md` 與 `.claude/rules/`；「改什麼檔」在 `development-guide.md`。
 
 ## 主線
@@ -94,7 +94,7 @@
 
 ## 刻意不做（附理由，防重提）
 
-- **多 session git 協調契約**（CAS、atomic claim、單一 integrator）：SayIt 一次一個 session，沒有雙工
+- **多 session git 協調契約**（CAS、atomic claim、單一 integrator）：TypeK 一次一個 session，沒有雙工
 - **三 reviewer `/code-review` 閘**：單人桌面 App、無金流；codex 雙閘加追溯閘與節流已夠，三 reviewer 在這個尺度會製造 finding
 - **模型分派表全套**：全域準則已定 codex 派工 SOP
 - **QA 落帳追溯閘、排程證據閘**：沒有 staging 站也沒有背景排程；真機驗證靠回報者實測與自己開 App

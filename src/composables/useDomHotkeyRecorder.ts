@@ -1,5 +1,5 @@
 /**
- * gh-78：Windows 上 SayIt 視窗有焦點時，全域鍵盤 hook 收不到任何事件（#78 日誌只有
+ * gh-78：Windows 上 TypeK 視窗有焦點時，全域鍵盤 hook 收不到任何事件（#78 日誌只有
  * started → timeout）。錄製自訂鍵期間改由 WebView 自己的 keydown／keyup 當第二來源，
  * 規則鏡像 Rust `RecordingState`（held＋snapshot、先放的不算、錄製前按住的不算）。
  * 只在 Windows 啟用（macOS 的 tap 不受焦點影響，且 DOM 看不到 Fn 鍵）。

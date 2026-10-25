@@ -15,9 +15,9 @@ export interface VocabularyExportEntry {
   source: VocabularySource;
 }
 
-/** SayIt 字典單檔匯出格式 */
+/** TypeK 字典單檔匯出格式 */
 export interface VocabularyExportFile {
-  format: "sayit-dictionary";
+  format: "typek-dictionary";
   version: number;
   exportedAt: string;
   terms: VocabularyExportEntry[];

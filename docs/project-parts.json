@@ -7,7 +7,7 @@
   "parts": [
     {
       "part_id": "frontend",
-      "display_name": "SayIt Frontend (Vue 3 + Tauri JS API)",
+      "display_name": "TypeK Frontend (Vue 3 + Tauri JS API)",
       "project_type_id": "web",
       "root_path": "src",
       "loc": 11503,
@@ -24,7 +24,7 @@
     },
     {
       "part_id": "backend",
-      "display_name": "SayIt Backend (Tauri Rust Runtime)",
+      "display_name": "TypeK Backend (Tauri Rust Runtime)",
       "project_type_id": "desktop",
       "root_path": "src-tauri",
       "loc": 6006,

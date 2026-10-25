@@ -244,8 +244,8 @@ $APPDATA/recordings/<id>.wav
 
 | 平台    | App data 路徑                                                    |
 | ------- | ---------------------------------------------------------------- |
-| macOS   | `~/Library/Application Support/com.sayit.app/`                   |
-| Windows | `%APPDATA%\com.sayit.app\`                                       |
+| macOS   | `~/Library/Application Support/com.typek.app/`                   |
+| Windows | `%APPDATA%\com.typek.app\`                                       |
 
 子目錄：
 - `app.db`（SQLite + WAL `app.db-wal` + shared memory `app.db-shm`）

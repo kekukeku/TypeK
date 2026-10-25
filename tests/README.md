@@ -1,4 +1,4 @@
-# Test Suite — SayIt
+# Test Suite — TypeK
 
 ## Setup
 

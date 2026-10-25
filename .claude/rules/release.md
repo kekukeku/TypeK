@@ -47,7 +47,7 @@ paths:
 ## 發版硬規則
 
 - 發版版本號必須在 `git tag`、`package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 四處保持一致（`scripts/release.sh` 負責同步，並要求 `CHANGELOG.md` 已有 `## [X.Y.Z]` 區塊、工作樹乾淨）
-- 正式版 Sentry release 一律由 `.github/workflows/release.yml` 產生，格式固定為 `sayit@<version>`
+- 正式版 Sentry release 一律由 `.github/workflows/release.yml` 產生，格式固定為 `typek@<version>`
 - 前端與 Rust 不可各自手動指定不同的 Sentry release 名稱
 - 正式版 telemetry 與 sourcemap upload 只能走 `release.yml`，不得繞過 workflow 手動上傳
 - 發版前必須確認 GitHub Secrets 與 Sentry Secrets 齊全
@@ -75,9 +75,9 @@ paths:
 
 | 平台 | URL |
 |------|-----|
-| macOS ARM | `https://github.com/chenjackle45/SayIt/releases/latest/download/SayIt-mac-arm64.dmg` |
-| macOS Intel | `https://github.com/chenjackle45/SayIt/releases/latest/download/SayIt-mac-x64.dmg` |
-| Windows | `https://github.com/chenjackle45/SayIt/releases/latest/download/SayIt-windows-x64.exe` |
+| macOS ARM | `https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-arm64.dmg` |
+| macOS Intel | `https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-x64.dmg` |
+| Windows | `https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-windows-x64.exe` |
 
 ## Claude Code Review Workflow
 
@@ -89,6 +89,7 @@ paths:
 
 ## 自動更新機制
 
+- **TypeK 目前關閉**（2026-10-26，fork 後尚無自己的簽章金鑰）：前端未設 `VITE_AUTO_UPDATE_ENABLED=true`、endpoints／pubkey 為空、`createUpdaterArtifacts: false`；啟用步驟見 `docs/deployment-guide.md` §5.4。下列機制在啟用後才生效
 - **定時檢查** — `main-window.ts`：啟動 5 秒後首次檢查，之後每 4 小時（`setInterval`）
 - **手動檢查** — `MainApp.vue` Sidebar Footer「檢查更新」按鈕，結果用 `useFeedbackMessage` 顯示
 - **回傳型別** — `checkForAppUpdate()` → `Promise<UpdateCheckResult>`（`up-to-date` | `update-available` | `error`）
