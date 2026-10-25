@@ -9,7 +9,10 @@ vi.mock("../../src/i18n", () => ({
 }));
 vi.mock("../../src/lib/sentry", () => ({ captureError: vi.fn() }));
 
-import { TOP_TERM_LIST_SQL } from "../../src/stores/useVocabularyStore";
+import {
+  AI_TERM_LIST_SQL,
+  MANUAL_TERM_LIST_SQL,
+} from "../../src/stores/useVocabularyStore";
 
 interface SeedRow {
   term: string;
@@ -19,7 +22,7 @@ interface SeedRow {
 }
 
 /** 用真 SQLite 跑 store 的排序 SQL（mock DB 看不出排序結果，#84） */
-function runTopTermQuery(rowList: SeedRow[], limit: number): string[] {
+function runTermQuery(sql: string, rowList: SeedRow[], limit: number): string[] {
   const db = new DatabaseSync(":memory:");
   // 欄位對應 src/lib/database.ts 的 vocabulary 表（v3 起有 weight、source）
   db.exec(
@@ -32,7 +35,7 @@ function runTopTermQuery(rowList: SeedRow[], limit: number): string[] {
     insert.run(`id-${index}`, row.term, row.weight, row.source, row.createdAt),
   );
   // tauri-plugin-sql 的 $1 在 SQLite 是具名參數，這裡用具名方式綁定
-  const result = db.prepare(TOP_TERM_LIST_SQL).all({ $1: limit }) as {
+  const result = db.prepare(sql).all({ $1: limit }) as {
     term: string;
   }[];
   db.close();
@@ -43,62 +46,49 @@ function minuteStamp(minute: number): string {
   return `2026-10-01 00:${String(minute).padStart(2, "0")}:00`;
 }
 
-describe("TOP_TERM_LIST_SQL（真 SQLite）", () => {
-  it("低權重的手動詞排在高權重的 AI 詞前面", () => {
-    const rowList: SeedRow[] = Array.from({ length: 60 }, (_, i) => ({
-      term: `AI${i}`,
-      weight: 5,
-      source: "ai" as const,
-      createdAt: minuteStamp(i),
-    }));
-    rowList.push({
-      term: "未來誌",
-      weight: 1,
-      source: "manual",
-      createdAt: "2026-09-01 00:00:00",
-    });
-
-    const result = runTopTermQuery(rowList, 50);
-
-    expect(result).toHaveLength(50);
-    expect(result[0]).toBe("未來誌");
-  });
-
-  it("手動詞超過名額時只回手動詞，且依權重遞減", () => {
-    const rowList: SeedRow[] = Array.from({ length: 60 }, (_, i) => ({
-      term: `M${i}`,
-      weight: i % 7,
-      source: "manual" as const,
-      createdAt: minuteStamp(i),
-    }));
-    for (let i = 0; i < 10; i++) {
-      rowList.push({
-        term: `AI${i}`,
-        weight: 99,
-        source: "ai",
-        createdAt: "2026-10-02 00:00:00",
-      });
-    }
-
-    const result = runTopTermQuery(rowList, 50);
-    const weightByTerm = new Map(rowList.map((row) => [row.term, row.weight]));
-    const weightList = result.map((term) => weightByTerm.get(term) ?? -1);
-
-    expect(result).toHaveLength(50);
-    expect(result.every((term) => term.startsWith("M"))).toBe(true);
-    expect(weightList).toEqual([...weightList].sort((a, b) => b - a));
-  });
-
-  it("同類同權重時較新的在前", () => {
-    const result = runTopTermQuery(
+describe("字典詞排序 SQL（真 SQLite）", () => {
+  it("manual SQL 只回手動詞，依權重遞減再用建立時間新到舊", () => {
+    const result = runTermQuery(
+      MANUAL_TERM_LIST_SQL,
       [
-        { term: "舊", weight: 2, source: "ai", createdAt: minuteStamp(1) },
-        { term: "最新", weight: 2, source: "ai", createdAt: minuteStamp(3) },
-        { term: "中", weight: 2, source: "ai", createdAt: minuteStamp(2) },
+        { term: "舊", weight: 2, source: "manual", createdAt: minuteStamp(1) },
+        { term: "高權重", weight: 5, source: "manual", createdAt: minuteStamp(2) },
+        { term: "最新", weight: 2, source: "manual", createdAt: minuteStamp(3) },
+        { term: "AI", weight: 99, source: "ai", createdAt: minuteStamp(4) },
       ],
       50,
     );
 
-    expect(result).toEqual(["最新", "中", "舊"]);
+    expect(result).toEqual(["高權重", "最新", "舊"]);
+  });
+
+  it("AI SQL 只回學到的詞，依權重遞減再用建立時間新到舊", () => {
+    const result = runTermQuery(
+      AI_TERM_LIST_SQL,
+      [
+        { term: "舊", weight: 2, source: "ai", createdAt: minuteStamp(1) },
+        { term: "高權重", weight: 5, source: "ai", createdAt: minuteStamp(2) },
+        { term: "最新", weight: 2, source: "ai", createdAt: minuteStamp(3) },
+        { term: "手動", weight: 99, source: "manual", createdAt: minuteStamp(4) },
+      ],
+      50,
+    );
+
+    expect(result).toEqual(["高權重", "最新", "舊"]);
+  });
+
+  it("LIMIT 只取指定數量", () => {
+    const rowList: SeedRow[] = Array.from({ length: 5 }, (_, i) => ({
+      term: `Manual${i}`,
+      weight: i,
+      source: "manual" as const,
+      createdAt: minuteStamp(i),
+    }));
+
+    expect(runTermQuery(MANUAL_TERM_LIST_SQL, rowList, 3)).toEqual([
+      "Manual4",
+      "Manual3",
+      "Manual2",
+    ]);
   });
 });

@@ -26,12 +26,41 @@ const IMPORT_BATCH_SIZE = 500;
 export const DICTIONARY_IMPORT_MAX_FILE_BYTES = MAX_IMPORT_FILE_BYTES;
 export const DICTIONARY_IMPORT_MAX_ENTRIES = MAX_IMPORT_ENTRIES;
 
+/** AI 學到的詞至少要保留的名額，避免手動詞占滿提示（#84） */
+export const LEARNED_TERM_RESERVED_SLOTS = 10;
+
+/** 手動詞（含匯入）：同類內照權重、再照新舊 */
+export const MANUAL_TERM_LIST_SQL =
+  "SELECT term FROM vocabulary WHERE source = 'manual' ORDER BY weight DESC, created_at DESC LIMIT $1";
+
+/** AI 學到的詞：同類內照權重、再照新舊 */
+export const AI_TERM_LIST_SQL =
+  "SELECT term FROM vocabulary WHERE source = 'ai' ORDER BY weight DESC, created_at DESC LIMIT $1";
+
 /**
- * 送進語音辨識與 AI 整理提示的字典詞：手動加的詞優先（含匯入的詞），
- * 同類內照權重、再照新舊。名額有限，被聽錯的手動詞很難靠權重排進去（#84）。
+ * 名額分配：AI 先保留 min(10, AI 詞數) 個（不超過 limit），
+ * 其餘名額先給 manual，manual 不夠再由 AI 補滿。
+ * 回傳順序 manual 在前、AI 在後，維持「越前面越優先」。
  */
-export const TOP_TERM_LIST_SQL =
-  "SELECT term FROM vocabulary ORDER BY CASE WHEN source = 'manual' THEN 0 ELSE 1 END, weight DESC, created_at DESC LIMIT $1";
+export function allocateTermSlots(
+  manualTermList: string[],
+  aiTermList: string[],
+  limit: number,
+): string[] {
+  const safeLimit = Math.max(0, limit);
+  const aiReservedSlots = Math.min(
+    LEARNED_TERM_RESERVED_SLOTS,
+    aiTermList.length,
+    safeLimit,
+  );
+  const manualQuota = safeLimit - aiReservedSlots;
+  const pickedManualTermList = manualTermList.slice(0, manualQuota);
+  const pickedAiTermList = aiTermList.slice(
+    0,
+    safeLimit - pickedManualTermList.length,
+  );
+  return [...pickedManualTermList, ...pickedAiTermList];
+}
 
 interface RawVocabularyRow {
   id: string;
@@ -337,10 +366,15 @@ export const useVocabularyStore = defineStore("vocabulary", () => {
   async function getTopTermListByWeight(limit: number): Promise<string[]> {
     try {
       const db = getDatabase();
-      const rows = await db.select<{ term: string }[]>(TOP_TERM_LIST_SQL, [
-        limit,
+      const [manualRows, aiRows] = await Promise.all([
+        db.select<{ term: string }[]>(MANUAL_TERM_LIST_SQL, [limit]),
+        db.select<{ term: string }[]>(AI_TERM_LIST_SQL, [limit]),
       ]);
-      return rows.map((row) => row.term);
+      return allocateTermSlots(
+        manualRows.map((row) => row.term),
+        aiRows.map((row) => row.term),
+        limit,
+      );
     } catch (error) {
       console.error(
         `[vocabulary-store] getTopTermListByWeight failed: ${extractErrorMessage(error)}`,

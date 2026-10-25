@@ -336,7 +336,7 @@ describe("enhancer.ts", () => {
       const callArgs = mockFetch.mock.calls[0];
       const body = JSON.parse(callArgs[1].body);
       expect(body.messages[0].content).toContain(
-        "<vocabulary>\nTypeScript, Vue.js, Tauri\n</vocabulary>",
+        "<vocabulary>\nPreferred spellings. If the transcript contains a homophone or near-homophone of one of these terms, use this spelling:\nTypeScript, Vue.js, Tauri\n</vocabulary>",
       );
     });
 
@@ -360,8 +360,17 @@ describe("enhancer.ts", () => {
       const result = buildSystemPrompt("基礎 prompt", ["詞彙A", "詞彙B"]);
 
       expect(result).toBe(
-        "基礎 prompt\n\n<vocabulary>\n詞彙A, 詞彙B\n</vocabulary>",
+        "基礎 prompt\n\n<vocabulary>\nPreferred spellings. If the transcript contains a homophone or near-homophone of one of these terms, use this spelling:\n詞彙A, 詞彙B\n</vocabulary>",
       );
+    });
+
+    it("[P1] vocabulary 區塊含英文說明行，詞清單維持逗號分隔", async () => {
+      const { buildSystemPrompt } = await import("../../src/lib/enhancer");
+      const result = buildSystemPrompt("基礎 prompt", ["TypeK", "Whisper"]);
+
+      expect(result).toContain("Preferred spellings.");
+      expect(result).toContain("homophone or near-homophone");
+      expect(result).toContain("TypeK, Whisper");
     });
 
     it("[P0] vocabulary 為空時只回傳基礎 prompt", async () => {

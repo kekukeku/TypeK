@@ -134,12 +134,10 @@ describe("useVocabularyStore", () => {
   // ==========================================================================
 
   describe("getTopTermListByWeight", () => {
-    it("應以手動優先的排序 SQL 回傳前 N 個詞", async () => {
-      mockDbSelect.mockResolvedValueOnce([
-        { term: "Tauri" },
-        { term: "Vue.js" },
-        { term: "Groq" },
-      ]);
+    it("manual 與 AI 分開查詢後，manual 在前、AI 在後", async () => {
+      mockDbSelect
+        .mockResolvedValueOnce([{ term: "Tauri" }, { term: "Vue.js" }])
+        .mockResolvedValueOnce([{ term: "Groq" }]);
 
       const { useVocabularyStore } = await import(
         "../../src/stores/useVocabularyStore"
@@ -149,13 +147,14 @@ describe("useVocabularyStore", () => {
       const result = await store.getTopTermListByWeight(3);
 
       expect(result).toEqual(["Tauri", "Vue.js", "Groq"]);
-      const [sql, params] = mockDbSelect.mock.calls[0];
-      const { TOP_TERM_LIST_SQL } = await import(
-        "../../src/stores/useVocabularyStore"
-      );
-      expect(sql).toBe(TOP_TERM_LIST_SQL);
-      expect(sql).toContain("LIMIT $1");
-      expect(params).toEqual([3]);
+      const [manualSql, manualParams] = mockDbSelect.mock.calls[0];
+      const [aiSql, aiParams] = mockDbSelect.mock.calls[1];
+      expect(manualSql).toContain("source = 'manual'");
+      expect(aiSql).toContain("source = 'ai'");
+      expect(manualSql).toContain("LIMIT $1");
+      expect(aiSql).toContain("LIMIT $1");
+      expect(manualParams).toEqual([3]);
+      expect(aiParams).toEqual([3]);
     });
 
     it("DB 失敗時回傳空陣列", async () => {
@@ -168,6 +167,60 @@ describe("useVocabularyStore", () => {
 
       const result = await store.getTopTermListByWeight(10);
       expect(result).toEqual([]);
+    });
+  });
+
+  describe("allocateTermSlots", () => {
+    it("manual 佔滿名額時，AI 仍有保留名額", async () => {
+      const { allocateTermSlots } = await import(
+        "../../src/stores/useVocabularyStore"
+      );
+      const manualTermList = Array.from(
+        { length: 60 },
+        (_, i) => `Manual${i}`,
+      );
+      const aiTermList = Array.from({ length: 20 }, (_, i) => `AI${i}`);
+
+      const result = allocateTermSlots(manualTermList, aiTermList, 50);
+
+      expect(result).toHaveLength(50);
+      expect(result.slice(0, 40)).toEqual(manualTermList.slice(0, 40));
+      expect(result.slice(40)).toEqual(aiTermList.slice(0, 10));
+    });
+
+    it("AI 少於保留名額時，由 manual 補滿", async () => {
+      const { allocateTermSlots } = await import(
+        "../../src/stores/useVocabularyStore"
+      );
+      const manualTermList = Array.from(
+        { length: 60 },
+        (_, i) => `Manual${i}`,
+      );
+      const aiTermList = ["AI1", "AI2", "AI3"];
+
+      const result = allocateTermSlots(manualTermList, aiTermList, 50);
+
+      expect(result).toHaveLength(50);
+      expect(result.slice(0, 47)).toEqual(manualTermList.slice(0, 47));
+      expect(result.slice(47)).toEqual(aiTermList);
+    });
+
+    it("manual 不足時由 AI 補滿", async () => {
+      const { allocateTermSlots } = await import(
+        "../../src/stores/useVocabularyStore"
+      );
+
+      const result = allocateTermSlots(["Manual1"], ["AI1", "AI2"], 5);
+
+      expect(result).toEqual(["Manual1", "AI1", "AI2"]);
+    });
+
+    it("limit 為 0 時回傳空陣列", async () => {
+      const { allocateTermSlots } = await import(
+        "../../src/stores/useVocabularyStore"
+      );
+
+      expect(allocateTermSlots(["Manual1"], ["AI1"], 0)).toEqual([]);
     });
   });
 

@@ -14,6 +14,8 @@ import {
 import { captureError } from "../lib/sentry";
 import { logInfoLine, logErrorLine } from "../lib/logger";
 import { enhanceText, buildSystemPrompt } from "../lib/enhancer";
+import { buildWhisperPrompt } from "../lib/whisperPrompt";
+import { getProviderIdForModel } from "../lib/llmProvider";
 import { getEditModePromptForLocale } from "../i18n/prompts";
 import type { SupportedLocale } from "../i18n/languageConfig";
 import { analyzeCorrections } from "../lib/vocabularyAnalyzer";
@@ -1295,6 +1297,10 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
       const result = await invoke<TranscriptionResult>("transcribe_audio", {
         apiKey,
         vocabularyTermList: hasVocabulary ? whisperTermList : null,
+        whisperPrompt: buildWhisperPrompt(
+          whisperTermList,
+          getEffectiveTranscriptLocale(),
+        ),
         modelId: settingsStore.selectedWhisperModelId,
         language: settingsStore.getWhisperLanguageCode(),
       });
@@ -1454,6 +1460,9 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
           if (isStaleFlow()) return;
           const llmApiKey = settingsStore.getLlmApiKey();
           const llmModelId = settingsStore.selectedLlmModelId;
+          writeInfoLog(
+            `useVoiceFlowStore: enhancement provider=${getProviderIdForModel(llmModelId)}, model=${llmModelId}, promptMode=${settingsStore.promptMode}, transcriptLocale=${getEffectiveTranscriptLocale()}, hasContext=${Boolean(inputContext)}`,
+          );
           if (!llmApiKey) {
             isLlmApiKeyMissing = true;
             throw new Error(t("errors.apiKeyMissing"));
@@ -1763,6 +1772,10 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
           filePath,
           apiKey,
           vocabularyTermList: hasVocabulary ? whisperTermList : null,
+          whisperPrompt: buildWhisperPrompt(
+            whisperTermList,
+            getEffectiveTranscriptLocale(),
+          ),
           modelId: settingsStore.selectedWhisperModelId,
           language: settingsStore.getWhisperLanguageCode(),
         },

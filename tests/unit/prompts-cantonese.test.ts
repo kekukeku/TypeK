@@ -12,14 +12,11 @@ describe("prompts — 廣東話（yue）", () => {
   const cantoneseSentence =
     "輸入是廣東話口語，保留粵語用字與句式（我哋、嘅、唔、係、喺、咗、嘢、點解等），不要改寫成書面語或普通話說法";
 
-  it("[P0] 精簡版：繁中版只換末尾語言句，其餘逐字相同", () => {
-    const zhTW = getMinimalPromptForLocale("zh-TW");
-    const expected = zhTW.replace(
-      /繁體中文 zh-TW。$/,
-      `繁體中文。${cantoneseSentence}。`,
-    );
-    expect(expected).not.toBe(zhTW);
-    expect(getMinimalPromptForLocale("yue")).toBe(expected);
+  it("[P0] 精簡版：保留粵語用字，且不隨新版 zh-TW 文案變動", () => {
+    const yuePrompt = getMinimalPromptForLocale("yue");
+    expect(yuePrompt).not.toBe(getMinimalPromptForLocale("zh-TW"));
+    expect(yuePrompt.endsWith(`繁體中文。${cantoneseSentence}。`)).toBe(true);
+    expect(yuePrompt).toContain("逐段處理，每段獨立校對");
   });
 
   it("[P0] 積極版：繁中版只換第 4 行語言句，其餘逐字相同", () => {

@@ -9,13 +9,23 @@ import { BUILTIN_PROMPTS_V0141 } from "../support/fixtures/builtin-prompts-v0.14
 describe("prompts — 輸出語言插槽（#83）", () => {
   const modes = ["minimal", "active"] as const;
 
-  describe("[AC3] 明確語言：與 v0.14.1 逐字相同", () => {
+  describe("[AC3] 明確語言：除 2026-10 zh-TW 精簡改版外，與 v0.14.1 逐字相同", () => {
     for (const mode of modes) {
       for (const [locale, expected] of Object.entries(BUILTIN_PROMPTS_V0141[mode])) {
         it(`${mode} × ${locale}`, () => {
-          expect(
-            getPromptForModeAndLocale(mode, locale as keyof (typeof BUILTIN_PROMPTS_V0141)[typeof mode]),
-          ).toBe(expected);
+          const actual = getPromptForModeAndLocale(
+            mode,
+            locale as keyof (typeof BUILTIN_PROMPTS_V0141)[typeof mode],
+          );
+          if (mode === "minimal" && locale === "zh-TW") {
+            expect(actual).not.toBe(expected);
+            expect(actual).toContain("修正語音辨識的同音錯字與誤聽");
+            expect(actual).toContain(
+              "中文諧音若對應到英文技術名詞或產品名",
+            );
+            return;
+          }
+          expect(actual).toBe(expected);
         });
       }
     }

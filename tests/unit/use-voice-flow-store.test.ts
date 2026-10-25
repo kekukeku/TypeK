@@ -458,6 +458,8 @@ describe("useVoiceFlowStore", () => {
     expect(mockInvoke).toHaveBeenCalledWith("transcribe_audio", {
       apiKey: "test-api-key-123",
       vocabularyTermList: null,
+      whisperPrompt:
+        "以下是台灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。",
       modelId: "whisper-large-v3",
       language: "zh",
     });
@@ -1658,6 +1660,8 @@ describe("useVoiceFlowStore", () => {
       expect(mockInvoke).toHaveBeenCalledWith("transcribe_audio", {
         apiKey: "test-api-key-123",
         vocabularyTermList: ["TypeScript", "Tauri"],
+        whisperPrompt:
+          "以下是台灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。剛才提到Tauri、TypeScript。",
         modelId: "whisper-large-v3",
         language: "zh",
       });
@@ -1687,6 +1691,8 @@ describe("useVoiceFlowStore", () => {
       expect(mockInvoke).toHaveBeenCalledWith("transcribe_audio", {
         apiKey: "test-api-key-123",
         vocabularyTermList: null,
+        whisperPrompt:
+          "以下是台灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。",
         modelId: "whisper-large-v3",
         language: "zh",
       });
@@ -1748,6 +1754,8 @@ describe("useVoiceFlowStore", () => {
       expect(mockInvoke).toHaveBeenCalledWith("transcribe_audio", {
         apiKey: "test-api-key-123",
         vocabularyTermList: ["Pinia", "Vitest"],
+        whisperPrompt:
+          "以下是台灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。剛才提到Vitest、Pinia。",
         modelId: "whisper-large-v3",
         language: "zh",
       });

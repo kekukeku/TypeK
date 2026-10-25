@@ -112,6 +112,21 @@ fn format_whisper_prompt(term_list: &[String]) -> String {
     format!("Important Vocabulary: {}", terms.join(", "))
 }
 
+/// 前端組好的 Whisper 前置稿優先（trim 後非空才算有值）；否則沿用字典詞清單。
+fn select_whisper_prompt(
+    whisper_prompt: Option<&str>,
+    vocabulary_term_list: Option<&[String]>,
+) -> Option<String> {
+    if let Some(prompt) = whisper_prompt {
+        if !prompt.trim().is_empty() {
+            return Some(prompt.to_string());
+        }
+    }
+
+    let terms = vocabulary_term_list.filter(|terms| !terms.is_empty())?;
+    Some(format_whisper_prompt(terms))
+}
+
 // ========== Retry Classification (gh-10) ==========
 
 /// 單次嘗試的失敗分類——決定要不要重試
@@ -173,6 +188,7 @@ async fn attempt_transcription_request(
     transcription_state: &TranscriptionState,
     api_key: &str,
     vocabulary_term_list: Option<&[String]>,
+    whisper_prompt: Option<&str>,
     model: &str,
     language: Option<&str>,
 ) -> Result<(String, f64), AttemptFailure> {
@@ -197,11 +213,8 @@ async fn attempt_transcription_request(
         form = form.text("language", lang.to_string());
     }
 
-    if let Some(terms) = vocabulary_term_list {
-        if !terms.is_empty() {
-            let prompt = format_whisper_prompt(terms);
-            form = form.text("prompt", prompt);
-        }
+    if let Some(prompt) = select_whisper_prompt(whisper_prompt, vocabulary_term_list) {
+        form = form.text("prompt", prompt);
     }
 
     // Send request (reuse shared client for connection pooling)
@@ -282,6 +295,7 @@ async fn send_transcription_request(
     transcription_state: &TranscriptionState,
     api_key: String,
     vocabulary_term_list: Option<Vec<String>>,
+    whisper_prompt: Option<String>,
     model_id: Option<String>,
     language: Option<String>,
 ) -> Result<TranscriptionResult, TranscriptionError> {
@@ -320,6 +334,7 @@ async fn send_transcription_request(
             transcription_state,
             &api_key,
             vocabulary_term_list.as_deref(),
+            whisper_prompt.as_deref(),
             &model,
             language.as_deref(),
         )
@@ -423,6 +438,7 @@ pub async fn transcribe_audio(
     transcription_state: State<'_, TranscriptionState>,
     api_key: String,
     vocabulary_term_list: Option<Vec<String>>,
+    whisper_prompt: Option<String>,
     model_id: Option<String>,
     language: Option<String>,
 ) -> Result<TranscriptionResult, TranscriptionError> {
@@ -444,6 +460,7 @@ pub async fn transcribe_audio(
         &transcription_state,
         api_key,
         vocabulary_term_list,
+        whisper_prompt,
         model_id,
         language,
     )
@@ -456,6 +473,7 @@ pub async fn retranscribe_from_file(
     file_path: String,
     api_key: String,
     vocabulary_term_list: Option<Vec<String>>,
+    whisper_prompt: Option<String>,
     model_id: Option<String>,
     language: Option<String>,
 ) -> Result<TranscriptionResult, TranscriptionError> {
@@ -484,6 +502,7 @@ pub async fn retranscribe_from_file(
         &transcription_state,
         api_key,
         vocabulary_term_list,
+        whisper_prompt,
         model_id,
         language,
     )
@@ -511,10 +530,18 @@ pub async fn test_whisper_connection(
     let model = model_id.unwrap_or_else(|| DEFAULT_WHISPER_MODEL_ID.to_string());
 
     // 連線測試走單次嘗試——要的就是即時真實結果，不重試
-    attempt_transcription_request(wav_data, &transcription_state, &api_key, None, &model, None)
-        .await
-        .map(|_| ())
-        .map_err(|failure| failure.error)
+    attempt_transcription_request(
+        wav_data,
+        &transcription_state,
+        &api_key,
+        None,
+        None,
+        &model,
+        None,
+    )
+    .await
+    .map(|_| ())
+    .map_err(|failure| failure.error)
 }
 
 // ========== Tests ==========
@@ -550,6 +577,32 @@ mod tests {
         assert_eq!(parts.len(), MAX_WHISPER_PROMPT_TERMS);
         assert_eq!(parts[0], format!("term{}", MAX_WHISPER_PROMPT_TERMS - 1));
         assert_eq!(parts[MAX_WHISPER_PROMPT_TERMS - 1], "term0");
+    }
+
+    #[test]
+    fn test_select_whisper_prompt_prefers_frontend_prompt() {
+        let terms = vec!["Tauri".to_string(), "Rust".to_string()];
+        assert_eq!(
+            select_whisper_prompt(Some("以下是台灣繁體中文的語音逐字稿。"), Some(&terms))
+                .as_deref(),
+            Some("以下是台灣繁體中文的語音逐字稿。")
+        );
+    }
+
+    #[test]
+    fn test_select_whisper_prompt_falls_back_to_vocabulary() {
+        let terms = vec!["Tauri".to_string(), "Rust".to_string()];
+        assert_eq!(
+            select_whisper_prompt(Some("   "), Some(&terms)).as_deref(),
+            Some("Important Vocabulary: Rust, Tauri")
+        );
+    }
+
+    #[test]
+    fn test_select_whisper_prompt_none_when_both_absent() {
+        let empty_terms: Vec<String> = vec![];
+        assert_eq!(select_whisper_prompt(None, None), None);
+        assert_eq!(select_whisper_prompt(Some(""), Some(&empty_terms)), None);
     }
 
     #[test]

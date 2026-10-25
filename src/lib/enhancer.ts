@@ -148,7 +148,7 @@ export function buildSystemPrompt(
 
   if (vocabularyTermList && vocabularyTermList.length > 0) {
     const truncatedTermList = vocabularyTermList.slice(0, MAX_VOCABULARY_TERMS);
-    prompt += `\n\n<vocabulary>\n${truncatedTermList.join(", ")}\n</vocabulary>`;
+    prompt += `\n\n<vocabulary>\nPreferred spellings. If the transcript contains a homophone or near-homophone of one of these terms, use this spelling:\n${truncatedTermList.join(", ")}\n</vocabulary>`;
   }
 
   const contextBlock = buildContextBlock(inputContext);

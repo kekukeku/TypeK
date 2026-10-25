@@ -25,6 +25,7 @@ import {
   type EnhanceWithGuardResult,
 } from "../lib/enhancer";
 import { applyTranscriptTextTransforms } from "../lib/transcriptTextTransforms";
+import { buildWhisperPrompt } from "../lib/whisperPrompt";
 import { detectHallucination } from "../lib/hallucinationDetector";
 import { useSettingsStore } from "./useSettingsStore";
 import { useVocabularyStore } from "./useVocabularyStore";
@@ -747,6 +748,10 @@ export const useHistoryStore = defineStore("history", () => {
         apiKey,
         vocabularyTermList:
           whisperTermList.length > 0 ? whisperTermList : null,
+        whisperPrompt: buildWhisperPrompt(
+          whisperTermList,
+          getEffectiveTranscriptLocale(settingsStore),
+        ),
         modelId: model,
         language: settingsStore.getWhisperLanguageCode(),
       });
