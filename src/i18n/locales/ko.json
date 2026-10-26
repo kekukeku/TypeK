@@ -209,7 +209,47 @@
       "privacyNote": "활성화하면 정리할 때마다 앱 이름, 창 제목, 커서 앞뒤 최대 400자를 선택한 AI 서비스로 전송합니다. 비밀번호 칸은 읽지 않으며 원문도 저장하지 않습니다"
     },
     "stt": {
-      "title": "음성 인식"
+      "title": "음성 인식",
+      "providerTitle": "전사 서비스",
+      "providerDescription": "음성 전사에 사용할 서비스를 선택하세요.",
+      "provider": {
+        "groq": "Groq",
+        "apple": "macOS 내장",
+        "byteplus": "BytePlus"
+      },
+      "providerHint": {
+        "groq": "무료 한도 · 키 필요",
+        "apple": "키 불필요 · Mac 전용",
+        "byteplus": "유료 · 대만 번체 출력"
+      },
+      "byteplusApiKey": {
+        "title": "BytePlus Seed Speech API Key",
+        "instruction": "BytePlus Seed Speech 콘솔에서 API Key를 만드세요(ModelArk 키가 아닙니다).",
+        "goToConsole": "BytePlus Console 열기",
+        "privacyNote": "녹음은 전사를 위해 BytePlus 싱가포르 서버로 업로드됩니다.",
+        "saved": "API Key가 저장되었습니다",
+        "deleted": "API Key가 삭제되었습니다",
+        "confirmDelete": "삭제할까요?",
+        "delete": "API Key 삭제"
+      },
+      "byteplusModel": "Seed ASR 고속 버전",
+      "appleModel": "Apple 음성 인식",
+      "appleAuth": {
+        "label": "음성 인식 권한",
+        "notDetermined": "미결정",
+        "denied": "거부됨",
+        "restricted": "제한됨",
+        "authorized": "승인됨",
+        "needsAuthorization": "승인 필요",
+        "request": "음성 인식 승인",
+        "openSettings": "시스템 설정 열기",
+        "deniedWarning": "TypeK에 음성 인식 권한이 없습니다. 시스템 설정에서 켜거나 Groq／BytePlus로 전환하세요.",
+        "restrictedWarning": "이 Mac에서는 음성 인식이 제한되어 있습니다. 시스템 설정을 확인하거나 Groq／BytePlus로 전환하세요.",
+        "authorizedHint": "승인되었습니다. macOS 내장 음성 인식을 사용할 수 있습니다.",
+        "description": "키가 필요 없고 무료입니다. 받아쓰기 언어 팩이 있는 언어는 기기에서 인식하고, 없으면 Apple 온라인 인식을 사용합니다(녹음은 Apple로 전송되며 요청당 최대 55초). 언어 팩은 시스템 설정 → 키보드 → 받아쓰기에서 내려받으세요.",
+        "authRequested": "음성 인식 권한 상태를 업데이트했습니다",
+        "statusUnavailable": "음성 인식 권한 상태를 가져올 수 없습니다"
+      }
     },
     "llm": {
       "title": "텍스트 정리"
@@ -359,7 +399,15 @@
       "serviceUnavailable": "전사 서비스를 일시적으로 사용할 수 없습니다",
       "failed": "음성 전사 실패",
       "recorderError": "녹음 장치에 오류가 발생했습니다",
-      "operationFailed": "작업 실패"
+      "operationFailed": "작업 실패",
+      "byteplusAuth": "BytePlus 키가 유효하지 않습니다. Seed Speech API Key인지 확인하세요(ModelArk 키가 아닙니다).",
+      "byteplusFailed": "BytePlus 전사에 실패했습니다(오류 코드 {code})",
+      "appleNotAuthorized": "TypeK에 음성 인식 권한이 없습니다. 설정 페이지에서 승인하세요.",
+      "appleLocaleUnsupported": "macOS 내장 음성 인식이 이 언어를 지원하지 않습니다. Groq 또는 BytePlus를 사용하세요.",
+      "appleNeedsLanguagePack": "이 녹음은 55초를 넘습니다. 먼저 받아쓰기 언어 팩을 내려받으세요: 시스템 설정 → 키보드 → 받아쓰기.",
+      "appleTimeout": "macOS 음성 인식 시간이 초과되었습니다. 다시 시도하거나 Groq를 사용하세요.",
+      "appleRecognitionFailed": "macOS 음성 인식에 실패했습니다. 다시 시도하세요.",
+      "providerUnsupported": "이 컴퓨터는 macOS 내장 음성 인식을 지원하지 않습니다."
     },
     "enhancement": {
       "timeout": "AI 정리 시간 초과, 원본 텍스트를 붙여넣었습니다",

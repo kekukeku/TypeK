@@ -33,7 +33,9 @@ const playingRecordId = ref<string | null>(null);
 // 重試鎖在 store（跨路由存活）；頁面只讀狀態來顯示 spinner / disabled
 const retryingId = computed(() => historyStore.retryingId);
 const retryingAction = computed(() => historyStore.retryingAction);
-const retryError = ref<{ id: string; key: string } | null>(null);
+const retryError = ref<{ id: string; key: string; message?: string } | null>(
+  null,
+);
 let currentAudio: HTMLAudioElement | null = null;
 let currentBlobUrl: string | null = null;
 
@@ -161,6 +163,7 @@ async function handleRetranscribe(record: TranscriptionRecord) {
     retryError.value = {
       id: record.id,
       key: result.errorKey ?? "history.retranscribeFailed",
+      message: result.errorMessage,
     };
   }
 }
@@ -354,7 +357,7 @@ onBeforeUnmount(() => {
               class="px-5 pb-2 text-xs text-destructive"
               data-testid="retry-error"
             >
-              {{ $t(retryError.key) }}
+              {{ retryError.message ?? $t(retryError.key) }}
             </p>
 
             <!-- 展開詳細 -->

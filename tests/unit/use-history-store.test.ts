@@ -1089,3 +1089,23 @@ describe("useHistoryStore", () => {
     });
   });
 });
+
+describe("每日額度 SQL — 只加總 Groq Whisper", () => {
+  it("[P0] DAILY_QUOTA_USAGE_SQL 排除 apple／byteplus 的 whisper 用量", async () => {
+    mockDbSelect.mockResolvedValueOnce([
+      { total_count: 0, total_characters: 0, total_recording_duration_ms: 0 },
+    ]);
+    mockDbSelect.mockResolvedValueOnce([]);
+
+    const { useHistoryStore } = await import(
+      "../../src/stores/useHistoryStore"
+    );
+    const store = useHistoryStore();
+    await store.fetchDashboardStats();
+
+    const quotaSql = mockDbSelect.mock.calls[1][0] as string;
+    expect(quotaSql).toContain(
+      "model IN ('whisper-large-v3', 'whisper-large-v3-turbo')",
+    );
+  });
+});

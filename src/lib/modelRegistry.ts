@@ -22,6 +22,32 @@ export type LlmModelId =
 
 export type WhisperModelId = "whisper-large-v3" | "whisper-large-v3-turbo";
 
+// ── 轉錄服務（STT provider）───────────────────────────────
+
+export type SttProviderId = "groq" | "apple" | "byteplus";
+
+export interface SttProviderConfig {
+  id: SttProviderId;
+  /** macOS 內建語音辨識只在 Mac 顯示（docs/plan-stt-providers.md） */
+  macOnly?: boolean;
+}
+
+export const STT_PROVIDER_LIST: SttProviderConfig[] = [
+  { id: "groq" },
+  { id: "apple", macOnly: true },
+  { id: "byteplus" },
+];
+
+export const DEFAULT_STT_PROVIDER_ID: SttProviderId = "groq";
+
+/** 用量紀錄用的 model id；Groq 仍記使用者選的 Whisper 模型，這裡只列非 Groq。 */
+export const STT_PROVIDER_USAGE_MODEL_ID: Partial<
+  Record<SttProviderId, string>
+> = {
+  apple: "apple-speech",
+  byteplus: "seed-asr-fast",
+};
+
 interface BaseModelConfig {
   displayName: string;
   badgeKey: string;

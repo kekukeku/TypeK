@@ -59,6 +59,39 @@ export function getTranscriptionErrorMessage(error: unknown): string {
     return t("errors.transcription.fileTooLarge");
   }
 
+  // BytePlus／Apple 的固定英文字樣（見 Rust TranscriptionError Display）
+  if (message.includes("Provider authentication failed (BytePlus)")) {
+    return t("errors.transcription.byteplusAuth");
+  }
+  const byteplusCodeMatch = message.match(
+    /BytePlus transcription failed \(code ([^)]+)\)/,
+  );
+  if (byteplusCodeMatch) {
+    return t("errors.transcription.byteplusFailed", {
+      code: byteplusCodeMatch[1],
+    });
+  }
+  const appleReasonMatch = message.match(/Apple speech error \(([^)]+)\)/);
+  if (appleReasonMatch) {
+    switch (appleReasonMatch[1]) {
+      case "not_authorized":
+        return t("errors.transcription.appleNotAuthorized");
+      case "locale_unsupported":
+        return t("errors.transcription.appleLocaleUnsupported");
+      case "needs_language_pack":
+        return t("errors.transcription.appleNeedsLanguagePack");
+      case "timeout":
+        return t("errors.transcription.appleTimeout");
+      case "recognition_failed":
+        return t("errors.transcription.appleRecognitionFailed");
+      default:
+        return t("errors.transcription.appleRecognitionFailed");
+    }
+  }
+  if (message.includes("This transcription provider is not supported")) {
+    return t("errors.transcription.providerUnsupported");
+  }
+
   // 先判 API 狀態碼（避免 body 含 network 字眼被誤判為網路錯誤）
   if (isApiStatusError) {
     const statusMatch = message.match(/\((\d+)\)/);
@@ -72,9 +105,10 @@ export function getTranscriptionErrorMessage(error: unknown): string {
     return t("errors.transcription.failed");
   }
 
-  // 網路/傳輸層失敗：RequestFailed 的 Display 為 "Groq API request failed: ..."，
+  // 網路/傳輸層失敗：RequestFailed 的 Display 為 "Transcription request failed: ..."，
   // 或含一般網路關鍵字（connect/dns/timeout/os error…）
   if (
+    message.includes("Transcription request failed") ||
     message.includes("Groq API request failed") ||
     NETWORK_ERROR_PATTERN.test(message)
   ) {

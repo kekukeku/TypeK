@@ -107,3 +107,25 @@ describe("modelRegistry — 下架遷移", () => {
     expect(getEffectiveLlmModelId("no-such-model")).toBe(DEFAULT_LLM_MODEL_ID);
   });
 });
+
+describe("modelRegistry — STT provider", () => {
+  it("[P0] 三家 provider、預設 groq、apple 只在 Mac", async () => {
+    const {
+      STT_PROVIDER_LIST,
+      DEFAULT_STT_PROVIDER_ID,
+      STT_PROVIDER_USAGE_MODEL_ID,
+    } = await import("../../src/lib/modelRegistry");
+
+    expect(STT_PROVIDER_LIST.map((provider) => provider.id)).toEqual([
+      "groq",
+      "apple",
+      "byteplus",
+    ]);
+    expect(
+      STT_PROVIDER_LIST.find((provider) => provider.id === "apple")?.macOnly,
+    ).toBe(true);
+    expect(DEFAULT_STT_PROVIDER_ID).toBe("groq");
+    expect(STT_PROVIDER_USAGE_MODEL_ID.apple).toBe("apple-speech");
+    expect(STT_PROVIDER_USAGE_MODEL_ID.byteplus).toBe("seed-asr-fast");
+  });
+});

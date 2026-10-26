@@ -54,6 +54,7 @@ import { applyTheme, DEFAULT_THEME_MODE, isThemeMode } from "../lib/theme";
 import {
   DEFAULT_LLM_MODEL_ID,
   DEFAULT_LLM_PROVIDER_ID,
+  DEFAULT_STT_PROVIDER_ID,
   DEFAULT_WHISPER_MODEL_ID,
   getEffectiveLlmModelId,
   getEffectiveWhisperModelId,
@@ -61,6 +62,7 @@ import {
   findLlmModelConfig,
   type LlmModelId,
   type LlmProviderId,
+  type SttProviderId,
   type WhisperModelId,
 } from "../lib/modelRegistry";
 
@@ -93,6 +95,19 @@ export function resolveLlmProviderId(
 ): LlmProviderId {
   if (savedLlmProviderId) return savedLlmProviderId;
   return savedGroqApiKey?.trim() ? "groq" : DEFAULT_LLM_PROVIDER_ID;
+}
+
+/**
+ * 轉錄服務：缺值／非法值一律 groq；非 Mac 讀到 apple 也回 groq
+ * （呼叫端負責把修正後的值寫回 store，不 emit 事件）。
+ */
+export function resolveSttProviderId(
+  savedProviderId: unknown,
+  isMac: boolean = IS_MACOS,
+): SttProviderId {
+  if (savedProviderId === "byteplus") return "byteplus";
+  if (savedProviderId === "apple") return isMac ? "apple" : "groq";
+  return "groq";
 }
 
 /** 已存的說話語言若不在支援清單（例如已移除的語言），遷移為 auto 並寫回磁碟。 */
@@ -152,6 +167,22 @@ export const useSettingsStore = defineStore("settings", () => {
   const openaiApiKey = ref<string>("");
   const anthropicApiKey = ref<string>("");
   const geminiApiKey = ref<string>("");
+  const selectedSttProviderId = ref<SttProviderId>(DEFAULT_STT_PROVIDER_ID);
+  const byteplusApiKey = ref<string>("");
+  const hasSttCredential = computed(() => {
+    switch (selectedSttProviderId.value) {
+      case "groq":
+        return apiKey.value !== "";
+      case "byteplus":
+        return byteplusApiKey.value !== "";
+      case "apple":
+        // macOS 內建免金鑰；授權狀態由設定頁另外顯示／檢查
+        return true;
+      default:
+        selectedSttProviderId.value satisfies never;
+        return false;
+    }
+  });
   const hasLlmApiKey = computed(() => {
     switch (selectedLlmProviderId.value) {
       case "groq":
@@ -207,6 +238,17 @@ export const useSettingsStore = defineStore("settings", () => {
     return apiKey.value;
   }
 
+  function getSttApiKey(): string {
+    switch (selectedSttProviderId.value) {
+      case "groq":
+        return apiKey.value;
+      case "byteplus":
+        return byteplusApiKey.value;
+      case "apple":
+        return "";
+    }
+  }
+
   function getLlmApiKey(): string {
     switch (selectedLlmProviderId.value) {
       case "groq":
@@ -250,6 +292,19 @@ export const useSettingsStore = defineStore("settings", () => {
 
       hotkeyConfig.value = { triggerKey: key, triggerMode: mode };
       apiKey.value = savedApiKey?.trim() ?? "";
+
+      // 轉錄服務：升級使用者缺值即 groq；非 Mac 讀到 apple 要寫回修正值（不 emit）
+      const savedSttProviderId = await store.get<unknown>("sttProviderId");
+      selectedSttProviderId.value = resolveSttProviderId(savedSttProviderId);
+      if (
+        typeof savedSttProviderId === "string" &&
+        savedSttProviderId !== selectedSttProviderId.value
+      ) {
+        await store.set("sttProviderId", selectedSttProviderId.value);
+        await store.save();
+      }
+      const savedByteplusApiKey = await store.get<string>("byteplusApiKey");
+      byteplusApiKey.value = savedByteplusApiKey?.trim() ?? "";
 
       // Load independently persisted custom/combo key
       const savedCustomKey =
@@ -647,6 +702,99 @@ export const useSettingsStore = defineStore("settings", () => {
         extractErrorMessage(err),
       );
       throw err;
+    }
+  }
+
+  async function saveSttProvider(providerId: SttProviderId) {
+    try {
+      const store = await load(STORE_NAME);
+      await store.set("sttProviderId", providerId);
+      await store.save();
+      selectedSttProviderId.value = providerId;
+
+      const payload: SettingsUpdatedPayload = {
+        key: "sttProvider",
+        value: providerId,
+      };
+      await emitEvent(SETTINGS_UPDATED, payload);
+      console.log(`[useSettingsStore] STT provider saved: ${providerId}`);
+    } catch (err) {
+      console.error(
+        "[useSettingsStore] saveSttProvider failed:",
+        extractErrorMessage(err),
+      );
+      captureError(err, { source: "settings", step: "save-stt-provider" });
+      throw err;
+    }
+  }
+
+  async function saveByteplusApiKey(key: string) {
+    const trimmedKey = key.trim();
+    if (trimmedKey === "") {
+      throw new Error(i18n.global.t("errors.apiKeyEmpty"));
+    }
+    try {
+      const store = await load(STORE_NAME);
+      await store.set("byteplusApiKey", trimmedKey);
+      await store.save();
+      byteplusApiKey.value = trimmedKey;
+
+      const payload: SettingsUpdatedPayload = {
+        key: "byteplusApiKey",
+        value: trimmedKey,
+      };
+      await emitEvent(SETTINGS_UPDATED, payload);
+      console.log("[useSettingsStore] BytePlus API Key saved");
+    } catch (err) {
+      console.error(
+        "[useSettingsStore] saveByteplusApiKey failed:",
+        extractErrorMessage(err),
+      );
+      captureError(err, {
+        source: "settings",
+        step: "save-byteplus-api-key",
+      });
+      throw err;
+    }
+  }
+
+  async function deleteByteplusApiKey() {
+    try {
+      const store = await load(STORE_NAME);
+      await store.delete("byteplusApiKey");
+      await store.save();
+      byteplusApiKey.value = "";
+
+      const payload: SettingsUpdatedPayload = {
+        key: "byteplusApiKey",
+        value: "",
+      };
+      await emitEvent(SETTINGS_UPDATED, payload);
+      console.log("[useSettingsStore] BytePlus API Key deleted");
+    } catch (err) {
+      console.error(
+        "[useSettingsStore] deleteByteplusApiKey failed:",
+        extractErrorMessage(err),
+      );
+      throw err;
+    }
+  }
+
+  async function refreshSttApiKey() {
+    if (selectedSttProviderId.value === "groq") {
+      await refreshApiKey();
+      return;
+    }
+    if (selectedSttProviderId.value === "apple") return;
+    try {
+      const store = await load(STORE_NAME);
+      const savedKey = await store.get<string>("byteplusApiKey");
+      byteplusApiKey.value = savedKey?.trim() ?? "";
+    } catch (err) {
+      console.error(
+        "[useSettingsStore] refreshSttApiKey failed:",
+        extractErrorMessage(err),
+      );
     }
   }
 
@@ -1353,6 +1501,8 @@ export const useSettingsStore = defineStore("settings", () => {
         "customTriggerKeyDomCode",
       );
       const savedApiKey = await store.get<string>("groqApiKey");
+      const savedSttProviderId = await store.get<unknown>("sttProviderId");
+      const savedByteplusApiKey = await store.get<string>("byteplusApiKey");
       const savedThresholdEnabled = await store.get<boolean>(
         "enhancementThresholdEnabled",
       );
@@ -1419,6 +1569,15 @@ export const useSettingsStore = defineStore("settings", () => {
       applyTheme(themeMode.value);
 
       apiKey.value = savedApiKey?.trim() ?? "";
+      selectedSttProviderId.value = resolveSttProviderId(savedSttProviderId);
+      if (
+        typeof savedSttProviderId === "string" &&
+        savedSttProviderId !== selectedSttProviderId.value
+      ) {
+        await store.set("sttProviderId", selectedSttProviderId.value);
+        await store.save();
+      }
+      byteplusApiKey.value = savedByteplusApiKey?.trim() ?? "";
       isEnhancementThresholdEnabled.value =
         savedThresholdEnabled ?? DEFAULT_ENHANCEMENT_THRESHOLD_ENABLED;
       enhancementThresholdCharCount.value =
@@ -1527,6 +1686,14 @@ export const useSettingsStore = defineStore("settings", () => {
     openaiApiKey: computed(() => openaiApiKey.value),
     anthropicApiKey: computed(() => anthropicApiKey.value),
     geminiApiKey: computed(() => geminiApiKey.value),
+    selectedSttProviderId,
+    byteplusApiKey: computed(() => byteplusApiKey.value),
+    hasSttCredential,
+    getSttApiKey,
+    refreshSttApiKey,
+    saveSttProvider,
+    saveByteplusApiKey,
+    deleteByteplusApiKey,
     getApiKey,
     getLlmApiKey,
     getAiPrompt,

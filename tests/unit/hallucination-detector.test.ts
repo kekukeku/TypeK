@@ -560,3 +560,28 @@ describe("hallucinationDetector.ts", () => {
     });
   });
 });
+
+describe("noSpeechProbability 為 null（Apple／BytePlus）", () => {
+  it("[P0] null 時跳過 Layer 2b，不拋錯、不判定幻覺", () => {
+    const result = detectHallucination({
+      rawText: "這是一段正常的語音內容",
+      recordingDurationMs: 3000,
+      peakEnergyLevel: 0.02,
+      rmsEnergyLevel: 0.005,
+      noSpeechProbability: null,
+    });
+    expect(result.isHallucination).toBe(false);
+  });
+
+  it("[P0] null 仍會觸發 Layer 2a 完全靜音", () => {
+    const result = detectHallucination({
+      rawText: "這是一段正常的語音內容",
+      recordingDurationMs: 3000,
+      peakEnergyLevel: 0.001,
+      rmsEnergyLevel: 0.0,
+      noSpeechProbability: null,
+    });
+    expect(result.isHallucination).toBe(true);
+    expect(result.reason).toBe("no-speech-detected");
+  });
+});

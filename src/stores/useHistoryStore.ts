@@ -14,7 +14,10 @@ import type { TranscriptionCompletedPayload } from "../types/events";
 import { invoke } from "@tauri-apps/api/core";
 import { getDatabase } from "../lib/database";
 import { buildDailyUsageSeries } from "../lib/usageTrend";
-import { extractErrorMessage } from "../lib/errorUtils";
+import {
+  extractErrorMessage,
+  getTranscriptionErrorMessage,
+} from "../lib/errorUtils";
 import { captureError } from "../lib/sentry";
 import {
   calculateChatCostCeiling,
@@ -26,6 +29,7 @@ import {
 } from "../lib/enhancer";
 import { applyTranscriptTextTransforms } from "../lib/transcriptTextTransforms";
 import { buildWhisperPrompt } from "../lib/whisperPrompt";
+import { STT_PROVIDER_USAGE_MODEL_ID } from "../lib/modelRegistry";
 import { detectHallucination } from "../lib/hallucinationDetector";
 import { useSettingsStore } from "./useSettingsStore";
 import { useVocabularyStore } from "./useVocabularyStore";
@@ -41,6 +45,8 @@ export interface HistoryRetryResult {
   ok: boolean;
   record?: TranscriptionRecord;
   errorKey?: string;
+  /** 已翻譯好的錯誤訊息（例如 BytePlus 金鑰無效、macOS 需要語言包）；有值時優先顯示 */
+  errorMessage?: string;
 }
 
 const PAGE_SIZE = 20;
@@ -147,6 +153,10 @@ const DAILY_QUOTA_USAGE_SQL = `
     COALESCE(SUM(MAX(COALESCE(audio_duration_ms, 0), 10000)), 0) as billed_audio_ms
   FROM api_usage
   WHERE DATE(created_at, 'localtime') = DATE('now', 'localtime')
+    AND (
+      api_type != 'whisper'
+      OR model IN ('whisper-large-v3', 'whisper-large-v3-turbo')
+    )
   GROUP BY api_type
 `;
 
@@ -729,17 +739,22 @@ export const useHistoryStore = defineStore("history", () => {
   ): Promise<HistoryRetryResult> {
     const settingsStore = useSettingsStore();
     const vocabularyStore = useVocabularyStore();
+    const sttProvider = settingsStore.selectedSttProviderId;
 
-    if (!settingsStore.getApiKey()) {
-      await settingsStore.refreshApiKey();
+    if (!settingsStore.hasSttCredential) {
+      await settingsStore.refreshSttApiKey();
     }
-    const apiKey = settingsStore.getApiKey();
-    if (!apiKey) {
+    const apiKey = settingsStore.getSttApiKey();
+    if (!settingsStore.hasSttCredential) {
       return { ok: false, errorKey: "errors.apiKeyMissing" };
     }
 
     const whisperTermList = await vocabularyStore.getTopTermListByWeight(50);
-    const model = settingsStore.selectedWhisperModelId;
+    const whisperModel = settingsStore.selectedWhisperModelId;
+    const usageModel =
+      sttProvider === "groq"
+        ? whisperModel
+        : (STT_PROVIDER_USAGE_MODEL_ID[sttProvider] ?? whisperModel);
 
     let result: TranscriptionResult;
     try {
@@ -748,27 +763,39 @@ export const useHistoryStore = defineStore("history", () => {
         apiKey,
         vocabularyTermList:
           whisperTermList.length > 0 ? whisperTermList : null,
-        whisperPrompt: buildWhisperPrompt(
-          whisperTermList,
-          getEffectiveTranscriptLocale(settingsStore),
-        ),
-        modelId: model,
+        provider: sttProvider,
+        transcriptionLocale: settingsStore.selectedTranscriptionLocale,
+        interfaceLocale: settingsStore.selectedLocale,
         language: settingsStore.getWhisperLanguageCode(),
+        ...(sttProvider === "groq"
+          ? {
+              whisperPrompt: buildWhisperPrompt(
+                whisperTermList,
+                getEffectiveTranscriptLocale(settingsStore),
+              ),
+              modelId: whisperModel,
+            }
+          : {}),
       });
     } catch (err) {
       captureError(err, { source: "history", step: "retranscribe-invoke" });
-      return { ok: false, errorKey: "history.retranscribeFailed" };
+      return {
+        ok: false,
+        errorKey: "history.retranscribeFailed",
+        errorMessage: getTranscriptionErrorMessage(err),
+      };
     }
 
-    // #39：轉譯語言為繁中時，把 Whisper 的簡體輸出轉成繁體（與即時流程一致，落地前一次到位）。
-    // 與主路徑同樣在 raw_text 寫入 DB 前套用，涵蓋空轉錄/幻覺偵測、charCount 與本地更新。
-    result.rawText = applyTranscriptTextTransforms(
-      result.rawText,
-      getEffectiveTranscriptLocale(settingsStore),
-    );
+    // #39：只有 Groq Whisper 的簡體輸出需要轉繁；Apple／BytePlus 自行處理正體。
+    if (sttProvider === "groq") {
+      result.rawText = applyTranscriptTextTransforms(
+        result.rawText,
+        getEffectiveTranscriptLocale(settingsStore),
+      );
+    }
 
     // HTTP 成功即計費（不論轉錄內容）→ 記錄 whisper 用量
-    recordWhisperUsage(record.id, record.recordingDurationMs, model);
+    recordWhisperUsage(record.id, record.recordingDurationMs, usageModel);
 
     // 空轉錄或幻覺 → 保留 failed、不覆寫原文
     const isEmpty = !result.rawText || !result.rawText.trim();

@@ -120,32 +120,63 @@ invoke('read_focused_text_field') → Result<string | null, string>
 invoke('read_selected_text')      → Result<string | null, string>
 ```
 
-### 2.8 LLM / 轉錄（2 個 · `plugins/transcription.rs`）
+### 2.8 LLM / 轉錄（5 個 · `plugins/transcription.rs`）
 
 #### `transcribe_audio`
 ```ts
 invoke('transcribe_audio', {
   api_key: string,
   vocabulary_term_list?: string[],
-  model_id?: string,        // 預設 'whisper-large-v3'
-  language?: string | null, // null = Whisper 自動偵測；undefined → Rust fallback 'zh'
+  whisper_prompt?: string,        // 只有 provider=groq 傳
+  model_id?: string,              // 預設 'whisper-large-v3'；只有 provider=groq 傳
+  language?: string | null,       // null／undefined = Groq 不帶 language（Whisper 自動偵測）
+  provider?: 'groq' | 'apple' | 'byteplus', // 缺值／其他 = groq
+  transcription_locale?: string,  // 'auto' 或七個介面語言 id
+  interface_locale?: string,      // 七個介面語言 id（apple 的 auto 對照用）
 }) → Result<TranscriptionResult, TranscriptionError>
 ```
 
 #### `retranscribe_from_file`
 ```ts
 invoke('retranscribe_from_file', {
-  path: string,
+  file_path: string,
   api_key: string,
   vocabulary_term_list?: string[],
-  model_id?: string,
+  whisper_prompt?: string,        // 只有 provider=groq 傳
+  model_id?: string,              // 只有 provider=groq 傳
   language?: string | null,
+  provider?: 'groq' | 'apple' | 'byteplus',
+  transcription_locale?: string,
+  interface_locale?: string,
 }) → Result<TranscriptionResult, TranscriptionError>
 ```
 
+#### `test_whisper_connection`
+```ts
+invoke('test_whisper_connection', {
+  api_key: string,
+  model_id?: string,              // 只有 provider=groq 傳
+  provider?: 'groq' | 'apple' | 'byteplus',
+  transcription_locale?: string,
+  interface_locale?: string,
+}) → Result<void, TranscriptionError>
+```
+
+#### `apple_speech_auth_status`（macOS only）
+```ts
+invoke('apple_speech_auth_status') → Result<number, TranscriptionError>
+// 0 未決定、1 拒絕、2 受限、3 已授權；非 macOS 回 ProviderUnsupported
+```
+
+#### `apple_speech_request_auth`（macOS only，spawn_blocking）
+```ts
+invoke('apple_speech_request_auth') → Result<number, TranscriptionError>
+```
+
 **型別**：
-- `TranscriptionResult = { text: string, durationMs: number, ... }`
-- `TranscriptionError`（thiserror enum）
+- `TranscriptionResult = { rawText: string, transcriptionDurationMs: number, noSpeechProbability: number | null, peakEnergyLevel: number, rmsEnergyLevel: number }`
+- `noSpeechProbability`：Groq 為數字；Apple／BytePlus 成功時為 `null`；Apple 空結果與 BytePlus 靜音（`X-Api-Status-Code: 20000003`）為 `1.0`、文字為空字串
+- `TranscriptionError`（thiserror enum；BytePlus／Apple 的 Display 為固定英文字樣，供 `errorUtils` 辨認）
 
 ### 2.9 音效回饋（4 個 · `plugins/sound_feedback.rs`）
 

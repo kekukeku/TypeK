@@ -7,15 +7,23 @@ import {
 
 const WHISPER_MIN_BILLING_MS = 10_000;
 
+/** 本機／非 Groq 轉錄服務的用量 model id：免額度、成本 0、不套 10 秒地板。 */
+const ZERO_COST_WHISPER_MODEL_ID_SET = new Set([
+  "apple-speech",
+  "seed-asr-fast",
+]);
+
 /**
  * 計算 Whisper API 費用上限。
  * Groq 最低計費 10 秒/次，不足 10 秒一律按 10 秒算。
  * 從 modelRegistry 查表取得對應模型的每小時費率。
+ * Apple／BytePlus 走自己的服務，不列入 Groq 計費。
  */
 export function calculateWhisperCostCeiling(
   audioDurationMs: number,
   modelId: string = DEFAULT_WHISPER_MODEL_ID,
 ): number {
+  if (ZERO_COST_WHISPER_MODEL_ID_SET.has(modelId)) return 0;
   const config = findWhisperModelConfig(modelId);
   const costPerHour = config?.costPerHour ?? 0.111;
   const billedMs = Math.max(audioDurationMs, WHISPER_MIN_BILLING_MS);

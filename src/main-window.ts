@@ -67,7 +67,7 @@ async function bootstrap() {
   await settingsStore.consumeUpgradeNotice();
   await settingsStore.initializeAutoStart();
 
-  if (!settingsStore.hasApiKey) {
+  if (!settingsStore.hasSttCredential) {
     await router.push("/settings");
     await nextTick();
     const currentWindow = getCurrentWindow();

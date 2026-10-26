@@ -36,12 +36,14 @@ import {
   getKeyDisplayNameByKeycode,
 } from "../lib/keycodeMap";
 import {
+  STT_PROVIDER_LIST,
   WHISPER_MODEL_LIST,
   findLlmModelConfig,
   findWhisperModelConfig,
   getModelListByProvider,
   type LlmModelId,
   type LlmProviderId,
+  type SttProviderId,
   type WhisperModelId,
 } from "../lib/modelRegistry";
 import { LLM_PROVIDER_LIST, findProviderConfig } from "../lib/llmProvider";
@@ -107,6 +109,10 @@ const { t } = useI18n();
 
 // ── 快捷鍵設定 ──────────────────────────────────────────────
 const isMac = navigator.userAgent.includes("Mac");
+
+const sttProviderList = computed(() =>
+  STT_PROVIDER_LIST.filter((provider) => !provider.macOnly || isMac),
+);
 
 const triggerKeyOptions = computed<{ value: PresetTriggerKey; label: string }[]>(() =>
   isMac
@@ -369,7 +375,10 @@ const apiKeyStatusClass = computed(() =>
     ? "border-0 bg-success/15 text-success"
     : "border-0 bg-destructive/15 text-destructive",
 );
-const shouldShowOnboardingHint = computed(() => !settingsStore.hasApiKey);
+const shouldShowOnboardingHint = computed(
+  () =>
+    settingsStore.selectedSttProviderId === "groq" && !settingsStore.hasApiKey,
+);
 
 function toggleApiKeyVisibility() {
   isApiKeyVisible.value = !isApiKeyVisible.value;
@@ -413,6 +422,147 @@ async function handleDeleteApiKey() {
   } finally {
     isSubmittingApiKey.value = false;
   }
+}
+
+// ── 轉錄服務（STT provider）──────────────────────────────────
+const sttProviderFeedback = useFeedbackMessage();
+
+async function handleSttProviderChange(providerId: SttProviderId) {
+  try {
+    await settingsStore.saveSttProvider(providerId);
+    sttProviderFeedback.show("success", t("common.save"));
+    if (providerId === "apple") {
+      await refreshAppleAuthStatus();
+    }
+  } catch (err) {
+    sttProviderFeedback.show("error", extractErrorMessage(err));
+  }
+}
+
+const byteplusApiKeyInput = ref("");
+const isByteplusApiKeyVisible = ref(false);
+const isSubmittingByteplusApiKey = ref(false);
+const byteplusKeyFeedback = useFeedbackMessage();
+
+const byteplusApiKeyStatusLabel = computed(() =>
+  settingsStore.byteplusApiKey
+    ? t("settings.apiKey.set")
+    : t("settings.apiKey.notSet"),
+);
+const byteplusApiKeyStatusClass = computed(() =>
+  settingsStore.byteplusApiKey
+    ? "border-0 bg-success/15 text-success"
+    : "border-0 bg-destructive/15 text-destructive",
+);
+
+async function handleSaveByteplusApiKey() {
+  try {
+    isSubmittingByteplusApiKey.value = true;
+    await settingsStore.saveByteplusApiKey(byteplusApiKeyInput.value);
+    byteplusApiKeyInput.value = "";
+    isByteplusApiKeyVisible.value = false;
+    byteplusKeyFeedback.show(
+      "success",
+      t("settings.stt.byteplusApiKey.saved"),
+    );
+  } catch (err) {
+    byteplusKeyFeedback.show("error", extractErrorMessage(err));
+  } finally {
+    isSubmittingByteplusApiKey.value = false;
+  }
+}
+
+async function handleDeleteByteplusApiKey() {
+  try {
+    isSubmittingByteplusApiKey.value = true;
+    await settingsStore.deleteByteplusApiKey();
+    byteplusApiKeyInput.value = "";
+    isByteplusApiKeyVisible.value = false;
+    byteplusKeyFeedback.show(
+      "success",
+      t("settings.stt.byteplusApiKey.deleted"),
+    );
+  } catch (err) {
+    byteplusKeyFeedback.show("error", extractErrorMessage(err));
+  } finally {
+    isSubmittingByteplusApiKey.value = false;
+  }
+}
+
+// ── macOS 內建語音辨識授權 ───────────────────────────────────
+const appleAuthStatus = ref<number | null>(null);
+const appleAuthFeedback = useFeedbackMessage();
+
+const appleAuthStatusLabel = computed(() => {
+  switch (appleAuthStatus.value) {
+    case 0:
+      return t("settings.stt.appleAuth.notDetermined");
+    case 1:
+      return t("settings.stt.appleAuth.denied");
+    case 2:
+      return t("settings.stt.appleAuth.restricted");
+    case 3:
+      return t("settings.stt.appleAuth.authorized");
+    default:
+      return t("settings.stt.appleAuth.needsAuthorization");
+  }
+});
+
+const appleAuthStatusClass = computed(() =>
+  appleAuthStatus.value === 3
+    ? "border-0 bg-success/15 text-success"
+    : "border-0 bg-destructive/15 text-destructive",
+);
+
+async function refreshAppleAuthStatus() {
+  if (!isMac) return;
+  try {
+    appleAuthStatus.value = await invoke<number>("apple_speech_auth_status");
+  } catch (err) {
+    appleAuthStatus.value = null;
+    console.error(
+      "[SettingsView] apple_speech_auth_status failed:",
+      extractErrorMessage(err),
+    );
+  }
+}
+
+async function handleRequestAppleAuth() {
+  try {
+    appleAuthStatus.value = await invoke<number>("apple_speech_request_auth");
+    appleAuthFeedback.show(
+      "success",
+      t("settings.stt.appleAuth.authRequested"),
+    );
+  } catch (err) {
+    appleAuthFeedback.show(
+      "error",
+      t("settings.stt.appleAuth.statusUnavailable"),
+    );
+  }
+}
+
+async function handleOpenSpeechSettings() {
+  try {
+    await openExternalUrl(
+      "x-apple.systempreferences:com.apple.preference.security?Privacy_SpeechRecognition",
+    );
+  } catch (err) {
+    appleAuthFeedback.show("error", extractErrorMessage(err));
+  }
+}
+
+async function handleWhisperTest() {
+  if (settingsStore.selectedSttProviderId === "apple") {
+    await refreshAppleAuthStatus();
+  }
+  return testWhisperConnection(
+    settingsStore.selectedSttProviderId,
+    settingsStore.getSttApiKey(),
+    settingsStore.selectedWhisperModelId,
+    settingsStore.selectedTranscriptionLocale,
+    settingsStore.selectedLocale,
+  );
 }
 
 // ── AI 整理門檻 ──────────────────────────────────────────────
@@ -883,6 +1033,9 @@ onMounted(async () => {
   if (settingsStore.hasApiKey) {
     apiKeyInput.value = settingsStore.getApiKey();
   }
+  if (settingsStore.selectedSttProviderId === "apple") {
+    await refreshAppleAuthStatus();
+  }
   thresholdEnabled.value = settingsStore.isEnhancementThresholdEnabled;
   thresholdCharCount.value = settingsStore.enhancementThresholdCharCount;
   recordingAutoCleanupEnabled.value =
@@ -919,6 +1072,9 @@ onBeforeUnmount(() => {
   autoStartFeedback.clearTimer();
   smartDictionaryFeedback.clearTimer();
   inputContextFeedback.clearTimer();
+  sttProviderFeedback.clearTimer();
+  byteplusKeyFeedback.clearTimer();
+  appleAuthFeedback.clearTimer();
   recordingCleanupFeedback.clearTimer();
   providerFeedback.clearTimer();
   clearTimeout(deleteConfirmTimeoutId);
@@ -1124,8 +1280,39 @@ onBeforeUnmount(() => {
         <CardTitle class="text-base">{{ $t("settings.stt.title") }}</CardTitle>
       </CardHeader>
       <CardContent class="space-y-5">
+        <!-- 轉錄服務選擇（沿用文字整理卡 provider RadioGroup 樣式） -->
+        <div class="space-y-3">
+          <Label>{{ $t("settings.stt.providerTitle") }}</Label>
+          <p class="text-xs text-muted-foreground">
+            {{ $t("settings.stt.providerDescription") }}
+          </p>
+          <RadioGroup
+            :model-value="settingsStore.selectedSttProviderId"
+            :class="isMac ? 'grid grid-cols-3 gap-3' : 'grid grid-cols-2 gap-3'"
+            @update:model-value="(v: unknown) => handleSttProviderChange(v as SttProviderId)"
+          >
+            <Label
+              v-for="provider in sttProviderList"
+              :key="provider.id"
+              :for="`stt-provider-${provider.id}`"
+              class="flex cursor-pointer items-center gap-2.5 rounded-[var(--radius)] p-3 transition-all"
+              :class="settingsStore.selectedSttProviderId === provider.id
+                ? 'border-2 border-primary bg-gradient-to-br from-card to-accent font-bold text-primary shadow-jelly'
+                : 'border border-border bg-card hover:border-primary/50 hover:scale-[1.02]'"
+            >
+              <RadioGroupItem :id="`stt-provider-${provider.id}`" :value="provider.id" class="!size-0 !border-0 !shadow-none overflow-hidden" />
+              <span class="flex flex-col gap-0.5">
+                <span class="text-sm font-medium">{{ $t(`settings.stt.provider.${provider.id}`) }}</span>
+                <span class="text-xs font-normal text-muted-foreground">{{ $t(`settings.stt.providerHint.${provider.id}`) }}</span>
+              </span>
+            </Label>
+          </RadioGroup>
+        </div>
+
+        <Separator />
+
         <!-- Groq API Key -->
-        <div class="space-y-4">
+        <div v-if="settingsStore.selectedSttProviderId === 'groq'" class="space-y-4">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <Label for="groq-api-key">{{ $t("settings.apiKey.title") }}</Label>
@@ -1213,33 +1400,180 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
+        <!-- BytePlus Seed Speech API Key -->
+        <div v-else-if="settingsStore.selectedSttProviderId === 'byteplus'" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <Label for="byteplus-api-key">{{ $t("settings.stt.byteplusApiKey.title") }}</Label>
+              <Badge :class="byteplusApiKeyStatusClass" class="border-0">
+                {{ byteplusApiKeyStatusLabel }}
+              </Badge>
+            </div>
+            <a
+              href="https://console.byteplus.com/voice/new/setting/apikeys"
+              target="_blank"
+              rel="noreferrer"
+              class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {{ $t("settings.stt.byteplusApiKey.goToConsole") }} &rarr;
+            </a>
+          </div>
+
+          <p class="text-sm text-muted-foreground leading-relaxed">
+            {{ $t("settings.stt.byteplusApiKey.instruction") }}
+          </p>
+
+          <div v-if="settingsStore.byteplusApiKey" class="flex items-center gap-2">
+            <Input
+              id="byteplus-api-key"
+              :model-value="
+                isByteplusApiKeyVisible
+                  ? settingsStore.byteplusApiKey
+                  : '••••••••••'
+              "
+              readonly
+              class="flex-1 font-mono text-xs"
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              @click="isByteplusApiKeyVisible = !isByteplusApiKeyVisible"
+            >
+              {{ isByteplusApiKeyVisible ? $t('settings.apiKey.hide') : $t('settings.apiKey.show') }}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="text-destructive"
+              :disabled="isSubmittingByteplusApiKey"
+              @click="handleDeleteByteplusApiKey"
+            >
+              {{ $t('settings.stt.byteplusApiKey.delete') }}
+            </Button>
+          </div>
+          <div v-else class="flex gap-2">
+            <Input
+              id="byteplus-api-key"
+              v-model="byteplusApiKeyInput"
+              type="password"
+              placeholder="..."
+              autocomplete="off"
+              class="flex-1 font-mono text-xs"
+            />
+            <Button
+              size="sm"
+              :disabled="isSubmittingByteplusApiKey || !byteplusApiKeyInput.trim()"
+              @click="handleSaveByteplusApiKey"
+            >
+              {{ $t('common.save') }}
+            </Button>
+          </div>
+
+          <transition name="feedback-fade">
+            <p
+              v-if="byteplusKeyFeedback.message.value !== ''"
+              class="text-sm"
+              :class="
+                byteplusKeyFeedback.type.value === 'success' ? 'text-success' : 'text-destructive'
+              "
+            >
+              {{ byteplusKeyFeedback.message.value }}
+            </p>
+          </transition>
+
+          <p class="text-xs text-muted-foreground">
+            {{ $t("settings.stt.byteplusApiKey.privacyNote") }}
+          </p>
+        </div>
+
+        <!-- macOS 內建語音辨識 -->
+        <div v-else class="space-y-4">
+          <div class="flex items-center gap-2">
+            <Label>{{ $t("settings.stt.appleAuth.label") }}</Label>
+            <Badge :class="appleAuthStatusClass" class="border-0">
+              {{ appleAuthStatusLabel }}
+            </Badge>
+          </div>
+
+          <template v-if="appleAuthStatus === 3">
+            <p class="text-sm text-muted-foreground">
+              {{ $t("settings.stt.appleAuth.authorizedHint") }}
+            </p>
+          </template>
+          <template v-else-if="appleAuthStatus === 1 || appleAuthStatus === 2">
+            <p class="rounded-[var(--radius)] border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-foreground">
+              {{
+                appleAuthStatus === 1
+                  ? $t("settings.stt.appleAuth.deniedWarning")
+                  : $t("settings.stt.appleAuth.restrictedWarning")
+              }}
+            </p>
+            <Button variant="outline" size="sm" @click="handleOpenSpeechSettings">
+              {{ $t("settings.stt.appleAuth.openSettings") }}
+            </Button>
+          </template>
+          <template v-else>
+            <Button size="sm" @click="handleRequestAppleAuth">
+              {{ $t("settings.stt.appleAuth.request") }}
+            </Button>
+          </template>
+
+          <p class="text-xs text-muted-foreground leading-relaxed">
+            {{ $t("settings.stt.appleAuth.description") }}
+          </p>
+
+          <transition name="feedback-fade">
+            <p
+              v-if="appleAuthFeedback.message.value !== ''"
+              class="text-sm"
+              :class="
+                appleAuthFeedback.type.value === 'success' ? 'text-success' : 'text-destructive'
+              "
+            >
+              {{ appleAuthFeedback.message.value }}
+            </p>
+          </transition>
+        </div>
+
         <Separator />
 
         <!-- 模型｜語言 並排 -->
         <div class="grid gap-4 sm:grid-cols-[1.4fr_1fr]">
           <div class="space-y-2">
-            <Label for="whisper-model">{{ $t("settings.model.whisperLabel") }}</Label>
-            <Select
-              :model-value="settingsStore.selectedWhisperModelId"
-              @update:model-value="handleWhisperModelChange($event as WhisperModelId)"
-            >
-              <SelectTrigger id="whisper-model" class="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem
-                  v-for="model in WHISPER_MODEL_LIST"
-                  :key="model.id"
-                  :value="model.id"
-                >
-                  {{ model.displayName }}
-                  <template v-if="model.isDefault" #extra>
-                    <Badge variant="secondary" class="ml-2 text-xs">{{ $t("settings.model.default") }}</Badge>
-                  </template>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <p class="text-xs text-muted-foreground">{{ whisperModelDescription }}</p>
+            <template v-if="settingsStore.selectedSttProviderId === 'groq'">
+              <Label for="whisper-model">{{ $t("settings.model.whisperLabel") }}</Label>
+              <Select
+                :model-value="settingsStore.selectedWhisperModelId"
+                @update:model-value="handleWhisperModelChange($event as WhisperModelId)"
+              >
+                <SelectTrigger id="whisper-model" class="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    v-for="model in WHISPER_MODEL_LIST"
+                    :key="model.id"
+                    :value="model.id"
+                  >
+                    {{ model.displayName }}
+                    <template v-if="model.isDefault" #extra>
+                      <Badge variant="secondary" class="ml-2 text-xs">{{ $t("settings.model.default") }}</Badge>
+                    </template>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p class="text-xs text-muted-foreground">{{ whisperModelDescription }}</p>
+            </template>
+            <template v-else>
+              <span class="text-sm font-medium">{{ $t("settings.model.whisperLabel") }}</span>
+              <div class="flex h-9 items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground">
+                {{
+                  settingsStore.selectedSttProviderId === "byteplus"
+                    ? $t("settings.stt.byteplusModel")
+                    : $t("settings.stt.appleModel")
+                }}
+              </div>
+            </template>
           </div>
 
           <div class="space-y-2">
@@ -1266,9 +1600,19 @@ onBeforeUnmount(() => {
         </div>
 
         <ConnectionTestButton
-          :on-test="() => testWhisperConnection(settingsStore.selectedWhisperModelId, settingsStore.getApiKey())"
-          :disabled="!settingsStore.hasApiKey"
+          :on-test="handleWhisperTest"
+          :disabled="!settingsStore.hasSttCredential"
         />
+
+        <transition name="feedback-fade">
+          <p
+            v-if="sttProviderFeedback.message.value !== ''"
+            class="text-sm"
+            :class="sttProviderFeedback.type.value === 'success' ? 'text-success' : 'text-destructive'"
+          >
+            {{ sttProviderFeedback.message.value }}
+          </p>
+        </transition>
 
         <transition name="feedback-fade">
           <p
@@ -1327,10 +1671,74 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Provider-specific API Key -->
-        <div v-if="settingsStore.selectedLlmProviderId === 'groq'" class="rounded-[var(--radius)] bg-secondary/50 p-3">
-          <p class="text-xs text-muted-foreground">
-            {{ settingsStore.hasApiKey ? $t("settings.provider.groqNote") : $t("settings.provider.groqNoteNotSet") }}
-          </p>
+        <div v-if="settingsStore.selectedLlmProviderId === 'groq'" class="space-y-3">
+          <div
+            v-if="settingsStore.selectedSttProviderId === 'groq'"
+            class="rounded-[var(--radius)] bg-secondary/50 p-3"
+          >
+            <p class="text-xs text-muted-foreground">
+              {{ settingsStore.hasApiKey ? $t("settings.provider.groqNote") : $t("settings.provider.groqNoteNotSet") }}
+            </p>
+          </div>
+
+          <!-- 轉錄用別的服務時，文字整理需要自己的 Groq 金鑰欄 -->
+          <template v-else>
+            <div class="flex items-center gap-2">
+              <Label for="llm-groq-api-key">{{ $t("settings.apiKey.title") }}</Label>
+              <Badge :class="apiKeyStatusClass" class="border-0">
+                {{ apiKeyStatusLabel }}
+              </Badge>
+            </div>
+            <div class="flex gap-2">
+              <div class="flex flex-1 gap-2">
+                <Input
+                  id="llm-groq-api-key"
+                  v-model="apiKeyInput"
+                  :type="isApiKeyVisible ? 'text' : 'password'"
+                  placeholder="gsk_..."
+                  autocomplete="off"
+                  class="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="shrink-0"
+                  @click="toggleApiKeyVisibility"
+                >
+                  {{ isApiKeyVisible ? $t("settings.apiKey.hide") : $t("settings.apiKey.show") }}
+                </Button>
+              </div>
+              <Button :disabled="isSubmittingApiKey" @click="handleSaveApiKey">
+                {{ $t("common.save") }}
+              </Button>
+            </div>
+            <div class="flex items-center justify-between">
+              <transition name="feedback-fade">
+                <p
+                  v-if="apiKeyFeedback.message.value !== ''"
+                  class="text-sm"
+                  :class="
+                    apiKeyFeedback.type.value === 'success' ? 'text-success' : 'text-destructive'
+                  "
+                >
+                  {{ apiKeyFeedback.message.value }}
+                </p>
+              </transition>
+              <Button
+                v-if="settingsStore.hasApiKey"
+                variant="outline"
+                :class="
+                  isConfirmingDeleteApiKey
+                    ? 'bg-destructive text-destructive-foreground border-destructive hover:bg-destructive/90'
+                    : 'text-destructive border-destructive hover:bg-destructive/10'
+                "
+                :disabled="isSubmittingApiKey"
+                @click="requestDeleteApiKey"
+              >
+                {{ isConfirmingDeleteApiKey ? $t('settings.apiKey.confirmDelete') : $t('settings.apiKey.delete') }}
+              </Button>
+            </div>
+          </template>
         </div>
 
         <div v-else-if="settingsStore.selectedLlmProviderId === 'openai'" class="space-y-2">

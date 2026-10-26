@@ -4,7 +4,12 @@ import {
   getEnhancementErrorMessage,
   getTranscriptionErrorMessage,
 } from "./errorUtils";
-import type { LlmModelId, WhisperModelId } from "./modelRegistry";
+import type {
+  LlmModelId,
+  SttProviderId,
+  WhisperModelId,
+} from "./modelRegistry";
+import type { SupportedLocale, TranscriptionLocale } from "../i18n/languageConfig";
 
 export interface TestSuccess {
   ok: true;
@@ -41,12 +46,21 @@ export async function testLlmConnection(
 }
 
 export async function testWhisperConnection(
-  modelId: WhisperModelId,
+  provider: SttProviderId,
   apiKey: string,
+  modelId?: WhisperModelId,
+  transcriptionLocale?: TranscriptionLocale,
+  interfaceLocale?: SupportedLocale,
 ): Promise<TestResult> {
   const start = performance.now();
   try {
-    await invoke("test_whisper_connection", { apiKey, modelId });
+    await invoke("test_whisper_connection", {
+      apiKey,
+      provider,
+      transcriptionLocale,
+      interfaceLocale,
+      ...(provider === "groq" && modelId ? { modelId } : {}),
+    });
     return { ok: true, durationMs: elapsed(start) };
   } catch (err) {
     return {

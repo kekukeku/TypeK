@@ -816,3 +816,136 @@ describe("resolveLlmProviderId（預設改 Gemini 的舊使用者遷移）", () 
     expect(resolveLlmProviderId(undefined, "   ")).toBe("gemini");
   });
 });
+
+describe("useSettingsStore — STT provider", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    mockStoreData.clear();
+    mockStoreGet.mockClear();
+    mockStoreSet.mockClear();
+    mockStoreDelete.mockClear();
+    mockStoreSave.mockClear();
+    mockInvoke.mockClear().mockResolvedValue(undefined);
+    mockEmit.mockClear().mockResolvedValue(undefined);
+    vi.resetModules();
+  });
+
+  it("[P0] 沒有存過 provider 時預設 groq", async () => {
+    const { useSettingsStore } = await import(
+      "../../src/stores/useSettingsStore"
+    );
+    const store = useSettingsStore();
+    await store.loadSettings();
+    expect(store.selectedSttProviderId).toBe("groq");
+    expect(store.hasSttCredential).toBe(false);
+  });
+
+  it("[P0] 非法 provider 值回退 groq", async () => {
+    mockStoreData.set("sttProviderId", "openai");
+    const { useSettingsStore } = await import(
+      "../../src/stores/useSettingsStore"
+    );
+    const store = useSettingsStore();
+    await store.loadSettings();
+    expect(store.selectedSttProviderId).toBe("groq");
+  });
+
+  it("[P0] 非 Mac 讀到 apple → groq，且用 store.set/save 寫回、不 emit", async () => {
+    mockStoreData.set("sttProviderId", "apple");
+    const { useSettingsStore } = await import(
+      "../../src/stores/useSettingsStore"
+    );
+    const store = useSettingsStore();
+    await store.loadSettings();
+
+    expect(store.selectedSttProviderId).toBe("groq");
+    expect(mockStoreSet).toHaveBeenCalledWith("sttProviderId", "groq");
+    expect(mockStoreSave).toHaveBeenCalled();
+    expect(mockEmit).not.toHaveBeenCalledWith(
+      "settings:updated",
+      expect.objectContaining({ key: "sttProvider" }),
+    );
+  });
+
+  it("[P0] getSttApiKey／hasSttCredential 依 provider 切換", async () => {
+    mockStoreData.set("groqApiKey", "gsk_groq");
+    mockStoreData.set("byteplusApiKey", "bp_key");
+    mockStoreData.set("sttProviderId", "groq");
+    const { useSettingsStore } = await import(
+      "../../src/stores/useSettingsStore"
+    );
+    const store = useSettingsStore();
+    await store.loadSettings();
+
+    expect(store.getSttApiKey()).toBe("gsk_groq");
+    expect(store.hasSttCredential).toBe(true);
+
+    await store.saveSttProvider("byteplus");
+    expect(store.getSttApiKey()).toBe("bp_key");
+    expect(store.hasSttCredential).toBe(true);
+    expect(mockEmit).toHaveBeenCalledWith("settings:updated", {
+      key: "sttProvider",
+      value: "byteplus",
+    });
+
+    await store.deleteByteplusApiKey();
+    expect(store.getSttApiKey()).toBe("");
+    expect(store.hasSttCredential).toBe(false);
+
+    await store.saveSttProvider("apple");
+    expect(store.getSttApiKey()).toBe("");
+    expect(store.hasSttCredential).toBe(true);
+  });
+
+  it("[P0] saveByteplusApiKey 去空白、持久化並 emit", async () => {
+    const { useSettingsStore } = await import(
+      "../../src/stores/useSettingsStore"
+    );
+    const store = useSettingsStore();
+    await store.loadSettings();
+
+    await store.saveByteplusApiKey("  bp_secret  ");
+    expect(store.byteplusApiKey).toBe("bp_secret");
+    expect(mockStoreData.get("byteplusApiKey")).toBe("bp_secret");
+    expect(mockEmit).toHaveBeenCalledWith("settings:updated", {
+      key: "byteplusApiKey",
+      value: "bp_secret",
+    });
+  });
+
+  it("[P0] refreshSttApiKey 依 provider 重讀對應鍵", async () => {
+    mockStoreData.set("sttProviderId", "byteplus");
+    mockStoreData.set("byteplusApiKey", "old");
+    const { useSettingsStore } = await import(
+      "../../src/stores/useSettingsStore"
+    );
+    const store = useSettingsStore();
+    await store.loadSettings();
+
+    mockStoreData.set("byteplusApiKey", "new_value");
+    await store.refreshSttApiKey();
+    expect(store.getSttApiKey()).toBe("new_value");
+
+    await store.saveSttProvider("groq");
+    mockStoreData.set("groqApiKey", "gsk_new");
+    await store.refreshSttApiKey();
+    expect(store.getSttApiKey()).toBe("gsk_new");
+  });
+
+  it("[P0] refreshCrossWindowSettings 讀 sttProviderId 與 byteplusApiKey", async () => {
+    mockStoreData.set("sttProviderId", "byteplus");
+    mockStoreData.set("byteplusApiKey", "bp_cross");
+    const { useSettingsStore } = await import(
+      "../../src/stores/useSettingsStore"
+    );
+    const store = useSettingsStore();
+    await store.loadSettings();
+
+    mockStoreData.set("sttProviderId", "groq");
+    mockStoreData.set("byteplusApiKey", "bp_updated");
+    await store.refreshCrossWindowSettings();
+
+    expect(store.selectedSttProviderId).toBe("groq");
+    expect(store.byteplusApiKey).toBe("bp_updated");
+  });
+});

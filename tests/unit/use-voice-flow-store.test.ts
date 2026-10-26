@@ -88,6 +88,8 @@ const {
       enhancementThresholdCharCount: 10,
       selectedLlmModelId: "llama-3.3-70b-versatile",
       selectedWhisperModelId: "whisper-large-v3",
+      selectedSttProviderId: "groq" as "groq" | "apple" | "byteplus",
+      hasSttCredential: true,
       isMuteOnRecordingEnabled: false,
       isSoundEffectsEnabled: true,
       isSmartDictionaryEnabled: false,
@@ -178,12 +180,20 @@ vi.mock("../../src/stores/useSettingsStore", () => ({
   useSettingsStore: () => ({
     loadSettings: mockLoadSettings,
     getApiKey: () => mockSettingsState.apiKey,
+    getSttApiKey: () => mockSettingsState.apiKey,
     getLlmApiKey: () => mockSettingsState.apiKey,
     getAiPrompt: () => "mock-minimal-prompt",
     get isInputContextEnabled() {
       return mockSettingsState.isInputContextEnabled;
     },
+    get hasSttCredential() {
+      return mockSettingsState.hasSttCredential;
+    },
+    get selectedSttProviderId() {
+      return mockSettingsState.selectedSttProviderId;
+    },
     refreshApiKey: vi.fn().mockResolvedValue(undefined),
+    refreshSttApiKey: vi.fn().mockResolvedValue(undefined),
     refreshLlmApiKey: vi.fn().mockResolvedValue(undefined),
     hasLlmApiKey: true,
     refreshEnhancementThreshold: vi.fn().mockResolvedValue(undefined),
@@ -338,6 +348,8 @@ describe("useVoiceFlowStore", () => {
     mockSettingsState.enhancementThresholdCharCount = 10;
     mockSettingsState.selectedLlmModelId = "llama-3.3-70b-versatile";
     mockSettingsState.selectedWhisperModelId = "whisper-large-v3";
+    mockSettingsState.selectedSttProviderId = "groq";
+    mockSettingsState.hasSttCredential = true;
     mockSettingsState.isMuteOnRecordingEnabled = false;
     mockSettingsState.isSoundEffectsEnabled = true;
     mockSettingsState.isSmartDictionaryEnabled = false;
@@ -460,6 +472,9 @@ describe("useVoiceFlowStore", () => {
     expect(mockInvoke).toHaveBeenCalledWith("stop_recording");
     expect(mockInvoke).toHaveBeenCalledWith("transcribe_audio", {
       apiKey: "test-api-key-123",
+      provider: "groq",
+      transcriptionLocale: "auto",
+      interfaceLocale: "zh-TW",
       vocabularyTermList: null,
       whisperPrompt:
         "以下是台灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。",
@@ -600,6 +615,7 @@ describe("useVoiceFlowStore", () => {
     });
 
     mockSettingsState.apiKey = "";
+    mockSettingsState.hasSttCredential = false;
     triggerHotkeyEvent("hotkey:released");
 
     await vi.waitFor(() => {
@@ -1449,6 +1465,9 @@ describe("useVoiceFlowStore", () => {
 
       expect(mockInvoke).toHaveBeenCalledWith("transcribe_audio", {
         apiKey: "test-api-key-123",
+        provider: "groq",
+        transcriptionLocale: "auto",
+        interfaceLocale: "zh-TW",
         vocabularyTermList: ["TypeScript", "Tauri"],
         whisperPrompt:
           "以下是台灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。剛才提到Tauri、TypeScript。",
@@ -1480,6 +1499,9 @@ describe("useVoiceFlowStore", () => {
 
       expect(mockInvoke).toHaveBeenCalledWith("transcribe_audio", {
         apiKey: "test-api-key-123",
+        provider: "groq",
+        transcriptionLocale: "auto",
+        interfaceLocale: "zh-TW",
         vocabularyTermList: null,
         whisperPrompt:
           "以下是台灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。",
@@ -1543,6 +1565,9 @@ describe("useVoiceFlowStore", () => {
       // transcriber 收到詞彙
       expect(mockInvoke).toHaveBeenCalledWith("transcribe_audio", {
         apiKey: "test-api-key-123",
+        provider: "groq",
+        transcriptionLocale: "auto",
+        interfaceLocale: "zh-TW",
         vocabularyTermList: ["Pinia", "Vitest"],
         whisperPrompt:
           "以下是台灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。剛才提到Vitest、Pinia。",
@@ -2163,6 +2188,9 @@ describe("useVoiceFlowStore", () => {
       });
       expect(mockInvoke).toHaveBeenCalledWith("transcribe_audio", {
         apiKey: "test-api-key-123",
+        provider: "groq",
+        transcriptionLocale: "vi",
+        interfaceLocale: "zh-TW",
         vocabularyTermList: ["TypeK"],
         whisperPrompt: null,
         modelId: "whisper-large-v3",
@@ -2572,5 +2600,189 @@ describe("useVoiceFlowStore", () => {
       });
       expect(mockInvoke).not.toHaveBeenCalledWith("play_stop_sound");
     });
+  });
+});
+
+describe("useVoiceFlowStore — STT provider 三條路徑", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    listenerCallbackMap.clear();
+    unlistenFunctionList.length = 0;
+    mockListen.mockClear();
+    mockEmit.mockClear().mockResolvedValue(undefined);
+    mockInvoke.mockClear().mockImplementation(createMockInvokeHandler());
+    mockEnhanceText.mockClear().mockResolvedValue({
+      text: "AI 整理後的書面語文字",
+      usage: null,
+    });
+    mockLoadSettings.mockClear().mockResolvedValue(undefined);
+    mockSettingsState.apiKey = "test-api-key-123";
+    mockSettingsState.triggerMode = "hold";
+    mockSettingsState.isInputContextEnabled = true;
+    mockSettingsState.isEnhancementThresholdEnabled = false;
+    mockSettingsState.enhancementThresholdCharCount = 10;
+    mockSettingsState.selectedLlmModelId = "llama-3.3-70b-versatile";
+    mockSettingsState.selectedWhisperModelId = "whisper-large-v3";
+    mockSettingsState.selectedSttProviderId = "groq";
+    mockSettingsState.hasSttCredential = true;
+    mockSettingsState.isMuteOnRecordingEnabled = false;
+    mockSettingsState.isSoundEffectsEnabled = true;
+    mockSettingsState.isSmartDictionaryEnabled = false;
+    mockSettingsState.whisperLanguageCode = "zh";
+    mockSettingsState.selectedTranscriptionLocale = "auto";
+    mockSettingsState.selectedLocale = "zh-TW";
+    mockVocabularyState.termList = [];
+    mockVocabularyState.getTopTermListByWeight
+      .mockClear()
+      .mockResolvedValue([]);
+    mockVocabularyState.batchIncrementWeights
+      .mockClear()
+      .mockResolvedValue(undefined);
+    mockAddTranscription.mockClear().mockResolvedValue(undefined);
+    mockUpdateTranscriptionOnRetrySuccess
+      .mockClear()
+      .mockResolvedValue(undefined);
+    mockAddApiUsage.mockClear().mockResolvedValue(undefined);
+  });
+
+  async function runSuccessfulTranscription(
+    rawText: string,
+    transcribeResult: unknown = {
+      rawText,
+      transcriptionDurationMs: 300,
+      noSpeechProbability: null,
+    },
+  ) {
+    mockInvoke.mockImplementation(
+      createMockInvokeHandler({ transcribeResult }),
+    );
+    const store = useVoiceFlowStore();
+    await store.initialize();
+    triggerHotkeyEvent("hotkey:pressed");
+    await vi.waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("start_recording", {
+        deviceName: "",
+      });
+    });
+    triggerHotkeyEvent("hotkey:released");
+    await vi.waitFor(() => {
+      expect(store.status).toBe("success");
+    });
+  }
+
+  it("[P0] apple：金鑰為空不被擋、帶 provider/locale、不傳 whisperPrompt/modelId、不簡轉繁", async () => {
+    mockSettingsState.apiKey = "";
+    mockSettingsState.selectedSttProviderId = "apple";
+    mockSettingsState.selectedTranscriptionLocale = "zh-TW";
+    mockSettingsState.selectedLocale = "zh-TW";
+
+    const rawText = "这是简体中文，Apple 不应再转换。";
+    await runSuccessfulTranscription(rawText);
+
+    const call = mockInvoke.mock.calls.find(
+      (item) => item[0] === "transcribe_audio",
+    );
+    expect(call?.[1]).toEqual({
+      apiKey: "",
+      vocabularyTermList: null,
+      provider: "apple",
+      transcriptionLocale: "zh-TW",
+      interfaceLocale: "zh-TW",
+      language: "zh",
+    });
+    expect(mockInvoke).toHaveBeenCalledWith("paste_text", {
+      text: rawText,
+      restoreClipboard: false,
+    });
+    await vi.waitFor(() => {
+      expect(mockAddApiUsage).toHaveBeenCalled();
+    });
+    const usage = mockAddApiUsage.mock.calls[0][0];
+    expect(usage.model).toBe("apple-speech");
+  });
+
+  it("[P0] byteplus：用 BytePlus 金鑰、字典詞照傳、用量記 seed-asr-fast", async () => {
+    mockSettingsState.apiKey = "bp_key_123";
+    mockSettingsState.selectedSttProviderId = "byteplus";
+    mockSettingsState.selectedTranscriptionLocale = "zh-TW";
+    mockSettingsState.selectedLocale = "zh-TW";
+    mockVocabularyState.getTopTermListByWeight.mockResolvedValue(["TypeK"]);
+
+    await runSuccessfulTranscription("這是繁體輸出");
+
+    const call = mockInvoke.mock.calls.find(
+      (item) => item[0] === "transcribe_audio",
+    );
+    expect(call?.[1]).toEqual({
+      apiKey: "bp_key_123",
+      vocabularyTermList: ["TypeK"],
+      provider: "byteplus",
+      transcriptionLocale: "zh-TW",
+      interfaceLocale: "zh-TW",
+      language: "zh",
+    });
+    await vi.waitFor(() => {
+      expect(mockAddApiUsage).toHaveBeenCalled();
+    });
+    const usage = mockAddApiUsage.mock.calls[0][0];
+    expect(usage.model).toBe("seed-asr-fast");
+  });
+
+  it("[P0] 重送路徑也帶 provider/locale，且非 groq 不簡轉繁", async () => {
+    mockSettingsState.apiKey = "";
+    mockSettingsState.selectedSttProviderId = "apple";
+    mockSettingsState.selectedTranscriptionLocale = "en";
+    mockSettingsState.selectedLocale = "en";
+    mockSettingsState.isEnhancementThresholdEnabled = false;
+
+    const store = useVoiceFlowStore();
+    await store.initialize();
+
+    // 先做一次失敗（空轉錄）以取得可重送的錄音檔
+    mockInvoke.mockImplementation(
+      createMockInvokeHandler({
+        transcribeResult: {
+          rawText: "",
+          transcriptionDurationMs: 200,
+          noSpeechProbability: 1.0,
+        },
+      }),
+    );
+    triggerHotkeyEvent("hotkey:pressed");
+    await vi.waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("start_recording", {
+        deviceName: "",
+      });
+    });
+    triggerHotkeyEvent("hotkey:released");
+    await vi.waitFor(() => {
+      expect(store.canRetry).toBe(true);
+    });
+
+    mockInvoke.mockImplementation(
+      createMockInvokeHandler({
+        retranscribeResult: {
+          rawText: "重送成功",
+          transcriptionDurationMs: 250,
+          noSpeechProbability: null,
+        },
+      }),
+    );
+    await store.handleRetryTranscription();
+
+    expect(mockInvoke).toHaveBeenCalledWith(
+      "retranscribe_from_file",
+      expect.objectContaining({
+        provider: "apple",
+        transcriptionLocale: "en",
+        interfaceLocale: "en",
+        apiKey: "",
+      }),
+    );
+    const retryCall = mockInvoke.mock.calls.find(
+      (item) => item[0] === "retranscribe_from_file",
+    );
+    expect(retryCall?.[1]).not.toHaveProperty("whisperPrompt");
+    expect(retryCall?.[1]).not.toHaveProperty("modelId");
   });
 });

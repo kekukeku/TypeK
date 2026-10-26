@@ -209,7 +209,47 @@
       "privacyNote": "When enabled, each polish sends the app name, window title and up to 400 characters around the cursor to your chosen AI service. Password fields are never read, and no original text is stored"
     },
     "stt": {
-      "title": "Speech to Text"
+      "title": "Speech to Text",
+      "providerTitle": "Transcription service",
+      "providerDescription": "Choose the service used for speech transcription.",
+      "provider": {
+        "groq": "Groq",
+        "apple": "macOS Built-in",
+        "byteplus": "BytePlus"
+      },
+      "providerHint": {
+        "groq": "Free tier · API key required",
+        "apple": "No key · Mac only",
+        "byteplus": "Paid · Taiwan Traditional Chinese output"
+      },
+      "byteplusApiKey": {
+        "title": "BytePlus Seed Speech API Key",
+        "instruction": "Create an API Key in the BytePlus Seed Speech console (not a ModelArk key)",
+        "goToConsole": "Go to BytePlus Console",
+        "privacyNote": "Recordings are uploaded to BytePlus servers in Singapore for transcription.",
+        "saved": "API Key saved",
+        "deleted": "API Key deleted",
+        "confirmDelete": "Confirm delete?",
+        "delete": "Delete API Key"
+      },
+      "byteplusModel": "Seed ASR Fast",
+      "appleModel": "Apple Speech Recognition",
+      "appleAuth": {
+        "label": "Speech recognition permission",
+        "notDetermined": "Not determined",
+        "denied": "Denied",
+        "restricted": "Restricted",
+        "authorized": "Authorized",
+        "needsAuthorization": "Authorization needed",
+        "request": "Authorize speech recognition",
+        "openSettings": "Open System Settings",
+        "deniedWarning": "TypeK does not have speech recognition permission. Enable it in System Settings, or switch to Groq／BytePlus.",
+        "restrictedWarning": "Speech recognition is restricted on this Mac. Check System Settings, or switch to Groq／BytePlus.",
+        "authorizedHint": "Authorized. macOS built-in speech recognition is ready.",
+        "description": "No key, no cost. Languages with a downloaded dictation pack are recognized on-device; without a pack, Apple online recognition is used (audio is uploaded to Apple, up to 55 seconds per request). Download language packs in System Settings → Keyboard → Dictation.",
+        "authRequested": "Speech recognition permission status updated",
+        "statusUnavailable": "Could not read speech recognition permission status"
+      }
     },
     "llm": {
       "title": "Text Enhancement"
@@ -359,7 +399,15 @@
       "serviceUnavailable": "Transcription service temporarily unavailable",
       "failed": "Speech transcription failed",
       "recorderError": "Recording device error",
-      "operationFailed": "Operation failed"
+      "operationFailed": "Operation failed",
+      "byteplusAuth": "The BytePlus key is invalid. Make sure it is a Seed Speech API Key (not a ModelArk key).",
+      "byteplusFailed": "BytePlus transcription failed (code {code})",
+      "appleNotAuthorized": "TypeK does not have speech recognition permission. Authorize it on the Settings page.",
+      "appleLocaleUnsupported": "macOS built-in speech recognition does not support this language. Use Groq or BytePlus instead.",
+      "appleNeedsLanguagePack": "This recording is longer than 55 seconds. Download a dictation language pack first: System Settings → Keyboard → Dictation.",
+      "appleTimeout": "macOS speech recognition timed out. Try again or use Groq.",
+      "appleRecognitionFailed": "macOS speech recognition failed. Please try again.",
+      "providerUnsupported": "macOS built-in speech recognition is not supported on this computer."
     },
     "enhancement": {
       "timeout": "AI enhancement timed out. Raw text pasted instead",

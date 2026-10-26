@@ -25,6 +25,8 @@ export type SettingsKey =
   | "llmModel"
   | "llmProvider"
   | "whisperModel"
+  | "sttProvider"
+  | "byteplusApiKey"
   | "muteOnRecording"
   | "smartDictionaryEnabled"
   | "inputContextEnabled"

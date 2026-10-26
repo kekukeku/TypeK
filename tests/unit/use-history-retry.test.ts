@@ -10,7 +10,12 @@ const h = vi.hoisted(() => {
   const mockTransform = vi.fn();
   const settingsStub = {
     getApiKey: () => "whisper-key",
+    sttApiKey: "whisper-key",
+    getSttApiKey: () => settingsStub.sttApiKey,
     refreshApiKey: vi.fn(),
+    refreshSttApiKey: vi.fn(),
+    hasSttCredential: true,
+    selectedSttProviderId: "groq" as "groq" | "apple" | "byteplus",
     selectedWhisperModelId: "whisper-large-v3-turbo",
     whisperLanguageCode: "zh" as string | null,
     getWhisperLanguageCode: () => settingsStub.whisperLanguageCode,
@@ -100,6 +105,9 @@ describe("useHistoryStore retry", () => {
     h.settingsStub.selectedTranscriptionLocale = "en";
     h.settingsStub.selectedLocale = "en";
     h.settingsStub.whisperLanguageCode = "zh";
+    h.settingsStub.selectedSttProviderId = "groq";
+    h.settingsStub.sttApiKey = "whisper-key";
+    h.settingsStub.hasSttCredential = true;
     h.settingsStub.refreshApiKey.mockReset().mockResolvedValue(undefined);
     h.settingsStub.refreshLlmApiKey.mockReset().mockResolvedValue(undefined);
   });
@@ -278,6 +286,76 @@ describe("useHistoryStore retry", () => {
         "vi",
       );
       expect(store.transcriptionList[0].rawText).toBe("Tôi muốn uống cà phê");
+    });
+
+    it("[P1] macOS 內建 → provider apple、空金鑰放行、不傳 whisperPrompt／modelId、不簡轉繁", async () => {
+      h.mockInvoke.mockResolvedValue(GOOD_TRANSCRIBE_RESULT);
+      h.settingsStub.selectedSttProviderId = "apple";
+      h.settingsStub.sttApiKey = "";
+      h.settingsStub.selectedTranscriptionLocale = "zh-TW";
+      h.settingsStub.selectedLocale = "zh-TW";
+      h.mockGetTopTerms.mockResolvedValue(["TypeK"]);
+      const store = useHistoryStore();
+      const record = createRecord();
+      store.transcriptionList.push(record);
+
+      const res = await store.retranscribeRecord(record);
+
+      expect(res.ok).toBe(true);
+      const [command, args] = h.mockInvoke.mock.calls[0];
+      expect(command).toBe("retranscribe_from_file");
+      expect(args).toMatchObject({
+        provider: "apple",
+        apiKey: "",
+        transcriptionLocale: "zh-TW",
+        interfaceLocale: "zh-TW",
+        vocabularyTermList: ["TypeK"],
+      });
+      expect(args).not.toHaveProperty("whisperPrompt");
+      expect(args).not.toHaveProperty("modelId");
+      expect(h.mockTransform).not.toHaveBeenCalled();
+    });
+
+    it("[P1] BytePlus → provider byteplus、帶 BytePlus 金鑰、不簡轉繁", async () => {
+      h.mockInvoke.mockResolvedValue(GOOD_TRANSCRIBE_RESULT);
+      h.settingsStub.selectedSttProviderId = "byteplus";
+      h.settingsStub.sttApiKey = "byteplus-key";
+      h.settingsStub.selectedTranscriptionLocale = "auto";
+      const store = useHistoryStore();
+      const record = createRecord();
+      store.transcriptionList.push(record);
+
+      const res = await store.retranscribeRecord(record);
+
+      expect(res.ok).toBe(true);
+      const [, args] = h.mockInvoke.mock.calls[0];
+      expect(args).toMatchObject({
+        provider: "byteplus",
+        apiKey: "byteplus-key",
+        transcriptionLocale: "auto",
+        interfaceLocale: "en",
+      });
+      expect(args).not.toHaveProperty("whisperPrompt");
+      expect(args).not.toHaveProperty("modelId");
+      expect(h.mockTransform).not.toHaveBeenCalled();
+    });
+
+    it("[P1] 後端回 BytePlus 金鑰錯誤 → errorMessage 帶已翻譯的專屬訊息", async () => {
+      h.settingsStub.selectedSttProviderId = "byteplus";
+      h.settingsStub.sttApiKey = "byteplus-key";
+      h.mockInvoke.mockRejectedValueOnce(
+        "Provider authentication failed (BytePlus)",
+      );
+      const store = useHistoryStore();
+      const record = createRecord();
+      store.transcriptionList.push(record);
+
+      const res = await store.retranscribeRecord(record);
+
+      expect(res.ok).toBe(false);
+      expect(res.errorKey).toBe("history.retranscribeFailed");
+      expect(res.errorMessage).toBeTruthy();
+      expect(res.errorMessage).not.toBe("Provider authentication failed (BytePlus)");
     });
 
     it("[P2] 重新辨識 → 重置 was_modified（SQL + 本地皆歸零）", async () => {

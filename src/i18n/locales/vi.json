@@ -209,7 +209,47 @@
       "privacyNote": "Khi bật, mỗi lần tinh chỉnh sẽ gửi tên ứng dụng, tiêu đề cửa sổ và tối đa 400 ký tự quanh con trỏ đến dịch vụ AI bạn chọn; ô mật khẩu không bị đọc và văn bản gốc không được lưu"
     },
     "stt": {
-      "title": "Phiên âm giọng nói"
+      "title": "Phiên âm giọng nói",
+      "providerTitle": "Dịch vụ chuyển giọng nói",
+      "providerDescription": "Chọn dịch vụ dùng để chuyển giọng nói thành văn bản.",
+      "provider": {
+        "groq": "Groq",
+        "apple": "macOS tích hợp",
+        "byteplus": "BytePlus"
+      },
+      "providerHint": {
+        "groq": "Miễn phí · cần khóa",
+        "apple": "Không cần khóa · chỉ Mac",
+        "byteplus": "Trả phí · xuất phồn thể Đài Loan"
+      },
+      "byteplusApiKey": {
+        "title": "BytePlus Seed Speech API Key",
+        "instruction": "Tạo API Key trong bảng điều khiển BytePlus Seed Speech (không phải khóa ModelArk)",
+        "goToConsole": "Mở BytePlus Console",
+        "privacyNote": "Bản ghi âm được tải lên máy chủ BytePlus tại Singapore để chuyển văn bản.",
+        "saved": "Đã lưu API Key",
+        "deleted": "Đã xóa API Key",
+        "confirmDelete": "Xác nhận xóa?",
+        "delete": "Xóa API Key"
+      },
+      "byteplusModel": "Seed ASR tốc độ cao",
+      "appleModel": "Nhận dạng giọng nói Apple",
+      "appleAuth": {
+        "label": "Quyền nhận dạng giọng nói",
+        "notDetermined": "Chưa quyết định",
+        "denied": "Bị từ chối",
+        "restricted": "Bị hạn chế",
+        "authorized": "Đã cấp quyền",
+        "needsAuthorization": "Cần cấp quyền",
+        "request": "Cấp quyền nhận dạng giọng nói",
+        "openSettings": "Mở Cài đặt hệ thống",
+        "deniedWarning": "TypeK không có quyền nhận dạng giọng nói. Hãy bật trong Cài đặt hệ thống hoặc chuyển sang Groq／BytePlus.",
+        "restrictedWarning": "Nhận dạng giọng nói bị hạn chế trên Mac này. Hãy kiểm tra Cài đặt hệ thống hoặc chuyển sang Groq／BytePlus.",
+        "authorizedHint": "Đã cấp quyền. Có thể dùng nhận dạng giọng nói tích hợp của macOS.",
+        "description": "Không cần khóa, miễn phí. Ngôn ngữ đã tải gói chính tả sẽ được nhận dạng trên máy; nếu chưa có gói, Apple sẽ nhận dạng trực tuyến (âm thanh được tải lên Apple, tối đa 55 giây mỗi lần). Tải gói ngôn ngữ tại Cài đặt hệ thống → Bàn phím → Chính tả.",
+        "authRequested": "Đã cập nhật trạng thái quyền nhận dạng giọng nói",
+        "statusUnavailable": "Không thể đọc trạng thái quyền nhận dạng giọng nói"
+      }
     },
     "llm": {
       "title": "Tinh chỉnh văn bản"
@@ -359,7 +399,15 @@
       "serviceUnavailable": "Dịch vụ phiên âm tạm thời không khả dụng",
       "failed": "Phiên âm giọng nói thất bại",
       "recorderError": "Thiết bị ghi âm gặp lỗi",
-      "operationFailed": "Thao tác thất bại"
+      "operationFailed": "Thao tác thất bại",
+      "byteplusAuth": "Khóa BytePlus không hợp lệ. Hãy chắc chắn đây là API Key của Seed Speech (không phải khóa ModelArk).",
+      "byteplusFailed": "Chuyển văn bản bằng BytePlus thất bại (mã lỗi {code})",
+      "appleNotAuthorized": "TypeK không có quyền nhận dạng giọng nói. Hãy cấp quyền trong trang Cài đặt.",
+      "appleLocaleUnsupported": "Nhận dạng giọng nói tích hợp của macOS không hỗ trợ ngôn ngữ này. Hãy dùng Groq hoặc BytePlus.",
+      "appleNeedsLanguagePack": "Bản ghi này dài hơn 55 giây. Hãy tải gói ngôn ngữ chính tả trước: Cài đặt hệ thống → Bàn phím → Chính tả.",
+      "appleTimeout": "Nhận dạng giọng nói macOS quá thời gian. Hãy thử lại hoặc dùng Groq.",
+      "appleRecognitionFailed": "Nhận dạng giọng nói macOS thất bại. Vui lòng thử lại.",
+      "providerUnsupported": "Máy tính này không hỗ trợ nhận dạng giọng nói tích hợp của macOS."
     },
     "enhancement": {
       "timeout": "Tinh chỉnh AI quá thời gian chờ, đã dán văn bản gốc",

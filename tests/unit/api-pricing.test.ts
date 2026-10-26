@@ -89,3 +89,15 @@ describe("apiPricing.ts", () => {
     });
   });
 });
+
+describe("apiPricing — 非 Groq 轉錄服務", () => {
+  it("[P0] apple-speech 成本 0，且不套 10 秒地板", () => {
+    expect(calculateWhisperCostCeiling(1_000, "apple-speech")).toBe(0);
+    expect(calculateWhisperCostCeiling(30_000, "apple-speech")).toBe(0);
+  });
+
+  it("[P0] seed-asr-fast 成本 0，且不套 10 秒地板", () => {
+    expect(calculateWhisperCostCeiling(1_000, "seed-asr-fast")).toBe(0);
+    expect(calculateWhisperCostCeiling(30_000, "seed-asr-fast")).toBe(0);
+  });
+});

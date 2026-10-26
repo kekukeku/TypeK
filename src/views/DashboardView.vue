@@ -58,6 +58,11 @@ const timeSavedSegments = computed(() =>
   ),
 );
 
+const isGroqWhisperProvider = computed(
+  () => settingsStore.selectedSttProviderId === "groq",
+);
+// BytePlus／Apple 的用量目前沒有獨立統計來源（每日額度 SQL 只加總 Groq），
+// 因此不列入「計費方案」用量列，避免顯示永遠是 0 的數字。
 const isPaidWhisperProvider = computed(() => false);
 
 const isPaidLlmProvider = computed(() => {
@@ -83,7 +88,7 @@ const quotaDimensionList = computed(() => {
   const dimensionList: { remaining: number; label: string }[] = [];
 
   // 免費 Whisper（Groq）才顯示額度維度；limit 為 0 的維度略過避免誤導
-  if (!isPaidWhisperProvider.value) {
+  if (isGroqWhisperProvider.value) {
     const wConfig = findWhisperModelConfig(settingsStore.selectedWhisperModelId);
     const wRpdLimit = wConfig?.freeQuotaRpd ?? 2000;
     const wAudioLimitMs =

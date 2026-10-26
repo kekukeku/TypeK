@@ -31,6 +31,7 @@ import {
   calculateWhisperCostCeiling,
   calculateChatCostCeiling,
 } from "../lib/apiPricing";
+import { STT_PROVIDER_USAGE_MODEL_ID } from "../lib/modelRegistry";
 import type { StopRecordingResult, TranscriptionResult } from "../types/audio";
 import {
   HOTKEY_ERROR,
@@ -80,6 +81,10 @@ const CANCELLED_DISPLAY_DURATION_MS = 1000;
  */
 function isEmptyTranscription(rawText: string): boolean {
   return !rawText || !rawText.trim();
+}
+/** Apple／BytePlus 沒有 no_speech_probability，日誌印 n/a。 */
+function formatNoSpeechProbability(value: number | null): string {
+  return value === null ? "n/a" : value.toFixed(3);
 }
 function t(key: string, params?: Record<string, unknown>): string {
   return i18n.global.t(key, params ?? {});
@@ -832,6 +837,12 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     const historyStore = useHistoryStore();
     const settingsStore = useSettingsStore();
     const roundedAudioMs = record.recordingDurationMs;
+    const sttProvider = settingsStore.selectedSttProviderId;
+    const sttUsageModel =
+      sttProvider === "groq"
+        ? settingsStore.selectedWhisperModelId
+        : (STT_PROVIDER_USAGE_MODEL_ID[sttProvider] ??
+          settingsStore.selectedWhisperModelId);
 
     function fireAndForget(usageRecord: ApiUsageRecord) {
       historyStore
@@ -847,7 +858,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
       id: crypto.randomUUID(),
       transcriptionId: record.id,
       apiType: "whisper",
-      model: settingsStore.selectedWhisperModelId,
+      model: sttUsageModel,
       promptTokens: null,
       completionTokens: null,
       totalTokens: null,
@@ -857,7 +868,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
       audioDurationMs: roundedAudioMs,
       estimatedCostCeiling: calculateWhisperCostCeiling(
         roundedAudioMs,
-        settingsStore.selectedWhisperModelId,
+        sttUsageModel,
       ),
     });
 
@@ -1123,14 +1134,15 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
 
       transitionTo("transcribing", t("voiceFlow.transcribing"));
       const settingsStore = useSettingsStore();
-      let apiKey = settingsStore.getApiKey();
+      const sttProvider = settingsStore.selectedSttProviderId;
+      let apiKey = settingsStore.getSttApiKey();
 
-      if (!apiKey) {
-        await settingsStore.refreshApiKey();
-        apiKey = settingsStore.getApiKey();
+      if (!settingsStore.hasSttCredential) {
+        await settingsStore.refreshSttApiKey();
+        apiKey = settingsStore.getSttApiKey();
       }
 
-      if (!apiKey) {
+      if (!settingsStore.hasSttCredential) {
         failRecordingFlow(
           t("errors.apiKeyMissing"),
           "useVoiceFlowStore: missing API key while transcribing",
@@ -1145,17 +1157,27 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
       const result = await invoke<TranscriptionResult>("transcribe_audio", {
         apiKey,
         vocabularyTermList: hasVocabulary ? whisperTermList : null,
-        whisperPrompt: buildWhisperPrompt(
-          whisperTermList,
-          getEffectiveTranscriptLocale(),
-        ),
-        modelId: settingsStore.selectedWhisperModelId,
+        provider: sttProvider,
+        transcriptionLocale: settingsStore.selectedTranscriptionLocale,
+        interfaceLocale: settingsStore.selectedLocale,
         language: settingsStore.getWhisperLanguageCode(),
+        ...(sttProvider === "groq"
+          ? {
+              whisperPrompt: buildWhisperPrompt(
+                whisperTermList,
+                getEffectiveTranscriptLocale(),
+              ),
+              modelId: settingsStore.selectedWhisperModelId,
+            }
+          : {}),
       });
       if (isAborted.value) return;
 
-      // #39：轉譯語言為繁中時，把 Whisper 的簡體輸出轉成繁體（落地前一次到位）
-      result.rawText = applyTranscriptTextTransforms(result.rawText);
+      // #39：轉譯語言為繁中時，把 Whisper 的簡體輸出轉成繁體（落地前一次到位）。
+      // 只有 Groq Whisper 會輸出簡體；Apple／BytePlus 自行處理正體。
+      if (sttProvider === "groq") {
+        result.rawText = applyTranscriptTextTransforms(result.rawText);
+      }
 
       writeInfoLog(`轉錄原文: "${result.rawText}"`);
 
@@ -1185,14 +1207,14 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
 
         failRecordingFlow(
           t("voiceFlow.noSpeechDetected"),
-          `useVoiceFlowStore: empty transcription (noSpeechProb=${result.noSpeechProbability.toFixed(3)})`,
+          `useVoiceFlowStore: empty transcription (noSpeechProb=${formatNoSpeechProbability(result.noSpeechProbability)})`,
         );
         return;
       }
 
       // ── 幻覺偵測（純物理信號：語速異常 + 無人聲）──
       writeInfoLog(
-        `useVoiceFlowStore: hallucination detection input: peakEnergy=${peakEnergyLevel.toFixed(4)}, rmsEnergy=${rmsEnergyLevel.toFixed(4)}, nsp=${result.noSpeechProbability.toFixed(3)}, rawText="${result.rawText}", durationMs=${Math.round(recordingDurationMs)}`,
+        `useVoiceFlowStore: hallucination detection input: peakEnergy=${peakEnergyLevel.toFixed(4)}, rmsEnergy=${rmsEnergyLevel.toFixed(4)}, nsp=${formatNoSpeechProbability(result.noSpeechProbability)}, rawText="${result.rawText}", durationMs=${Math.round(recordingDurationMs)}`,
       );
 
       const hallucinationDetectionResult = detectHallucination({
@@ -1479,14 +1501,15 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
 
     try {
       const settingsStore = useSettingsStore();
-      let apiKey = settingsStore.getApiKey();
+      const sttProvider = settingsStore.selectedSttProviderId;
+      let apiKey = settingsStore.getSttApiKey();
 
-      if (!apiKey) {
-        await settingsStore.refreshApiKey();
-        apiKey = settingsStore.getApiKey();
+      if (!settingsStore.hasSttCredential) {
+        await settingsStore.refreshSttApiKey();
+        apiKey = settingsStore.getSttApiKey();
       }
 
-      if (!apiKey) {
+      if (!settingsStore.hasSttCredential) {
         transitionTo("error", t("errors.apiKeyMissing"));
         playSoundIfEnabled("play_error_sound");
         lastFailedAudioFilePath.value = null;
@@ -1504,18 +1527,27 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
           filePath,
           apiKey,
           vocabularyTermList: hasVocabulary ? whisperTermList : null,
-          whisperPrompt: buildWhisperPrompt(
-            whisperTermList,
-            getEffectiveTranscriptLocale(),
-          ),
-          modelId: settingsStore.selectedWhisperModelId,
+          provider: sttProvider,
+          transcriptionLocale: settingsStore.selectedTranscriptionLocale,
+          interfaceLocale: settingsStore.selectedLocale,
           language: settingsStore.getWhisperLanguageCode(),
+          ...(sttProvider === "groq"
+            ? {
+                whisperPrompt: buildWhisperPrompt(
+                  whisperTermList,
+                  getEffectiveTranscriptLocale(),
+                ),
+                modelId: settingsStore.selectedWhisperModelId,
+              }
+            : {}),
         },
       );
       if (isAborted.value) return;
 
-      // #39：同主路徑，重送轉錄後也套用簡→繁
-      result.rawText = applyTranscriptTextTransforms(result.rawText);
+      // #39：同主路徑；只有 Groq Whisper 的簡體輸出需要轉繁。
+      if (sttProvider === "groq") {
+        result.rawText = applyTranscriptTextTransforms(result.rawText);
+      }
 
       writeInfoLog(`重送轉錄原文: "${result.rawText}"`);
 

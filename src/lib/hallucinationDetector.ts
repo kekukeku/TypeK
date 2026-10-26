@@ -35,7 +35,7 @@ export interface HallucinationDetectionParams {
   recordingDurationMs: number;
   peakEnergyLevel: number;
   rmsEnergyLevel: number;
-  noSpeechProbability: number;
+  noSpeechProbability: number | null;
 }
 
 export interface HallucinationDetectionResult {
@@ -233,6 +233,7 @@ export function detectHallucination(
     peakEnergyLevel < SILENCE_PEAK_ENERGY_THRESHOLD ||
     (peakEnergyLevel < LAYER2B_PEAK_ENERGY_CEILING &&
       rmsEnergyLevel < SILENCE_RMS_THRESHOLD &&
+      noSpeechProbability !== null &&
       noSpeechProbability > SILENCE_NSP_THRESHOLD)
   ) {
     return {

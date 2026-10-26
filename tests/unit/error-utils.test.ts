@@ -189,3 +189,53 @@ describe("getHotkeyErrorMessage", () => {
     expect(getHotkeyErrorMessage("unknown_error")).toBe("快捷鍵發生錯誤");
   });
 });
+
+describe("getTranscriptionErrorMessage — 新 provider 錯誤", () => {
+  it("[P0] BytePlus 金鑰錯誤提示要點名 Seed Speech", () => {
+    expect(
+      getTranscriptionErrorMessage(
+        "Provider authentication failed (BytePlus)",
+      ),
+    ).toContain("Seed Speech");
+  });
+
+  it("[P0] BytePlus ProviderError 帶錯誤碼", () => {
+    expect(
+      getTranscriptionErrorMessage(
+        "BytePlus transcription failed (code 45000001): bad request",
+      ),
+    ).toContain("45000001");
+  });
+
+  it("[P0] Apple 各錯誤原因都有對應文案", () => {
+    expect(
+      getTranscriptionErrorMessage("Apple speech error (not_authorized)"),
+    ).toContain("語音辨識權限");
+    expect(
+      getTranscriptionErrorMessage("Apple speech error (locale_unsupported)"),
+    ).toContain("不支援這個語言");
+    expect(
+      getTranscriptionErrorMessage("Apple speech error (needs_language_pack)"),
+    ).toContain("55 秒");
+    expect(
+      getTranscriptionErrorMessage("Apple speech error (timeout)"),
+    ).toContain("逾時");
+    expect(
+      getTranscriptionErrorMessage("Apple speech error (recognition_failed)"),
+    ).toContain("失敗");
+  });
+
+  it("[P0] ProviderUnsupported 有專屬文案", () => {
+    expect(
+      getTranscriptionErrorMessage(
+        "This transcription provider is not supported on this platform",
+      ),
+    ).toContain("不支援");
+  });
+
+  it("[P0] 新的 provider-neutral RequestFailed 仍映射為網路錯誤", () => {
+    expect(
+      getTranscriptionErrorMessage("Transcription request failed: connection reset"),
+    ).toBe("網路連線中斷");
+  });
+});

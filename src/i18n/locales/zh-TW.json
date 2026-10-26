@@ -209,7 +209,47 @@
       "privacyNote": "啟用後，每次整理會把 App 名稱、視窗標題與游標前後最多 400 字送到你選的 AI 服務；密碼欄不讀取，也不儲存原文"
     },
     "stt": {
-      "title": "語音轉錄"
+      "title": "語音轉錄",
+      "providerTitle": "轉錄服務",
+      "providerDescription": "選擇語音轉錄使用的服務。",
+      "provider": {
+        "groq": "Groq",
+        "apple": "macOS 內建",
+        "byteplus": "BytePlus"
+      },
+      "providerHint": {
+        "groq": "免費額度 · 需金鑰",
+        "apple": "免金鑰 · 只限 Mac",
+        "byteplus": "付費 · 可輸出台灣繁體"
+      },
+      "byteplusApiKey": {
+        "title": "BytePlus Seed Speech API Key",
+        "instruction": "請到 BytePlus Seed Speech 主控台建立 API Key（不是 ModelArk 金鑰）",
+        "goToConsole": "前往 BytePlus Console",
+        "privacyNote": "錄音會上傳到 BytePlus 新加坡伺服器轉錄。",
+        "saved": "API Key 已儲存",
+        "deleted": "API Key 已刪除",
+        "confirmDelete": "確認刪除？",
+        "delete": "刪除 API Key"
+      },
+      "byteplusModel": "Seed ASR 極速版",
+      "appleModel": "Apple 語音辨識",
+      "appleAuth": {
+        "label": "語音辨識權限",
+        "notDetermined": "未決定",
+        "denied": "已拒絕",
+        "restricted": "受限",
+        "authorized": "已授權",
+        "needsAuthorization": "需授權",
+        "request": "授權語音辨識",
+        "openSettings": "打開系統設定",
+        "deniedWarning": "TypeK 沒有語音辨識權限。請到系統設定開啟，或改用 Groq／BytePlus。",
+        "restrictedWarning": "這台 Mac 限制了語音辨識功能。請檢查系統設定，或改用 Groq／BytePlus。",
+        "authorizedHint": "已授權，可以使用 macOS 內建語音辨識。",
+        "description": "免金鑰、免費。已下載聽寫語言包的語言在本機辨識；沒有語言包時改由 Apple 線上辨識（錄音會上傳到 Apple，單次最多 55 秒）。語言包在 系統設定 → 鍵盤 → 聽寫 下載。",
+        "authRequested": "已更新語音辨識權限狀態",
+        "statusUnavailable": "無法取得語音辨識權限狀態"
+      }
     },
     "llm": {
       "title": "文字整理"
@@ -359,7 +399,15 @@
       "serviceUnavailable": "轉錄服務暫時無法使用",
       "failed": "語音轉錄失敗",
       "recorderError": "錄音裝置發生錯誤",
-      "operationFailed": "操作失敗"
+      "operationFailed": "操作失敗",
+      "byteplusAuth": "BytePlus 金鑰無效，請確認是 Seed Speech 的 API Key（不是 ModelArk 金鑰）",
+      "byteplusFailed": "BytePlus 轉錄失敗（錯誤碼 {code}）",
+      "appleNotAuthorized": "TypeK 沒有語音辨識權限，請到設定頁授權",
+      "appleLocaleUnsupported": "macOS 內建語音辨識不支援這個語言，請改用 Groq 或 BytePlus",
+      "appleNeedsLanguagePack": "這段錄音超過 55 秒，需要先下載聽寫語言包：系統設定 → 鍵盤 → 聽寫",
+      "appleTimeout": "macOS 語音辨識逾時，請重試或改用 Groq",
+      "appleRecognitionFailed": "macOS 語音辨識失敗，請重試",
+      "providerUnsupported": "這台電腦不支援 macOS 內建語音辨識"
     },
     "enhancement": {
       "timeout": "AI 整理逾時，已貼原始文字",

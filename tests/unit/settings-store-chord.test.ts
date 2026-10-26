@@ -63,6 +63,7 @@ vi.mock("../../src/lib/keycodeMap", () => ({
 vi.mock("../../src/lib/modelRegistry", () => ({
   DEFAULT_LLM_MODEL_ID: "test-llm",
   DEFAULT_LLM_PROVIDER_ID: "groq",
+  DEFAULT_STT_PROVIDER_ID: "groq",
   DEFAULT_WHISPER_MODEL_ID: "test-whisper",
   getEffectiveLlmModelId: (id: string | null) => id ?? "test-llm",
   getEffectiveWhisperModelId: (id: string | null) => id ?? "test-whisper",

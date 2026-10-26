@@ -209,7 +209,47 @@
       "privacyNote": "有効にすると、整形のたびにアプリ名・ウィンドウタイトル・カーソル前後の最大 400 文字を選択した AI サービスに送信します。パスワード欄は読み取らず、原文も保存しません"
     },
     "stt": {
-      "title": "音声文字起こし"
+      "title": "音声文字起こし",
+      "providerTitle": "文字起こしサービス",
+      "providerDescription": "音声の文字起こしに使うサービスを選択します。",
+      "provider": {
+        "groq": "Groq",
+        "apple": "macOS 内蔵",
+        "byteplus": "BytePlus"
+      },
+      "providerHint": {
+        "groq": "無料枠 · キーが必要",
+        "apple": "キー不要 · Mac のみ",
+        "byteplus": "有料 · 台湾繁体字を出力"
+      },
+      "byteplusApiKey": {
+        "title": "BytePlus Seed Speech API Key",
+        "instruction": "BytePlus Seed Speech コンソールで API Key を作成してください（ModelArk キーではありません）",
+        "goToConsole": "BytePlus Console を開く",
+        "privacyNote": "録音は文字起こしのため BytePlus のシンガポールサーバーへ送信されます。",
+        "saved": "API Key を保存しました",
+        "deleted": "API Key を削除しました",
+        "confirmDelete": "削除しますか？",
+        "delete": "API Key を削除"
+      },
+      "byteplusModel": "Seed ASR 高速版",
+      "appleModel": "Apple 音声認識",
+      "appleAuth": {
+        "label": "音声認識の権限",
+        "notDetermined": "未確認",
+        "denied": "拒否",
+        "restricted": "制限",
+        "authorized": "許可済み",
+        "needsAuthorization": "許可が必要",
+        "request": "音声認識を許可",
+        "openSettings": "システム設定を開く",
+        "deniedWarning": "TypeK に音声認識の権限がありません。システム設定で有効にするか、Groq／BytePlus に切り替えてください。",
+        "restrictedWarning": "この Mac では音声認識が制限されています。システム設定を確認するか、Groq／BytePlus に切り替えてください。",
+        "authorizedHint": "許可済みです。macOS 内蔵の音声認識を利用できます。",
+        "description": "キー不要・無料。音声入力の言語パックをダウンロード済みの言語はオンデバイスで認識し、ない場合は Apple のオンライン認識を使用します（録音は Apple に送信され、1 回最大 55 秒）。言語パックは システム設定 → キーボード → 音声入力 からダウンロードできます。",
+        "authRequested": "音声認識の権限状態を更新しました",
+        "statusUnavailable": "音声認識の権限状態を取得できませんでした"
+      }
     },
     "llm": {
       "title": "文章整形"
@@ -359,7 +399,15 @@
       "serviceUnavailable": "文字起こしサービスが一時的に利用できません",
       "failed": "音声文字起こしに失敗しました",
       "recorderError": "録音デバイスでエラーが発生しました",
-      "operationFailed": "操作に失敗しました"
+      "operationFailed": "操作に失敗しました",
+      "byteplusAuth": "BytePlus キーが無効です。Seed Speech の API Key か確認してください（ModelArk キーではありません）。",
+      "byteplusFailed": "BytePlus の文字起こしに失敗しました（エラーコード {code}）",
+      "appleNotAuthorized": "TypeK に音声認識の権限がありません。設定画面で許可してください。",
+      "appleLocaleUnsupported": "macOS 内蔵の音声認識はこの言語に対応していません。Groq または BytePlus をご利用ください。",
+      "appleNeedsLanguagePack": "この録音は 55 秒を超えています。先に音声入力の言語パックをダウンロードしてください：システム設定 → キーボード → 音声入力。",
+      "appleTimeout": "macOS の音声認識がタイムアウトしました。再試行するか Groq をご利用ください。",
+      "appleRecognitionFailed": "macOS の音声認識に失敗しました。もう一度お試しください。",
+      "providerUnsupported": "このコンピューターは macOS 内蔵の音声認識に対応していません。"
     },
     "enhancement": {
       "timeout": "AI 整理がタイムアウトしました。原文を貼り付けました",
