@@ -25,16 +25,17 @@ export function useAudioPreview() {
     { immediate: false },
   );
 
-  async function startPreview(deviceName: string): Promise<void> {
+  /** 回傳是否成功開啟；呼叫端用它顯示權限／裝置失敗提示。 */
+  async function startPreview(deviceName: string): Promise<boolean> {
     const currentRequestId = ++startRequestId;
     await stopPreview();
 
     // F12 fix: 如果在 stopPreview 期間有新的 startPreview 呼叫，放棄本次
-    if (currentRequestId !== startRequestId) return;
+    if (currentRequestId !== startRequestId) return false;
 
     try {
       await invoke("start_audio_preview", { deviceName });
-      if (currentRequestId !== startRequestId) return;
+      if (currentRequestId !== startRequestId) return false;
 
       const nextUnlisten = await listenToEvent<AudioPreviewLevelPayload>(
         AUDIO_PREVIEW_LEVEL,
@@ -46,14 +47,16 @@ export function useAudioPreview() {
       // 再次檢查：如果期間被取消，立即清理新建的 listener
       if (currentRequestId !== startRequestId) {
         nextUnlisten();
-        return;
+        return false;
       }
 
       unlistenPreview = nextUnlisten;
       isPreviewActive.value = true;
       resume();
+      return true;
     } catch (err) {
       console.error("[useAudioPreview] start failed:", err);
+      return false;
     }
   }
 

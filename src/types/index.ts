@@ -4,6 +4,7 @@ export type HudStatus =
   | "transcribing"
   | "enhancing"
   | "success"
+  | "warning"
   | "error"
   | "cancelled";
 

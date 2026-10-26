@@ -10,7 +10,7 @@ import {
   VOCABULARY_LEARNED,
 } from "../composables/useTauriEvents";
 import { useI18n } from "vue-i18n";
-import { BookOpen, Check, Heart, RotateCcw, Sparkles, X } from "lucide-vue-next";
+import { BookOpen, Check, Heart, RotateCcw, Sparkles, TriangleAlert, X } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { useSettingsStore } from "../stores/useSettingsStore";
 
@@ -22,6 +22,7 @@ type VisualMode =
   | "morphing"
   | "transcribing"
   | "success"
+  | "warning"
   | "error"
   | "cancelled"
   | "collapsing"
@@ -83,9 +84,15 @@ function buildNotchPath(p: NotchShapeParams): string {
 const hasErrorMessage = computed(
   () => visualMode.value === "error" && props.message !== "",
 );
+const hasWarningMessage = computed(
+  () => visualMode.value === "warning" && props.message !== "",
+);
 
 const isExpandedMode = computed(
-  () => hasErrorMessage.value || visualMode.value === "learned",
+  () =>
+    hasErrorMessage.value ||
+    hasWarningMessage.value ||
+    visualMode.value === "learned",
 );
 
 const notchStyle = computed(() => {
@@ -155,6 +162,7 @@ const isHighPriorityMode = computed(() => {
     mode === "morphing" ||
     mode === "transcribing" ||
     mode === "success" ||
+    mode === "warning" ||
     mode === "error" ||
     mode === "cancelled"
   );
@@ -286,6 +294,12 @@ watch(
       return;
     }
 
+    if (nextStatus === "warning") {
+      stopWaveformAnimation();
+      visualMode.value = "warning";
+      return;
+    }
+
     if (nextStatus === "error") {
       stopWaveformAnimation();
       visualMode.value = "error";
@@ -340,6 +354,13 @@ onUnmounted(() => {
           <X
             v-if="visualMode === 'cancelled'"
             class="cancelled-icon-svg"
+            :size="18"
+            aria-hidden="true"
+          />
+          <!-- Warning: amber alert icon（AI 整理失敗、已貼上原文） -->
+          <TriangleAlert
+            v-else-if="visualMode === 'warning'"
+            class="warning-icon-svg"
             :size="18"
             aria-hidden="true"
           />
@@ -416,6 +437,9 @@ onUnmounted(() => {
 
       <div v-if="hasErrorMessage" class="error-message-row">
         <span class="error-message">{{ props.message }}</span>
+      </div>
+      <div v-else-if="hasWarningMessage" class="warning-message-row">
+        <span class="warning-message">{{ props.message }}</span>
       </div>
       <Sparkles class="notch-star notch-star-right" :size="10" aria-hidden="true" />
     </div>
@@ -754,6 +778,39 @@ onUnmounted(() => {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ---- Warning: amber alert icon + message ---- */
+.warning-icon-svg {
+  stroke: var(--notch-wave-2);
+  animation: warningIconFadeIn 0.3s ease-out;
+}
+
+@keyframes warningIconFadeIn {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.warning-message-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 40px 6px;
+  animation: warningTextFadeIn 0.3s ease-out 0.1s both;
+}
+
+.warning-message {
+  color: var(--notch-wave-2);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes warningTextFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ---- Error: scatter + shake ---- */
 .waveform-scatter {
   width: 6px;
@@ -842,6 +899,7 @@ onUnmounted(() => {
 /* ---- Collapsing: 內容淡出 ---- */
 .notch-collapsing .notch-content,
 .notch-collapsing .error-message-row,
+.notch-collapsing .warning-message-row,
 .notch-collapsing .learned-terms-row {
   opacity: 0;
   transition: opacity 0.15s ease;

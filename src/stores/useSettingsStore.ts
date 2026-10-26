@@ -79,7 +79,7 @@ const DEFAULT_SOUND_EFFECTS_ENABLED = true;
 const DEFAULT_RECORDING_AUTO_CLEANUP_ENABLED = false;
 const DEFAULT_RECORDING_AUTO_CLEANUP_DAYS = 7;
 const DEFAULT_DEBUG_LOG_ENABLED = false;
-const DEFAULT_COPY_TRANSCRIPTION_TO_CLIPBOARD = true;
+const DEFAULT_COPY_TRANSCRIPTION_TO_CLIPBOARD = false;
 const DEFAULT_HIDE_DOCK_ICON = false;
 const DEFAULT_START_HIDDEN = false;
 const IS_MACOS = navigator.userAgent.includes("Mac");
@@ -482,12 +482,24 @@ export const useSettingsStore = defineStore("settings", () => {
       );
       selectedAudioInputDeviceName.value = savedAudioInputDeviceName ?? "";
 
-      const savedCopyTranscriptionToClipboard = await store.get<boolean>(
-        "copyTranscriptionToClipboard",
+      // 1.3.3 一次性遷移：預設改成「不留在剪貼簿」，貼完還原使用者原本內容。
+      // 有旗標後就完全照使用者自己的選擇，不再覆寫。
+      const isCopyTranscriptionDefaultMigrated = await store.get<boolean>(
+        "copyTranscriptionDefaultMigrated",
       );
-      isCopyTranscriptionToClipboardEnabled.value =
-        savedCopyTranscriptionToClipboard ??
-        DEFAULT_COPY_TRANSCRIPTION_TO_CLIPBOARD;
+      if (!isCopyTranscriptionDefaultMigrated) {
+        isCopyTranscriptionToClipboardEnabled.value = false;
+        await store.set("copyTranscriptionToClipboard", false);
+        await store.set("copyTranscriptionDefaultMigrated", true);
+        await store.save();
+      } else {
+        const savedCopyTranscriptionToClipboard = await store.get<boolean>(
+          "copyTranscriptionToClipboard",
+        );
+        isCopyTranscriptionToClipboardEnabled.value =
+          savedCopyTranscriptionToClipboard ??
+          DEFAULT_COPY_TRANSCRIPTION_TO_CLIPBOARD;
+      }
 
       // Sync saved (or default) config to Rust on startup
       await syncHotkeyConfigToRust(key, mode);

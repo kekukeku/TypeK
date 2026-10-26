@@ -68,6 +68,7 @@ import type { VoiceFlowStateChangedPayload } from "../types/events";
 import { useSettingsStore } from "./useSettingsStore";
 
 const SUCCESS_DISPLAY_DURATION_MS = 1000;
+const WARNING_DISPLAY_DURATION_MS = 2000;
 const ERROR_DISPLAY_DURATION_MS = 3000;
 const MAX_ENHANCEMENT_RETRY_COUNT = 3;
 const ERROR_WITH_RETRY_DISPLAY_DURATION_MS = 6000;
@@ -402,16 +403,21 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
       return;
     }
 
-    if (nextStatus === "success") {
+    if (nextStatus === "success" || nextStatus === "warning") {
       showHud().catch((err) => {
         writeErrorLog(
           `useVoiceFlowStore: showHud failed: ${extractErrorMessage(err)}`,
         );
         captureError(err, { source: "voice-flow", step: "showHud" });
       });
-      autoHideTimer = setTimeout(() => {
-        transitionTo("idle");
-      }, SUCCESS_DISPLAY_DURATION_MS);
+      autoHideTimer = setTimeout(
+        () => {
+          transitionTo("idle");
+        },
+        nextStatus === "warning"
+          ? WARNING_DISPLAY_DURATION_MS
+          : SUCCESS_DISPLAY_DURATION_MS,
+      );
       return;
     }
 
@@ -797,6 +803,8 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
   async function completePasteFlow(params: {
     text: string;
     successMessage: string;
+    /** AI 整理失敗、貼上原文時用琥珀色 warning，其餘維持綠色 success */
+    hudStatus?: "success" | "warning";
     record: TranscriptionRecord;
     chatUsage: ChatUsageData | null;
     skipRecordSaving?: boolean;
@@ -808,7 +816,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
         restoreClipboard: !settingsStore.isCopyTranscriptionToClipboardEnabled,
       });
       isRecording.value = false;
-      transitionTo("success", params.successMessage);
+      transitionTo(params.hudStatus ?? "success", params.successMessage);
       startQualityMonitorAfterPaste();
       // api_usage FK 依賴 transcriptions — 必須等 transcription 寫入後才存 usage
       // retry 路徑使用 updateTranscriptionOnRetrySuccess，不走 INSERT
@@ -1281,9 +1289,6 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
         const enhanceEpoch = recordingEpoch;
         const isStaleFlow = () =>
           isAborted.value || enhanceEpoch !== recordingEpoch;
-        // 缺 LLM key 時 HUD 要看得出原因（新安裝預設 Gemini，可能只填了 Groq key）
-        let isLlmApiKeyMissing = false;
-
         try {
           const enhancementTermList =
             await vocabularyStore.getTopTermListByWeight(50);
@@ -1305,7 +1310,6 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
             `useVoiceFlowStore: enhancement provider=${getProviderIdForModel(llmModelId)}, model=${llmModelId}, transcriptLocale=${getEffectiveTranscriptLocale()}, hasContext=${Boolean(inputContext)}`,
           );
           if (!llmApiKey) {
-            isLlmApiKeyMissing = true;
             throw new Error(t("errors.apiKeyMissing"));
           }
 
@@ -1424,9 +1428,8 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
 
           await completePasteFlow({
             text: result.rawText,
-            successMessage: isLlmApiKeyMissing
-              ? `${t("voiceFlow.pasteSuccessUnenhanced")} · ${t("errors.apiKeyMissing")}`
-              : t("voiceFlow.pasteSuccessUnenhanced"),
+            successMessage: t("voiceFlow.pasteRawEnhanceFailed"),
+            hudStatus: "warning",
             record: fallbackRecord,
             chatUsage: null,
           });
@@ -1707,7 +1710,8 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
 
           await completePasteFlow({
             text: result.rawText,
-            successMessage: t("voiceFlow.pasteSuccessUnenhanced"),
+            successMessage: t("voiceFlow.pasteRawEnhanceFailed"),
+            hudStatus: "warning",
             record: fallbackRecord,
             chatUsage: null,
             skipRecordSaving: true,

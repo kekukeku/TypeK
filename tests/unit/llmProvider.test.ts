@@ -79,7 +79,7 @@ describe("llmProvider.ts", () => {
     it("[P0] Groq qwen：reasoning_effort none 關閉思考模式", () => {
       const qwenRequest: LlmChatRequest = {
         ...BASE_REQUEST,
-        model: "qwen/qwen3.6-27b",
+        model: "qwen/qwen3.8-27b",
       };
       const { init } = buildFetchParams("groq", qwenRequest, TEST_API_KEY);
       const body = JSON.parse(init.body as string);
@@ -348,7 +348,7 @@ describe("llmProvider.ts", () => {
     });
 
     it("[P0] getProviderIdForModel 根據 modelId 回傳 providerId", () => {
-      expect(getProviderIdForModel("qwen/qwen3.6-27b")).toBe("groq");
+      expect(getProviderIdForModel("qwen/qwen3.8-27b")).toBe("groq");
       expect(getProviderIdForModel("gpt-5.6-luna")).toBe("openai");
       expect(getProviderIdForModel("claude-haiku-4-5-20251001")).toBe("anthropic");
       expect(getProviderIdForModel("gemini-3.5-flash")).toBe("gemini");

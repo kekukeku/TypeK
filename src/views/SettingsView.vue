@@ -38,6 +38,7 @@ import {
 import {
   STT_PROVIDER_LIST,
   WHISPER_MODEL_LIST,
+  estimateDailyEnhancementCount,
   findLlmModelConfig,
   findWhisperModelConfig,
   getModelListByProvider,
@@ -618,6 +619,10 @@ const llmModelDescription = computed(() => {
   // gh-71：免費專案選到沒額度的模型會直接 429，事前把付費狀態講清楚
   if (config.freeTier === "none") return `${base} · ${t("settings.model.paidOnlyHint")}`;
   if (config.freeTier === "limited") return `${base} · ${t("settings.model.limitedFreeHint")}`;
+  const dailyCount = estimateDailyEnhancementCount(config);
+  if (config.providerId === "groq" && dailyCount > 0) {
+    return `${base} · ${t("settings.model.dailyQuotaHint", { count: dailyCount })}`;
+  }
   return base;
 });
 
@@ -981,6 +986,69 @@ const isRefreshingDeviceList = ref(false);
 const audioInputFeedback = useFeedbackMessage();
 const { previewLevel, isPreviewActive, startPreview, stopPreview } =
   useAudioPreview();
+const MIC_TEST_DURATION_SECONDS = 10;
+const previewRemainingSeconds = ref(MIC_TEST_DURATION_SECONDS);
+const isPreviewFailed = ref(false);
+let previewAutoStopTimeoutId: ReturnType<typeof setTimeout> | undefined;
+let previewCountdownIntervalId: ReturnType<typeof setInterval> | undefined;
+
+function clearMicTestTimers() {
+  clearTimeout(previewAutoStopTimeoutId);
+  clearInterval(previewCountdownIntervalId);
+}
+
+async function startMicTest() {
+  clearMicTestTimers();
+  isPreviewFailed.value = false;
+  previewRemainingSeconds.value = MIC_TEST_DURATION_SECONDS;
+
+  const isStarted = await startPreview(
+    settingsStore.selectedAudioInputDeviceName,
+  );
+  if (!isStarted) {
+    isPreviewFailed.value = true;
+    return;
+  }
+
+  previewCountdownIntervalId = setInterval(() => {
+    if (previewRemainingSeconds.value > 1) {
+      previewRemainingSeconds.value -= 1;
+    }
+  }, 1000);
+  previewAutoStopTimeoutId = setTimeout(() => {
+    stopMicTest();
+  }, MIC_TEST_DURATION_SECONDS * 1000);
+}
+
+function stopMicTest() {
+  clearMicTestTimers();
+  void stopPreview();
+}
+
+async function handleToggleMicTest() {
+  if (isPreviewActive.value) {
+    stopMicTest();
+    return;
+  }
+  await startMicTest();
+}
+
+async function restartMicTestIfActive() {
+  if (isPreviewActive.value) await startMicTest();
+}
+
+async function openMicrophoneSettings() {
+  try {
+    await openExternalUrl(
+      "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone",
+    );
+  } catch (err) {
+    console.error(
+      "[SettingsView] Failed to open microphone settings:",
+      extractErrorMessage(err),
+    );
+  }
+}
 
 async function loadAudioInputDeviceList() {
   try {
@@ -1006,7 +1074,7 @@ async function handleRefreshAudioInputDeviceList() {
         count: audioInputDeviceList.value.length,
       }),
     );
-    void startPreview(settingsStore.selectedAudioInputDeviceName);
+    await restartMicTestIfActive();
   } catch (err) {
     audioInputFeedback.show("error", extractErrorMessage(err));
   } finally {
@@ -1018,17 +1086,15 @@ async function handleAudioInputDeviceChange(deviceName: string) {
   try {
     await settingsStore.saveAudioInputDevice(deviceName);
     audioInputFeedback.show("success", t("settings.audioInput.updated"));
-    void startPreview(deviceName);
+    await restartMicTestIfActive();
   } catch (err) {
     audioInputFeedback.show("error", extractErrorMessage(err));
   }
 }
 
 onMounted(async () => {
-  // F5 fix: 先載入裝置列表，完成後再啟動預覽（避免 cpal 並行 host 查詢）
-  void loadAudioInputDeviceList().then(() => {
-    void startPreview(settingsStore.selectedAudioInputDeviceName);
-  });
+  // 麥克風只在按下「測試麥克風」時才開啟，避免一進設定頁就佔用裝置
+  void loadAudioInputDeviceList();
 
   if (settingsStore.hasApiKey) {
     apiKeyInput.value = settingsStore.getApiKey();
@@ -1052,6 +1118,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  clearMicTestTimers();
   void stopPreview();
   stopKeyRecording();
   hotkeyFeedback.clearTimer();
@@ -1135,7 +1202,7 @@ onBeforeUnmount(() => {
             {{ $t("settings.about.description") }}
           </p>
           <p class="text-sm text-muted-foreground">
-            {{ $t("settings.about.author") }}<a href="https://github.com/kekukeku" target="_blank" rel="noopener noreferrer" class="font-medium text-foreground hover:text-primary transition-colors">kekukeku</a>
+            {{ $t("settings.about.author") }}<a href="https://github.com/kekukeku" target="_blank" rel="noopener noreferrer" class="font-medium text-foreground hover:text-primary transition-colors">Kevin Kuo</a>
           </p>
         </div>
 
@@ -1923,6 +1990,13 @@ onBeforeUnmount(() => {
                   {{ model.displayName }}
                   <template #extra>
                     <Badge variant="secondary" class="ml-2 text-xs">{{ $t(model.badgeKey) }}</Badge>
+                    <Badge
+                      v-if="model.providerId === 'groq' && estimateDailyEnhancementCount(model) > 0"
+                      variant="outline"
+                      class="ml-1 text-xs"
+                    >
+                      {{ $t("settings.model.dailyQuotaBadge", { count: estimateDailyEnhancementCount(model) }) }}
+                    </Badge>
                     <Badge v-if="model.freeTier !== 'full'" variant="outline" class="ml-1 text-xs">
                       {{ model.freeTier === 'none' ? $t("settings.modelBadge.paidOnly") : $t("settings.modelBadge.limitedFree") }}
                     </Badge>
@@ -2124,6 +2198,18 @@ onBeforeUnmount(() => {
             </Button>
           </div>
         </div>
+        <div>
+          <Button variant="outline" size="sm" @click="handleToggleMicTest">
+            <Mic class="h-4 w-4" />
+            {{
+              isPreviewActive
+                ? $t("settings.audioInput.stopTest", {
+                  seconds: previewRemainingSeconds,
+                })
+                : $t("settings.audioInput.testMic")
+            }}
+          </Button>
+        </div>
         <div
           v-if="isPreviewActive"
           role="meter"
@@ -2134,13 +2220,29 @@ onBeforeUnmount(() => {
           class="flex items-center gap-2 h-5"
         >
           <Mic class="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-          <div class="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
+          <div class="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
             <div
-              class="h-full rounded-full bg-primary transition-[width] duration-75"
+              class="h-full rounded-full bg-gradient-to-r from-primary to-chart-4 transition-[width] duration-75"
               :style="{ width: `${Math.round(previewLevel * 100)}%` }"
             />
           </div>
         </div>
+        <transition name="feedback-fade">
+          <div v-if="isPreviewFailed" class="space-y-2">
+            <p class="flex items-start gap-1.5 text-sm text-destructive">
+              <CircleAlert class="mt-0.5 h-4 w-4 flex-shrink-0" />
+              {{ $t("settings.audioInput.testFailed") }}
+            </p>
+            <Button
+              v-if="isMac"
+              variant="outline"
+              size="sm"
+              @click="openMicrophoneSettings"
+            >
+              {{ $t("settings.audioInput.openSystemSettings") }}
+            </Button>
+          </div>
+        </transition>
         <transition name="feedback-fade">
           <p
             v-if="audioInputFeedback.message.value !== ''"

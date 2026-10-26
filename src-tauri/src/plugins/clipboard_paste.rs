@@ -352,6 +352,248 @@ fn restore_clipboard_text(clipboard: &mut Clipboard, original_text: &Option<Stri
     }
 }
 
+// ========== 剪貼簿快照（貼完還原使用者原本內容） ==========
+//
+// 只備份文字不夠：使用者原本複製的是圖片／檔案時，get_text() 會失敗，
+// 貼完轉錄文字就留在剪貼簿。macOS 用 NSPasteboard 逐 item、逐 type 備份原始
+// bytes（含圖片、檔案、富文字）；Windows 用 arboard 備份文字＋圖片（檔案不支援）。
+// 還原延遲沿用 RESTORE_DELAY_MS：目標 app 需要時間消費 paste，太早寫回會貼到舊內容。
+
+#[cfg(target_os = "macos")]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+struct PasteboardItemSnapshot {
+    type_list: Vec<String>,
+    data_list: Vec<Vec<u8>>,
+}
+
+#[cfg(target_os = "macos")]
+impl PasteboardItemSnapshot {
+    fn push(&mut self, type_name: String, data: Vec<u8>) {
+        self.type_list.push(type_name);
+        self.data_list.push(data);
+    }
+
+    fn pair_count(&self) -> usize {
+        self.type_list.len().min(self.data_list.len())
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn snapshot_pasteboard_items() -> Vec<PasteboardItemSnapshot> {
+    use objc::runtime::{Class, Object};
+    use objc::{msg_send, sel, sel_impl};
+    use std::ffi::CStr;
+
+    unsafe {
+        let Some(pasteboard_class) = Class::get("NSPasteboard") else {
+            return Vec::new();
+        };
+        let pasteboard: *mut Object = msg_send![pasteboard_class, generalPasteboard];
+        if pasteboard.is_null() {
+            return Vec::new();
+        }
+        let items: *mut Object = msg_send![pasteboard, pasteboardItems];
+        if items.is_null() {
+            return Vec::new();
+        }
+
+        let item_count: usize = msg_send![items, count];
+        let mut snapshot_list = Vec::with_capacity(item_count);
+        for item_index in 0..item_count {
+            let item: *mut Object = msg_send![items, objectAtIndex: item_index];
+            if item.is_null() {
+                continue;
+            }
+            let type_list: *mut Object = msg_send![item, types];
+            if type_list.is_null() {
+                continue;
+            }
+
+            let type_count: usize = msg_send![type_list, count];
+            let mut item_snapshot = PasteboardItemSnapshot::default();
+            for type_index in 0..type_count {
+                let pasteboard_type: *mut Object =
+                    msg_send![type_list, objectAtIndex: type_index];
+                if pasteboard_type.is_null() {
+                    continue;
+                }
+                let type_name_ptr: *const std::os::raw::c_char =
+                    msg_send![pasteboard_type, UTF8String];
+                if type_name_ptr.is_null() {
+                    continue;
+                }
+                let type_name = CStr::from_ptr(type_name_ptr)
+                    .to_string_lossy()
+                    .into_owned();
+
+                // 部分 type 是 lazy provider，當下沒有 data；抓不到就跳過。
+                let data: *mut Object = msg_send![item, dataForType: pasteboard_type];
+                if data.is_null() {
+                    continue;
+                }
+                let length: usize = msg_send![data, length];
+                let bytes: *const u8 = msg_send![data, bytes];
+                if bytes.is_null() {
+                    continue;
+                }
+                item_snapshot.push(
+                    type_name,
+                    std::slice::from_raw_parts(bytes, length).to_vec(),
+                );
+            }
+            snapshot_list.push(item_snapshot);
+        }
+        snapshot_list
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn restore_pasteboard_items(snapshot_list: &[PasteboardItemSnapshot]) {
+    use objc::runtime::{Class, Object};
+    use objc::{msg_send, sel, sel_impl};
+    use std::ffi::CString;
+
+    unsafe {
+        let Some(pasteboard_class) = Class::get("NSPasteboard") else {
+            return;
+        };
+        let pasteboard: *mut Object = msg_send![pasteboard_class, generalPasteboard];
+        if pasteboard.is_null() {
+            return;
+        }
+        let _: i64 = msg_send![pasteboard, clearContents];
+
+        // 原本是空的：清空就好，不要留下轉錄文字。
+        if snapshot_list.is_empty() {
+            return;
+        }
+
+        let Some(array_class) = Class::get("NSMutableArray") else {
+            return;
+        };
+        let item_array: *mut Object = msg_send![array_class, array];
+        if item_array.is_null() {
+            return;
+        }
+        let Some(item_class) = Class::get("NSPasteboardItem") else {
+            return;
+        };
+        let Some(nsdata_class) = Class::get("NSData") else {
+            return;
+        };
+        let Some(nsstring_class) = Class::get("NSString") else {
+            return;
+        };
+
+        for item_snapshot in snapshot_list {
+            let item: *mut Object = msg_send![item_class, new];
+            if item.is_null() {
+                continue;
+            }
+            for pair_index in 0..item_snapshot.pair_count() {
+                let Ok(type_name) = CString::new(item_snapshot.type_list[pair_index].as_str())
+                else {
+                    continue;
+                };
+                let data_bytes = &item_snapshot.data_list[pair_index];
+                let ns_type: *mut Object =
+                    msg_send![nsstring_class, stringWithUTF8String: type_name.as_ptr()];
+                if ns_type.is_null() {
+                    continue;
+                }
+                let ns_data: *mut Object =
+                    msg_send![nsdata_class, dataWithBytes: data_bytes.as_ptr() length: data_bytes.len()];
+                if ns_data.is_null() {
+                    continue;
+                }
+                // BOOL 在 Intel 是 i8、Apple Silicon 是 bool，用 objc 的 BOOL 型別接
+                let _: objc::runtime::BOOL = msg_send![item, setData: ns_data forType: ns_type];
+            }
+            let _: () = msg_send![item_array, addObject: item];
+            let _: () = msg_send![item, release];
+        }
+
+        let restored: objc::runtime::BOOL = msg_send![pasteboard, writeObjects: item_array];
+        if restored == objc::runtime::NO {
+            log::error!("[clipboard-paste] failed to restore pasteboard items");
+        }
+    }
+}
+
+#[cfg(target_os = "windows")]
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ImageSnapshot {
+    width: usize,
+    height: usize,
+    bytes: Vec<u8>,
+}
+
+#[cfg(target_os = "windows")]
+#[derive(Debug, Default, Clone)]
+struct WindowsClipboardSnapshot {
+    text: Option<String>,
+    image: Option<ImageSnapshot>,
+}
+
+#[cfg(target_os = "windows")]
+fn image_snapshot_from(image: &arboard::ImageData<'_>) -> ImageSnapshot {
+    ImageSnapshot {
+        width: image.width,
+        height: image.height,
+        bytes: image.bytes.to_vec(),
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn image_data_from_snapshot(snapshot: &ImageSnapshot) -> arboard::ImageData<'_> {
+    arboard::ImageData {
+        width: snapshot.width,
+        height: snapshot.height,
+        bytes: std::borrow::Cow::Borrowed(snapshot.bytes.as_slice()),
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn capture_clipboard_snapshot(clipboard: &mut Clipboard) -> WindowsClipboardSnapshot {
+    let mut snapshot = WindowsClipboardSnapshot::default();
+    snapshot.text = clipboard.get_text().ok().filter(|text| !text.is_empty());
+    match clipboard.get_image() {
+        Ok(image) => snapshot.image = Some(image_snapshot_from(&image)),
+        Err(e) => log::info!("[clipboard-paste] Snapshot: no image content ({e})"),
+    }
+    snapshot
+}
+
+#[cfg(target_os = "windows")]
+fn restore_clipboard_snapshot(clipboard: &mut Clipboard, snapshot: &WindowsClipboardSnapshot) {
+    // 圖片優先：同時有文字與圖片時，arboard 只能一次寫一種，圖片是較完整的原內容。
+    if let Some(image) = snapshot.image.as_ref() {
+        if let Err(e) = clipboard.set_image(image_data_from_snapshot(image)) {
+            log::error!("[clipboard-paste] failed to restore clipboard image: {e}");
+        }
+        return;
+    }
+    if let Some(text) = snapshot.text.as_ref() {
+        if let Err(e) = clipboard.set_text(text) {
+            log::error!("[clipboard-paste] failed to restore clipboard text: {e}");
+        }
+        return;
+    }
+    if let Err(e) = clipboard.clear() {
+        log::error!("[clipboard-paste] failed to clear clipboard: {e}");
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn capture_clipboard_snapshot(_clipboard: &mut Clipboard) -> Vec<PasteboardItemSnapshot> {
+    snapshot_pasteboard_items()
+}
+
+#[cfg(target_os = "macos")]
+fn restore_clipboard_snapshot(_clipboard: &mut Clipboard, snapshot: &[PasteboardItemSnapshot]) {
+    restore_pasteboard_items(snapshot);
+}
+
 #[tauri::command]
 pub fn copy_to_clipboard(text: String) -> Result<(), ClipboardError> {
     let mut clipboard =
@@ -391,27 +633,11 @@ pub fn paste_text<R: Runtime>(
     let mut clipboard =
         Clipboard::new().map_err(|e| ClipboardError::ClipboardAccess(e.to_string()))?;
 
-    // 若使用者要求還原，先抓快照。Err 涵蓋非文字內容／暫時鎖等情況，視為「無可還原」
-    let original_text = if restore_clipboard {
-        match clipboard.get_text() {
-            Ok(t) if !t.is_empty() => {
-                log::info!(
-                    "[clipboard-paste] Snapshot original clipboard ({} chars)",
-                    t.len()
-                );
-                Some(t)
-            }
-            Ok(_) => {
-                log::info!("[clipboard-paste] Snapshot: clipboard was empty");
-                None
-            }
-            Err(e) => {
-                log::error!(
-                    "[clipboard-paste] Snapshot: read failed (likely non-text content): {e}"
-                );
-                None
-            }
-        }
+    // 若使用者要求還原，先抓完整快照（文字、圖片、檔案、富文字）。
+    let clipboard_snapshot = if restore_clipboard {
+        let snapshot = capture_clipboard_snapshot(&mut clipboard);
+        log::info!("[clipboard-paste] Snapshot original clipboard captured");
+        Some(snapshot)
     } else {
         None
     };
@@ -462,9 +688,9 @@ pub fn paste_text<R: Runtime>(
     }
 
     // 即使 paste 失敗也要還原，避免轉錄文字遺留在剪貼簿
-    if restore_clipboard {
+    if let Some(snapshot) = clipboard_snapshot.as_ref() {
         thread::sleep(Duration::from_millis(RESTORE_DELAY_MS));
-        restore_clipboard_text(&mut clipboard, &original_text);
+        restore_clipboard_snapshot(&mut clipboard, snapshot);
     }
 
     if let Some(e) = paste_err {
@@ -563,6 +789,42 @@ mod tests {
         let debug_str = format!("{error:?}");
         assert!(debug_str.contains("KeyboardSimulation"));
         assert!(debug_str.contains("sim fail"));
+    }
+
+    /// 快照 round trip：type 與原始 bytes 必須一對一保留（含圖片／檔案等非文字 type）。
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn test_pasteboard_item_snapshot_roundtrip() {
+        let mut item = PasteboardItemSnapshot::default();
+        item.push("public.utf8-plain-text".to_string(), b"hello".to_vec());
+        item.push("public.png".to_string(), vec![0x89, 0x50, 0x4E, 0x47]);
+        item.push("public.file-url".to_string(), b"file:///tmp/a.txt".to_vec());
+
+        assert_eq!(item.pair_count(), 3);
+        assert_eq!(item.type_list[1], "public.png");
+        assert_eq!(item.data_list[1], vec![0x89, 0x50, 0x4E, 0x47]);
+        assert_eq!(item.type_list[2], "public.file-url");
+        assert_eq!(item.data_list[2], b"file:///tmp/a.txt".to_vec());
+    }
+
+    /// Windows 圖片快照 round trip：尺寸與 RGBA bytes 都要原樣還原。
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn test_windows_image_snapshot_roundtrip() {
+        let image = arboard::ImageData {
+            width: 2,
+            height: 1,
+            bytes: std::borrow::Cow::Owned(vec![1, 2, 3, 4, 5, 6, 7, 8]),
+        };
+        let snapshot = image_snapshot_from(&image);
+        assert_eq!(snapshot.width, 2);
+        assert_eq!(snapshot.height, 1);
+        assert_eq!(snapshot.bytes, vec![1, 2, 3, 4, 5, 6, 7, 8]);
+
+        let restored = image_data_from_snapshot(&snapshot);
+        assert_eq!(restored.width, 2);
+        assert_eq!(restored.height, 1);
+        assert_eq!(restored.bytes.as_ref(), &[1_u8, 2, 3, 4, 5, 6, 7, 8][..]);
     }
 
     /// 還原延遲區間守門：避免改成 0（還沒貼完就還原）或數秒（使用者感受到延遲）。

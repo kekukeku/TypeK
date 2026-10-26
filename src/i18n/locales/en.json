@@ -100,7 +100,9 @@
       "default": "Default",
       "costPerHour": "${cost}/hour",
       "paidOnlyHint": "No free tier; requires billing on the provider's platform",
-      "limitedFreeHint": "Free tier is tiny or varies by project; free projects often get \"too many requests\""
+      "limitedFreeHint": "Free tier is tiny or varies by project; free projects often get \"too many requests\"",
+      "dailyQuotaBadge": "~{count}/day",
+      "dailyQuotaHint": "Daily free quota is about {count} cleanups (estimated for typical dictation, resets daily)"
     },
     "modelBadge": {
       "balanced": "Balanced · Default",
@@ -135,18 +137,18 @@
       "muteEnabled": "Mute on recording enabled",
       "muteDisabled": "Mute on recording disabled",
       "copyTranscriptionToClipboard": {
-        "label": "Copy transcription to clipboard",
-        "descriptionOn": "After auto-paste, the transcription stays in your clipboard so you can paste it again with Cmd+V — but it overwrites whatever you had copied before.",
-        "descriptionOff": "After auto-paste, your previous clipboard content is preserved so you can keep using it.",
-        "enabled": "Enabled: transcription will stay in clipboard",
-        "disabled": "Disabled: previous clipboard content will be preserved"
+        "label": "Keep transcription text on the clipboard",
+        "descriptionOn": "On: the transcription stays on the clipboard so you can press ⌘V again, but it replaces what you copied before.",
+        "descriptionOff": "Off (recommended): after pasting, your previous clipboard content (text, images, files) is restored automatically.",
+        "enabled": "On: transcription text stays on the clipboard",
+        "disabled": "Off: your previous clipboard content is restored after pasting"
       },
       "soundFeedback": "Sound Feedback",
       "soundFeedbackDescription": "Play sound effects when recording starts, stops, or encounters an error",
       "soundFeedbackEnabled": "Sound feedback enabled",
       "soundFeedbackDisabled": "Sound feedback disabled",
       "hideDockIcon": "Hide Dock Icon",
-      "hideDockIconDescription": "Remove TypeK from the Dock and use the menu bar icon only",
+      "hideDockIconDescription": "When on, TypeK appears only in the menu bar at the top of the screen and is hidden from ⌘Tab; open the main window from the menu bar icon.",
       "hideDockIconEnabled": "Dock icon hidden",
       "hideDockIconDisabled": "Dock icon shown",
       "autoStart": "Launch at Login",
@@ -171,7 +173,11 @@
       "volumePreview": "Microphone volume preview",
       "refresh": "Refresh",
       "refreshed": "{count} device(s) detected",
-      "updated": "Input device updated"
+      "updated": "Input device updated",
+      "testMic": "Test microphone",
+      "stopTest": "Stop test ({seconds}s)",
+      "testFailed": "Could not open the microphone. Check microphone permission or try another input device.",
+      "openSystemSettings": "Open System Settings"
     },
     "recording": {
       "title": "Recording Storage",
@@ -373,7 +379,8 @@
     "vocabularyLearned": "{terms}",
     "vocabularyLearnedTruncated": "{terms} +{count} more",
     "retryFailed": "Recognition failed, please record again",
-    "cancelled": "Cancelled"
+    "cancelled": "Cancelled",
+    "pasteRawEnhanceFailed": "Pasted raw text (AI cleanup failed)"
   },
   "errors": {
     "databaseInitFailed": "Database initialization failed. History is temporarily unavailable. Please restart the app.",

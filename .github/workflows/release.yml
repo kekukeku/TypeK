@@ -160,20 +160,23 @@ jobs:
       # macOS 用同一張自簽「TypeK Code Signing」憑證簽每一版：designated requirement 綁憑證，
       # 不綁每版的 cdhash，使用者更新後輔助使用／麥克風權限可以保留（2026-10-26 Kevin 本機實驗證實）。
       # 不是 Apple Developer ID：不公證，第一次安裝仍要「強制打開」。p12 不走 APPLE_CERTIFICATE
-      # （tauri-bundler 2.10 只認 Apple 前綴的憑證），改匯入臨時鑰匙圈，再用 APPLE_SIGNING_IDENTITY 指定。
+      # （tauri-cli 2.10.0 內的 tauri-macos-sign 2.3.3 只認 Apple 前綴的憑證），改匯入臨時鑰匙圈，再用 APPLE_SIGNING_IDENTITY 指定。
       - name: Import TypeK code signing certificate (macOS)
         if: runner.os == 'macOS'
         shell: bash
         env:
           TYPEK_CODESIGN_P12: ${{ secrets.TYPEK_CODESIGN_P12 }}
           TYPEK_CODESIGN_P12_PASSWORD: ${{ secrets.TYPEK_CODESIGN_P12_PASSWORD }}
+          OPT_APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
         run: |
           set -euo pipefail
           if [ -z "$TYPEK_CODESIGN_P12" ] || [ -z "$TYPEK_CODESIGN_P12_PASSWORD" ]; then
             echo "::error::TYPEK_CODESIGN_P12 / TYPEK_CODESIGN_P12_PASSWORD missing. Without them macOS permissions reset on every update; see docs/deployment-guide.md §5.1."
             exit 1
           fi
-          if [ -n "${APPLE_CERTIFICATE:-}" ] || [ -n "${APPLE_ID:-}" ] || [ -n "${APPLE_API_KEY:-}" ]; then
+          if [ -n "${APPLE_CERTIFICATE:-}" ] || [ -n "${APPLE_CERTIFICATE_PASSWORD:-}" ] \
+            || [ -n "${APPLE_ID:-}" ] || [ -n "${APPLE_PASSWORD:-}" ] || [ -n "${APPLE_TEAM_ID:-}" ] \
+            || [ -n "${OPT_APPLE_API_KEY:-}" ]; then
             echo "::error::APPLE_* signing/notarization secrets must stay empty (self-signed certificate cannot be notarized)."
             exit 1
           fi
@@ -184,6 +187,7 @@ jobs:
           printf '%s' "$TYPEK_CODESIGN_P12" | base64 --decode > "$P12_PATH"
 
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          echo "TYPEK_SIGNING_KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
           security set-keychain-settings -lut 21600 "$KEYCHAIN"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
           security import "$P12_PATH" -k "$KEYCHAIN" -f pkcs12 -P "$TYPEK_CODESIGN_P12_PASSWORD" -T /usr/bin/codesign
@@ -195,7 +199,6 @@ jobs:
 
           security find-identity -p codesigning "$KEYCHAIN" | grep -q '"TypeK Code Signing"' \
             || { echo "::error::Identity 'TypeK Code Signing' not found after import"; exit 1; }
-          echo "TYPEK_SIGNING_KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
           echo "APPLE_SIGNING_IDENTITY=TypeK Code Signing" >> "$GITHUB_ENV"
           echo "Imported TypeK Code Signing into temporary keychain"
 
@@ -230,8 +233,8 @@ jobs:
           EXPECTED_LEAF: 4524a36ee9abdfb6d9e150137ee105956e7cfede
         run: |
           set -euo pipefail
-          APP=$(find src-tauri/target -maxdepth 6 -type d -path "*/bundle/macos/TypeK.app" | head -1)
-          [ -n "$APP" ] || { echo "::error::TypeK.app not found"; exit 1; }
+          APP="src-tauri/target/${{ matrix.rust_target }}/release/bundle/macos/TypeK.app"
+          [ -d "$APP" ] || { echo "::error::TypeK.app not found at $APP"; exit 1; }
           REQ=$(codesign -d -r - "$APP" 2>&1 | grep 'designated =>' || true)
           echo "$REQ"
           codesign --verify --strict --verbose=2 "$APP"

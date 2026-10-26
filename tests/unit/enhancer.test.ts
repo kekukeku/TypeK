@@ -26,7 +26,7 @@ vi.mock("../../src/i18n/languageConfig", () => ({
 // 這裡把「未指定 modelId 時的預設」固定回 Groq 模型，避免整檔改寫成 Gemini 格式
 vi.mock("../../src/lib/modelRegistry", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../src/lib/modelRegistry")>()),
-  DEFAULT_LLM_MODEL_ID: "qwen/qwen3.6-27b",
+  DEFAULT_LLM_MODEL_ID: "qwen/qwen3.8-27b",
 }));
 
 const TEST_API_KEY = "test-api-key-123";
@@ -118,7 +118,7 @@ describe("enhancer.ts", () => {
       expect(callArgs[1].headers.Authorization).toBe(`Bearer ${TEST_API_KEY}`);
 
       const body = JSON.parse(callArgs[1].body);
-      expect(body.model).toBe("qwen/qwen3.6-27b");
+      expect(body.model).toBe("qwen/qwen3.8-27b");
       expect(body.temperature).toBe(0.1);
       // Qwen3.x 預設開 <think> 思考模式，必須明確關閉（省時間、保 5 秒 timeout）
       expect(body.reasoning_effort).toBe("none");

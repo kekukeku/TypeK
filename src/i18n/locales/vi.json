@@ -100,7 +100,9 @@
       "default": "Mặc định",
       "costPerHour": "${cost}/giờ",
       "paidOnlyHint": "Mô hình này không có gói miễn phí, cần bật thanh toán trên nền tảng tương ứng",
-      "limitedFreeHint": "Hạn mức miễn phí rất ít hoặc tùy dự án; dự án miễn phí thường trả về \"quá nhiều yêu cầu\""
+      "limitedFreeHint": "Hạn mức miễn phí rất ít hoặc tùy dự án; dự án miễn phí thường trả về \"quá nhiều yêu cầu\"",
+      "dailyQuotaBadge": "~{count} lần/ngày",
+      "dailyQuotaHint": "Hạn mức miễn phí hằng ngày đủ khoảng {count} lần tinh chỉnh (ước tính cho câu nói thông thường, đặt lại mỗi ngày)"
     },
     "modelBadge": {
       "balanced": "Cân bằng · Mặc định",
@@ -135,18 +137,18 @@
       "muteEnabled": "Đã bật tự động tắt tiếng khi ghi âm",
       "muteDisabled": "Đã tắt tự động tắt tiếng khi ghi âm",
       "copyTranscriptionToClipboard": {
-        "label": "Sao chép văn bản phiên âm vào bộ nhớ tạm",
-        "descriptionOn": "Sau khi tự động dán, văn bản phiên âm vẫn nằm trong bộ nhớ tạm để bạn dán lại bằng Cmd+V, nhưng sẽ ghi đè nội dung bạn đã sao chép trước đó.",
-        "descriptionOff": "Sau khi tự động dán, bộ nhớ tạm giữ nguyên nội dung bạn đã sao chép trước đó để tiện dùng tiếp.",
-        "enabled": "Đã bật: văn bản phiên âm sẽ nằm trong bộ nhớ tạm",
-        "disabled": "Đã tắt: bộ nhớ tạm giữ nguyên nội dung cũ"
+        "label": "Giữ văn bản ghi âm trong bảng tạm",
+        "descriptionOn": "Bật: văn bản ghi âm vẫn ở bảng tạm để bạn nhấn ⌘V dán lại, nhưng sẽ ghi đè nội dung bạn đã sao chép trước đó.",
+        "descriptionOff": "Tắt (khuyến nghị): sau khi dán, nội dung bảng tạm trước đó (văn bản, hình ảnh, tệp) được tự động khôi phục.",
+        "enabled": "Đã bật: văn bản ghi âm vẫn ở bảng tạm",
+        "disabled": "Đã tắt: khôi phục nội dung bảng tạm trước đó sau khi dán"
       },
       "soundFeedback": "Phản hồi âm thanh",
       "soundFeedbackDescription": "Phát âm thanh thông báo khi bắt đầu, kết thúc ghi âm và khi có lỗi",
       "soundFeedbackEnabled": "Đã bật phản hồi âm thanh",
       "soundFeedbackDisabled": "Đã tắt phản hồi âm thanh",
       "hideDockIcon": "Ẩn biểu tượng trên Dock",
-      "hideDockIconDescription": "Gỡ biểu tượng TypeK khỏi Dock, chỉ thao tác qua biểu tượng trên thanh menu",
+      "hideDockIconDescription": "Khi bật, TypeK chỉ xuất hiện trên thanh menu ở đầu màn hình và không hiện trong ⌘Tab; mở cửa sổ chính từ biểu tượng thanh menu.",
       "hideDockIconEnabled": "Đã ẩn biểu tượng trên Dock",
       "hideDockIconDisabled": "Đã hiện biểu tượng trên Dock",
       "autoStart": "Tự khởi động khi đăng nhập",
@@ -171,7 +173,11 @@
       "volumePreview": "Xem trước âm lượng micrô",
       "refresh": "Làm mới",
       "refreshed": "Đã phát hiện {count} thiết bị",
-      "updated": "Đã cập nhật thiết bị đầu vào"
+      "updated": "Đã cập nhật thiết bị đầu vào",
+      "testMic": "Kiểm tra micrô",
+      "stopTest": "Dừng kiểm tra ({seconds} giây)",
+      "testFailed": "Không thể mở micrô. Hãy kiểm tra quyền micrô hoặc chọn thiết bị đầu vào khác.",
+      "openSystemSettings": "Mở Cài đặt hệ thống"
     },
     "recording": {
       "title": "Quản lý lưu trữ bản ghi âm",
@@ -373,7 +379,8 @@
     "vocabularyLearned": "{terms}",
     "vocabularyLearnedTruncated": "{terms} và {count} mục khác",
     "retryFailed": "Nhận dạng thất bại, vui lòng ghi âm lại",
-    "cancelled": "Đã hủy"
+    "cancelled": "Đã hủy",
+    "pasteRawEnhanceFailed": "Đã dán văn bản gốc (tinh chỉnh AI thất bại)"
   },
   "errors": {
     "databaseInitFailed": "Khởi tạo cơ sở dữ liệu thất bại, lịch sử tạm thời không dùng được. Vui lòng khởi động lại ứng dụng.",

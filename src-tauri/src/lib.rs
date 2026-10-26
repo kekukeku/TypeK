@@ -159,7 +159,32 @@ fn apply_dock_icon_hidden<R: Runtime>(app: &AppHandle<R>, hidden: bool) -> tauri
 
 #[command]
 fn set_dock_icon_hidden<R: Runtime>(app: AppHandle<R>, hidden: bool) -> Result<(), String> {
-    apply_dock_icon_hidden(&app, hidden).map_err(|e| e.to_string())
+    #[cfg(target_os = "macos")]
+    {
+        // 執行期切換一定要回主執行緒改 NSApplication 狀態；切到 Accessory 時
+        // AppKit 常會把既有視窗退到後面，所以主視窗開著就重新顯示並聚焦。
+        let main_thread_app = app.clone();
+        app.run_on_main_thread(move || {
+            if let Err(e) = apply_dock_icon_hidden(&main_thread_app, hidden) {
+                log::error!("[dock] failed to set activation policy: {e}");
+                return;
+            }
+            if hidden {
+                if let Some(window) = main_thread_app.get_webview_window("main-window") {
+                    if window.is_visible().unwrap_or(false) {
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                    }
+                }
+            }
+        })
+        .map_err(|e| e.to_string())
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = apply_dock_icon_hidden(&app, hidden);
+        Ok(())
+    }
 }
 
 /// 供前端在啟動/需要時查詢權威 OS 外觀（"dark" | "light"，未知回 null）。
@@ -667,7 +692,10 @@ pub fn run() {
                     .and_then(|value| value.as_bool())
                     .unwrap_or(false);
                 if hide_dock_icon {
-                    let _ = apply_dock_icon_hidden(app.handle(), true);
+                    // 在 setup 直接對 App 設策略（Tauri 文件建議路徑）：
+                    // AppHandle 版本是送訊息進 event loop，AppKit 已先把行程註冊成
+                    // Regular，Dock 圖示會先出現且不一定被後續訊息收回。
+                    app.set_activation_policy(tauri::ActivationPolicy::Accessory);
                 }
             }
 

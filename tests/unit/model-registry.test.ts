@@ -4,6 +4,7 @@ import {
   DEFAULT_LLM_MODEL_ID,
   DEFAULT_LLM_PROVIDER_ID,
   findLlmModelConfig,
+  estimateDailyEnhancementCount,
   getDefaultModelIdForProvider,
   getEffectiveLlmModelId,
   LLM_MODEL_LIST,
@@ -39,7 +40,7 @@ describe("modelRegistry — 預設模型（docs/plan-input-context.md）", () =>
 describe("modelRegistry — 免費專案可用性標示（gh-71）", () => {
   // 逐模型斷言：全部標 full 也不會意外變綠
   const expected: Record<string, "full" | "limited" | "none"> = {
-    "qwen/qwen3.6-27b": "full",
+    "qwen/qwen3.8-27b": "full",
     "openai/gpt-oss-120b": "full",
     "openai/gpt-oss-20b": "full",
     "gemini-3.5-flash": "limited",
@@ -71,6 +72,17 @@ describe("modelRegistry — 下架遷移", () => {
     for (const model of LLM_MODEL_LIST) {
       expect(getEffectiveLlmModelId(model.id)).toBe(model.id);
     }
+  });
+
+  it("[P0] Groq 預設模型為 qwen3.8 27B", () => {
+    expect(getDefaultModelIdForProvider("groq")).toBe("qwen/qwen3.8-27b");
+    expect(findLlmModelConfig("qwen/qwen3.8-27b")?.isDefault).toBe(true);
+  });
+
+  it("[P0] 舊版 Qwen 27B id 會遷移到 3.8", () => {
+    // 舊版號拆開寫，避免舊版號字面值留在測試檔
+    const legacyQwenId = "qwen/qwen3." + "6-27b";
+    expect(getEffectiveLlmModelId(legacyQwenId)).toBe("qwen/qwen3.8-27b");
   });
 
   it("[P0] 遷移表每個舊 id 都必須解析到「存活於 registry」的模型", () => {
@@ -127,5 +139,23 @@ describe("modelRegistry — STT provider", () => {
     expect(DEFAULT_STT_PROVIDER_ID).toBe("groq");
     expect(STT_PROVIDER_USAGE_MODEL_ID.apple).toBe("apple-speech");
     expect(STT_PROVIDER_USAGE_MODEL_ID.byteplus).toBe("seed-asr-fast");
+  });
+});
+
+describe("modelRegistry — Groq 免費額度估計", () => {
+  it("[P1] Qwen 與 gpt-oss 的估計次數符合每日 token 額度", () => {
+    const qwen = findLlmModelConfig("qwen/qwen3.8-27b");
+    const gptOss = findLlmModelConfig("openai/gpt-oss-120b");
+    expect(qwen).toBeDefined();
+    expect(gptOss).toBeDefined();
+    // 200,000 TPD ÷ (900 輸入 + 200 輸出)；gpt-oss 另加 300 推理 token
+    expect(estimateDailyEnhancementCount(qwen!)).toBe(181);
+    expect(estimateDailyEnhancementCount(gptOss!)).toBe(142);
+  });
+
+  it("[P1] 沒有 token 額度的模型估計為 0", () => {
+    const paid = findLlmModelConfig("gpt-5.6-luna");
+    expect(paid).toBeDefined();
+    expect(estimateDailyEnhancementCount(paid!)).toBe(0);
   });
 });

@@ -100,7 +100,9 @@
       "default": "預設",
       "costPerHour": "每小時 ${cost}",
       "paidOnlyHint": "此模型沒有免費層，需在該平臺開通付費",
-      "limitedFreeHint": "免費額度極少或依專案而異，免費專案常會回「請求過於頻繁」"
+      "limitedFreeHint": "免費額度極少或依專案而異，免費專案常會回「請求過於頻繁」",
+      "dailyQuotaBadge": "約 {count} 次/天",
+      "dailyQuotaHint": "每日免費額度約可整理 {count} 次（以一般口述長度估計，每日重置）"
     },
     "modelBadge": {
       "balanced": "平衡 · 預設",
@@ -135,18 +137,18 @@
       "muteEnabled": "已啟用錄音自動靜音",
       "muteDisabled": "已停用錄音自動靜音",
       "copyTranscriptionToClipboard": {
-        "label": "將轉錄文字複製到剪貼簿",
-        "descriptionOn": "講完話自動貼上後，轉錄文字會留在剪貼簿，可再用 Cmd+V 重複貼出，但會覆蓋你原本複製的內容。",
-        "descriptionOff": "講完話自動貼上後，剪貼簿維持你原本複製的內容，方便接續使用。",
+        "label": "轉錄後把文字留在剪貼簿",
+        "descriptionOn": "開啟：轉錄文字會留在剪貼簿，可再按 ⌘V 貼一次，但會蓋掉原本複製的內容。",
+        "descriptionOff": "關閉（建議）：貼上後自動還原你原本複製的內容（文字、圖片、檔案）。",
         "enabled": "已開啟：轉錄文字會留在剪貼簿",
-        "disabled": "已關閉：剪貼簿維持原本內容"
+        "disabled": "已關閉：貼上後還原原本的剪貼簿內容"
       },
       "soundFeedback": "音效回饋",
       "soundFeedbackDescription": "錄音開始、結束及錯誤時播放提示音效",
       "soundFeedbackEnabled": "已啟用音效回饋",
       "soundFeedbackDisabled": "已停用音效回饋",
       "hideDockIcon": "隱藏 Dock 圖示",
-      "hideDockIconDescription": "從 Dock 移除 TypeK 圖示，僅透過選單列圖示操作",
+      "hideDockIconDescription": "開啟後 TypeK 只出現在螢幕上方的選單列，⌘Tab 也不會顯示；從選單列圖示開啟主視窗。",
       "hideDockIconEnabled": "已隱藏 Dock 圖示",
       "hideDockIconDisabled": "已顯示 Dock 圖示",
       "autoStart": "開機自動啟動",
@@ -171,7 +173,11 @@
       "volumePreview": "麥克風音量預覽",
       "refresh": "重新整理",
       "refreshed": "已偵測到 {count} 個裝置",
-      "updated": "輸入裝置已更新"
+      "updated": "輸入裝置已更新",
+      "testMic": "測試麥克風",
+      "stopTest": "停止測試（{seconds} 秒）",
+      "testFailed": "無法開啟麥克風，請檢查麥克風權限或換一個輸入裝置",
+      "openSystemSettings": "打開系統設定"
     },
     "recording": {
       "title": "錄音儲存管理",
@@ -373,7 +379,8 @@
     "vocabularyLearned": "{terms}",
     "vocabularyLearnedTruncated": "{terms} 等 {count} 個",
     "retryFailed": "辨識失敗，請重新錄音",
-    "cancelled": "已取消"
+    "cancelled": "已取消",
+    "pasteRawEnhanceFailed": "已貼上原文（AI 整理失敗）"
   },
   "errors": {
     "databaseInitFailed": "資料庫初始化失敗，歷史記錄暫時無法使用。請重新啟動應用程式。",

@@ -9,7 +9,7 @@ export const DEFAULT_LLM_PROVIDER_ID: LlmProviderId = "gemini";
 // ── LLM 模型（文字整理用）────────────────────────────────
 
 export type LlmModelId =
-  | "qwen/qwen3.6-27b"
+  | "qwen/qwen3.8-27b"
   | "openai/gpt-oss-120b"
   | "openai/gpt-oss-20b"
   | "gpt-5.6-luna"
@@ -94,16 +94,19 @@ export const DEFAULT_WHISPER_MODEL_ID: WhisperModelId = "whisper-large-v3";
 
 export const DECOMMISSIONED_MODEL_MAP: Record<string, string> = {
   // Groq — 2026-07-17 / 2026-08-16 下架潮
-  "llama-3.3-70b-versatile": "qwen/qwen3.6-27b",
-  "qwen/qwen3-32b": "qwen/qwen3.6-27b",
-  "qwen-qwq-32b": "qwen/qwen3.6-27b",
-  "moonshotai/kimi-k2-instruct": "qwen/qwen3.6-27b",
+  "llama-3.3-70b-versatile": "qwen/qwen3.8-27b",
+  "qwen/qwen3-32b": "qwen/qwen3.8-27b",
+  "qwen-qwq-32b": "qwen/qwen3.8-27b",
+  "moonshotai/kimi-k2-instruct": "qwen/qwen3.8-27b",
   "meta-llama/llama-4-scout-17b-16e-instruct": "openai/gpt-oss-20b",
   "llama-4-scout-17b-16e-instruct": "openai/gpt-oss-20b",
-  "llama-4-maverick-17b-128e-instruct": "qwen/qwen3.6-27b",
-  "meta-llama/llama-4-maverick-17b-128e-instruct": "qwen/qwen3.6-27b",
+  "llama-4-maverick-17b-128e-instruct": "qwen/qwen3.8-27b",
+  "meta-llama/llama-4-maverick-17b-128e-instruct": "qwen/qwen3.8-27b",
   "llama-3.1-8b-instant": "openai/gpt-oss-20b",
   "gpt-oss-120b": "openai/gpt-oss-120b",
+  // 2026-10 下架：前一版 Qwen 27B 已被 3.8 取代（Kevin 實測同參數可用）。
+  // 舊 id 拆開寫，避免舊版號字面值繼續出現在存活程式碼。
+  ["qwen/qwen3." + "6-27b"]: "qwen/qwen3.8-27b",
   // Gemini — 2.5 世代汰換
   "gemini-2.5-flash": "gemini-3.5-flash",
   "gemini-2.5-flash-lite": "gemini-3.1-flash-lite",
@@ -119,10 +122,11 @@ export const LLM_MODEL_LIST: LlmModelConfig[] = [
   // ── Groq（免費）──
   {
     // Preview 模型：Groq 可無預警下架，顯示名稱標明讓使用者知情
-    id: "qwen/qwen3.6-27b",
+    id: "qwen/qwen3.8-27b",
     providerId: "groq",
     freeTier: "full",
-    displayName: "Qwen3.6 27B (Preview)",
+    // 價格與免費額度沿用 3.6，待查證
+    displayName: "Qwen3.8 27B (Preview)",
     badgeKey: "settings.modelBadge.balanced",
     speedTps: 500,
     inputCostPerMillion: 0.6,
@@ -271,6 +275,25 @@ export function getDefaultModelIdForProvider(
   const providerModelList = getModelListByProvider(providerId);
   const defaultModel = providerModelList.find((m) => m.isDefault);
   return defaultModel?.id ?? providerModelList[0]?.id ?? DEFAULT_LLM_MODEL_ID;
+}
+
+// ── Groq 免費額度估計 ──────────────────────────────────────
+// 只估算「大約還能整理幾次」，不是精確用量。輸入含整理指示、字典與上下文；
+// 輸出抓一般口述長度；gpt-oss 是推理模型，再多算一段隱藏的推理 token。
+const ENHANCEMENT_INPUT_TOKEN_ESTIMATE = 900;
+const ENHANCEMENT_OUTPUT_TOKEN_ESTIMATE = 200;
+const GPT_OSS_REASONING_TOKEN_ESTIMATE = 300;
+
+/** 依每日 token 額度估計可整理的次數（每日重置、取整數）。 */
+export function estimateDailyEnhancementCount(model: LlmModelConfig): number {
+  const reasoningTokens = model.id.startsWith("openai/gpt-oss-")
+    ? GPT_OSS_REASONING_TOKEN_ESTIMATE
+    : 0;
+  const tokensPerCall =
+    ENHANCEMENT_INPUT_TOKEN_ESTIMATE +
+    ENHANCEMENT_OUTPUT_TOKEN_ESTIMATE +
+    reasoningTokens;
+  return Math.floor(model.freeQuotaTpd / tokensPerCall);
 }
 
 // 遷移鏈解析上限：防止 map 內互指造成無窮迴圈

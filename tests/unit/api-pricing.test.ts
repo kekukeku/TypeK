@@ -51,7 +51,7 @@ describe("apiPricing.ts", () => {
   // ==========================================================================
 
   describe("calculateChatCostCeiling", () => {
-    const QWEN_MODEL_ID = "qwen/qwen3.6-27b";
+    const QWEN_MODEL_ID = "qwen/qwen3.8-27b";
 
     it("[P0] 0 tokens 應回傳 0", () => {
       expect(calculateChatCostCeiling(0)).toBe(0);

@@ -105,6 +105,16 @@ const showAutoInstallDialog = ref(false);
 const showInstallLocationDialog = ref(false);
 let autoInstallPromptPending = false;
 
+// 任一個全域對話框開著時，不要再疊「更新已就緒」（會蓋住、按不到）
+const hasGlobalDialogOpen = computed(
+  () =>
+    showUpgradeNoticeDialog.value ||
+    showAccessibilityGuide.value ||
+    showManualUpdateDialog.value ||
+    showAutoInstallDialog.value ||
+    showInstallLocationDialog.value,
+);
+
 // 升級提示（watch 而非 onMounted，因為 loadSettings 在 mount 之後才執行）
 const settingsStore = useSettingsStore();
 const showUpgradeNoticeDialog = ref(false);
@@ -173,10 +183,11 @@ async function promptAutoInstall() {
   showAutoInstallDialog.value = true;
 }
 
-// 錄音／轉錄結束回到 idle 後，補跳自動流程的安裝對話框。
-watch(voiceFlowStatus, (status) => {
+// 錄音／轉錄結束或既有對話框關閉後，補跳自動流程的安裝對話框。
+watch([voiceFlowStatus, hasGlobalDialogOpen], ([status]) => {
   if (status !== "idle" || !autoInstallPromptPending) return;
   if (updateState.value !== "ready-to-install") return;
+  if (hasGlobalDialogOpen.value) return;
   autoInstallPromptPending = false;
   void promptAutoInstall();
 });
@@ -220,7 +231,7 @@ async function autoCheckAndDownload() {
     await downloadUpdate();
     updateState.value = "ready-to-install";
 
-    if (isInstallBlocked.value) {
+    if (isInstallBlocked.value || hasGlobalDialogOpen.value) {
       autoInstallPromptPending = true;
       return;
     }
@@ -269,6 +280,8 @@ function handleSidebarInstall() {
 
 // ── 流程 2：手動檢查更新 ──
 async function handleManualCheck() {
+  // 更新摘要開著時先關掉，避免跟手動更新對話框疊在一起
+  showUpgradeNoticeDialog.value = false;
   if (updateState.value === "ready-to-install") {
     showAutoInstallDialog.value = true;
     return;

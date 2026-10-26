@@ -100,7 +100,9 @@
       "default": "默认",
       "costPerHour": "每小时 ${cost}",
       "paidOnlyHint": "此模型没有免费层，需在该平台开通付费",
-      "limitedFreeHint": "免费额度极少或因项目而异，免费项目常会返回“请求过于频繁”"
+      "limitedFreeHint": "免费额度极少或因项目而异，免费项目常会返回“请求过于频繁”",
+      "dailyQuotaBadge": "约 {count} 次/天",
+      "dailyQuotaHint": "每日免费额度约可整理 {count} 次（以一般口述长度估计，每日重置）"
     },
     "modelBadge": {
       "balanced": "平衡 · 默认",
@@ -135,18 +137,18 @@
       "muteEnabled": "已启用录音自动静音",
       "muteDisabled": "已停用录音自动静音",
       "copyTranscriptionToClipboard": {
-        "label": "将转录文字复制到剪贴板",
-        "descriptionOn": "讲完话自动粘贴后，转录文字会留在剪贴板，可再用 Cmd+V 重复粘贴，但会覆盖你原本复制的内容。",
-        "descriptionOff": "讲完话自动粘贴后，剪贴板维持你原本复制的内容，方便继续使用。",
+        "label": "转录后把文字留在剪贴板",
+        "descriptionOn": "开启：转录文字会留在剪贴板，可再按 Ctrl+V 粘贴一次，但会覆盖原本复制的内容。",
+        "descriptionOff": "关闭（建议）：粘贴后自动还原你原本复制的内容（文字、图片、文件）。",
         "enabled": "已开启：转录文字会留在剪贴板",
-        "disabled": "已关闭：剪贴板维持原本内容"
+        "disabled": "已关闭：粘贴后还原原本的剪贴板内容"
       },
       "soundFeedback": "音效反馈",
       "soundFeedbackDescription": "录音开始、结束及错误时播放提示音效",
       "soundFeedbackEnabled": "已启用音效反馈",
       "soundFeedbackDisabled": "已停用音效反馈",
       "hideDockIcon": "隐藏 Dock 图标",
-      "hideDockIconDescription": "从 Dock 移除 TypeK 图标，仅通过菜单栏图标操作",
+      "hideDockIconDescription": "开启后 TypeK 只出现在屏幕顶部的菜单栏，⌘Tab 也不会显示；从菜单栏图标打开主窗口。",
       "hideDockIconEnabled": "已隐藏 Dock 图标",
       "hideDockIconDisabled": "已显示 Dock 图标",
       "autoStart": "开机自动启动",
@@ -171,7 +173,11 @@
       "volumePreview": "麦克风音量预览",
       "refresh": "刷新",
       "refreshed": "已检测到 {count} 个设备",
-      "updated": "输入设备已更新"
+      "updated": "输入设备已更新",
+      "testMic": "测试麦克风",
+      "stopTest": "停止测试（{seconds} 秒）",
+      "testFailed": "无法打开麦克风，请检查麦克风权限或换一个输入设备",
+      "openSystemSettings": "打开系统设置"
     },
     "recording": {
       "title": "录音存储管理",
@@ -373,7 +379,8 @@
     "vocabularyLearned": "{terms}",
     "vocabularyLearnedTruncated": "{terms} 等 {count} 个",
     "retryFailed": "识别失败，请重新录音",
-    "cancelled": "已取消"
+    "cancelled": "已取消",
+    "pasteRawEnhanceFailed": "已粘贴原文（AI 整理失败）"
   },
   "errors": {
     "databaseInitFailed": "数据库初始化失败，历史记录暂时无法使用。请重新启动应用程序。",

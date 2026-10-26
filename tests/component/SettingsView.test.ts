@@ -2,7 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 import { flushPromises, mount } from "@vue/test-utils";
 import i18n from "../../src/i18n";
 
-const { mockInvoke, settingsState } = vi.hoisted(() => ({
+const { mockInvoke, settingsState, audioPreviewMock } = vi.hoisted(() => ({
+  audioPreviewMock: {
+    startPreview: vi.fn().mockResolvedValue(true),
+    stopPreview: vi.fn().mockResolvedValue(undefined),
+  },
   mockInvoke: vi.fn(async (command: string) => {
     if (command === "list_audio_input_devices") return [];
     if (command === "get_default_input_device_name") return null;
@@ -10,7 +14,7 @@ const { mockInvoke, settingsState } = vi.hoisted(() => ({
   }),
   settingsState: {
     selectedLlmProviderId: "groq",
-    selectedLlmModelId: "qwen/qwen3.6-27b",
+    selectedLlmModelId: "qwen/qwen3.8-27b",
     selectedWhisperModelId: "whisper-large-v3",
     selectedSttProviderId: "byteplus",
     selectedTranscriptionLocale: "zh-TW",
@@ -92,14 +96,17 @@ vi.mock("../../src/stores/useHistoryStore", () => ({
   }),
 }));
 
-vi.mock("../../src/composables/useAudioPreview", () => ({
-  useAudioPreview: () => ({
-    previewLevel: { value: 0 },
-    isPreviewActive: { value: false },
-    startPreview: vi.fn(),
-    stopPreview: vi.fn(),
-  }),
-}));
+vi.mock("../../src/composables/useAudioPreview", async () => {
+  const { computed } = await import("vue");
+  return {
+    useAudioPreview: () => ({
+      previewLevel: computed(() => 0),
+      isPreviewActive: computed(() => false),
+      startPreview: audioPreviewMock.startPreview,
+      stopPreview: audioPreviewMock.stopPreview,
+    }),
+  };
+});
 
 vi.mock("../../src/composables/useHotkeyRecordingSession", () => ({
   useHotkeyRecordingSession: () => ({
@@ -143,5 +150,49 @@ describe("SettingsView — 轉錄服務", () => {
 
     expect(wrapper.find("#llm-groq-api-key").exists()).toBe(false);
     expect(wrapper.find("#groq-api-key").exists()).toBe(true);
+  });
+});
+
+describe("SettingsView — 麥克風測試按鈕", () => {
+  function mountWithDeviceList() {
+    mockInvoke.mockImplementation(async (command: string) => {
+      if (command === "list_audio_input_devices") return [];
+      if (command === "get_default_input_device_name") return null;
+      return undefined;
+    });
+    return mountSettings();
+  }
+
+  it("[P0] 掛載時不自動開啟麥克風", async () => {
+    audioPreviewMock.startPreview.mockClear();
+    const wrapper = mountWithDeviceList();
+    await flushPromises();
+
+    expect(audioPreviewMock.startPreview).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it("[P0] 按下「測試麥克風」才開始，10 秒後自動停止", async () => {
+    vi.useFakeTimers();
+    audioPreviewMock.startPreview.mockClear();
+    audioPreviewMock.stopPreview.mockClear();
+
+    const wrapper = mountWithDeviceList();
+    await flushPromises();
+
+    const button = wrapper
+      .findAll("button")
+      .find((item) => item.text().includes("測試麥克風"));
+    expect(button).toBeDefined();
+    await button!.trigger("click");
+    await flushPromises();
+
+    expect(audioPreviewMock.startPreview).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(audioPreviewMock.stopPreview).toHaveBeenCalled();
+
+    vi.useRealTimers();
+    wrapper.unmount();
   });
 });

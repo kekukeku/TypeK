@@ -100,7 +100,9 @@
       "default": "デフォルト",
       "costPerHour": "1時間あたり ${cost}",
       "paidOnlyHint": "無料枠がなく、各プラットフォームで課金を有効にする必要があります",
-      "limitedFreeHint": "無料枠がごく少ないかプロジェクトによって異なり、無料プロジェクトでは「リクエストが多すぎます」になりがちです"
+      "limitedFreeHint": "無料枠がごく少ないかプロジェクトによって異なり、無料プロジェクトでは「リクエストが多すぎます」になりがちです",
+      "dailyQuotaBadge": "約 {count} 回/日",
+      "dailyQuotaHint": "1日の無料枠で約 {count} 回整理できます（一般的な口述の長さでの推定、毎日リセット）"
     },
     "modelBadge": {
       "balanced": "バランス · デフォルト",
@@ -135,18 +137,18 @@
       "muteEnabled": "録音時自動ミュートを有効にしました",
       "muteDisabled": "録音時自動ミュートを無効にしました",
       "copyTranscriptionToClipboard": {
-        "label": "文字起こし結果をクリップボードにコピー",
-        "descriptionOn": "自動貼り付け後、文字起こし結果がクリップボードに残るため Cmd+V で再度貼り付けできますが、元のコピー内容は上書きされます。",
-        "descriptionOff": "自動貼り付け後もクリップボードの元の内容が保持されるため、引き続き利用できます。",
-        "enabled": "オン：文字起こし結果がクリップボードに残ります",
-        "disabled": "オフ：クリップボードの元の内容を保持します"
+        "label": "文字起こしの文字をクリップボードに残す",
+        "descriptionOn": "オン：文字起こしがクリップボードに残り、⌘V でもう一度貼り付けられますが、以前コピーした内容は上書きされます。",
+        "descriptionOff": "オフ（推奨）：貼り付け後に、以前コピーした内容（テキスト・画像・ファイル）を自動で復元します。",
+        "enabled": "オン：文字起こしをクリップボードに残します",
+        "disabled": "オフ：貼り付け後に元のクリップボード内容を復元します"
       },
       "soundFeedback": "効果音フィードバック",
       "soundFeedbackDescription": "録音の開始・終了・エラー時に効果音を再生します",
       "soundFeedbackEnabled": "効果音フィードバックを有効にしました",
       "soundFeedbackDisabled": "効果音フィードバックを無効にしました",
       "hideDockIcon": "Dock アイコンを隠す",
-      "hideDockIconDescription": "Dock から TypeK を非表示にし、メニューバーアイコンのみで操作します",
+      "hideDockIconDescription": "オンにすると TypeK は画面上部のメニューバーだけに表示され、⌘Tab にも表示されません。メニューバーのアイコンからメインウィンドウを開けます。",
       "hideDockIconEnabled": "Dock アイコンを非表示にしました",
       "hideDockIconDisabled": "Dock アイコンを表示しました",
       "autoStart": "ログイン時に自動起動",
@@ -171,7 +173,11 @@
       "volumePreview": "マイク音量プレビュー",
       "refresh": "更新",
       "refreshed": "{count} 個のデバイスを検出しました",
-      "updated": "入力デバイスを更新しました"
+      "updated": "入力デバイスを更新しました",
+      "testMic": "マイクをテスト",
+      "stopTest": "テスト停止（{seconds}秒）",
+      "testFailed": "マイクを開けませんでした。マイクの権限を確認するか、別の入力デバイスを選んでください。",
+      "openSystemSettings": "システム設定を開く"
     },
     "recording": {
       "title": "録音ストレージ管理",
@@ -373,7 +379,8 @@
     "vocabularyLearned": "{terms}",
     "vocabularyLearnedTruncated": "{terms} 他 {count} 語",
     "retryFailed": "認識失敗、もう一度録音してください",
-    "cancelled": "キャンセル"
+    "cancelled": "キャンセル",
+    "pasteRawEnhanceFailed": "原文を貼り付けました（AI 整理に失敗）"
   },
   "errors": {
     "databaseInitFailed": "データベースの初期化に失敗しました。履歴が一時的に使用できません。アプリを再起動してください。",

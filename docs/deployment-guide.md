@@ -276,14 +276,14 @@ tag push 後自動觸發 `release.yml`：
 >
 > **1.3.2 起，macOS 正式版用自簽憑證「TypeK Code Signing」簽章**（`release.yml` 的 Import／Verify 兩步）：designated requirement 是 `identifier "com.kekukeku.typek" and certificate leaf = H"4524a36ee9abdfb6d9e150137ee105956e7cfede"`，綁憑證不綁每版 cdhash，所以更新後輔助使用（macOS 27 叫 Device Control and Data Access）與麥克風權限會保留（2026-10-26 Kevin 本機以 1.3.0→1.3.1 實驗證實）。
 >
-> - Secrets：`TYPEK_CODESIGN_P12`（p12 的 base64，單行）、`TYPEK_CODESIGN_P12_PASSWORD`。不要放進 `APPLE_CERTIFICATE`（tauri-bundler 2.10 只認 Apple 前綴憑證）
+> - Secrets：`TYPEK_CODESIGN_P12`（p12 的 base64，單行）、`TYPEK_CODESIGN_P12_PASSWORD`。不要放進 `APPLE_CERTIFICATE`（tauri-cli 2.10.0 內的 tauri-macos-sign 2.3.3 只認 Apple 前綴憑證）
 > - 憑證效期 10 年（到 2036-10）。p12 與密碼另存密碼管理器；**遺失或換憑證＝所有使用者要再「− 再 +」一次**，且要同步改 `release.yml` 的 `EXPECTED_LEAF`
 > - 本機 `pnpm tauri build` 仍是 ad-hoc（`tauri.conf.json` 的 `signingIdentity "-"`），權限不與正式版共用
 > - 從 ad-hoc 版（1.3.1 以前）更新到第一個自簽版時，使用者仍要「− 再 +」一次；之後的更新不用
 
 ### 5.2 簽署流程
 
-不做 Apple 簽章與公證，`release.yml` 不執行憑證匯入、`codesign` 或 notarization；上述步驟保留為未來若申請付費帳號時的參考，不在 1.3.0 範圍。
+1.3.2 起 `release.yml` 的 macOS job 會匯入自簽憑證「TypeK Code Signing」到臨時鑰匙圈，以 `APPLE_SIGNING_IDENTITY` 覆寫 `signingIdentity "-"` 讓 tauri-bundler `codesign`，打包後驗證 designated requirement 的 certificate leaf；不做 Developer ID、不公證。DMG 容器也會被同一張自簽憑證簽上，使用者打開時仍會看到「無法驗證開發者」，`.app` 第一次仍要「強制打開」。
 
 ### 5.3 必要 entitlements（`src-tauri/Entitlements.plist`）
 
@@ -320,7 +320,7 @@ gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD
 - `TAURI_SIGNING_PRIVATE_KEY`、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD` 必須存在；`release.yml` 在打包前會檢查私鑰與 `pubkey` 非空，缺一就失敗
 - `publish-release` 驗證 `latest.json` 通過才公開；已公開的 tag 不重建
 - 私鑰或密碼遺失＝已安裝版本無法驗證新版，只能請使用者手動重裝一次（沒有輪替流程；舊私鑰還在時也不保證跳版使用者能無縫換 key）
-- Apple 簽章維持不做、`APPLE_*` 維持空白；`signingIdentity` 維持 `"-"`
+- Apple Developer ID 簽章與公證維持不做、`APPLE_*` 維持空白；`tauri.conf.json` 的 `signingIdentity` 維持 `"-"`（本機用），CI 以 `APPLE_SIGNING_IDENTITY=TypeK Code Signing` 覆寫（見 §5.1）
 
 已知殘餘風險（updater 2.10.0）：
 
@@ -332,12 +332,14 @@ gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD
 
 ## 六、GitHub Secrets
 
-必要（2 個）：
+必要（4 個）：
 
 | Secret                                  | 用途                                            |
 | --------------------------------------- | ----------------------------------------------- |
 | `TAURI_SIGNING_PRIVATE_KEY`             | Updater 簽署私鑰（minisign 私鑰檔全文）          |
 | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`    | 私鑰密碼                                        |
+| `TYPEK_CODESIGN_P12`                    | macOS 自簽「TypeK Code Signing」憑證 p12（base64 單行） |
+| `TYPEK_CODESIGN_P12_PASSWORD`           | p12 密碼                                        |
 
 選配（Sentry；沒有也能發版）：
 

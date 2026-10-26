@@ -83,6 +83,35 @@ describe("useSettingsStore", () => {
       expect(store.hotkeyConfig?.triggerMode).toBe("hold");
     });
 
+    it("[P0] 首次載入會把剪貼簿開關遷移成關閉（不保留轉錄文字）", async () => {
+      mockStoreData.set("copyTranscriptionToClipboard", true);
+
+      const { useSettingsStore } = await import(
+        "../../src/stores/useSettingsStore"
+      );
+      const store = useSettingsStore();
+
+      await store.loadSettings();
+
+      expect(store.isCopyTranscriptionToClipboardEnabled).toBe(false);
+      expect(mockStoreData.get("copyTranscriptionToClipboard")).toBe(false);
+      expect(mockStoreData.get("copyTranscriptionDefaultMigrated")).toBe(true);
+    });
+
+    it("[P0] 已遷移過就尊重使用者後來開啟的選擇", async () => {
+      mockStoreData.set("copyTranscriptionDefaultMigrated", true);
+      mockStoreData.set("copyTranscriptionToClipboard", true);
+
+      const { useSettingsStore } = await import(
+        "../../src/stores/useSettingsStore"
+      );
+      const store = useSettingsStore();
+
+      await store.loadSettings();
+
+      expect(store.isCopyTranscriptionToClipboardEnabled).toBe(true);
+    });
+
     it("[P1] 載入後應同步 hotkey config 到 Rust", async () => {
       mockStoreData.set("hotkeyTriggerKey", "control");
       mockStoreData.set("hotkeyTriggerMode", "hold");
