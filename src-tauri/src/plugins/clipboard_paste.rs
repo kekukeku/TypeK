@@ -555,13 +555,15 @@ fn image_data_from_snapshot(snapshot: &ImageSnapshot) -> arboard::ImageData<'_> 
 
 #[cfg(target_os = "windows")]
 fn capture_clipboard_snapshot(clipboard: &mut Clipboard) -> WindowsClipboardSnapshot {
-    let mut snapshot = WindowsClipboardSnapshot::default();
-    snapshot.text = clipboard.get_text().ok().filter(|text| !text.is_empty());
-    match clipboard.get_image() {
-        Ok(image) => snapshot.image = Some(image_snapshot_from(&image)),
-        Err(e) => log::info!("[clipboard-paste] Snapshot: no image content ({e})"),
-    }
-    snapshot
+    let text = clipboard.get_text().ok().filter(|text| !text.is_empty());
+    let image = match clipboard.get_image() {
+        Ok(image) => Some(image_snapshot_from(&image)),
+        Err(e) => {
+            log::info!("[clipboard-paste] Snapshot: no image content ({e})");
+            None
+        }
+    };
+    WindowsClipboardSnapshot { text, image }
 }
 
 #[cfg(target_os = "windows")]
