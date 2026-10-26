@@ -144,3 +144,33 @@ async function handleManualUpdate() {
 - 七份 README（`README.md`、`README.en.md`、`README.ja.md`、`README.ko.md`、`README.th.md`、`README.vi.md`、`README.zh-CN.md`）的更新段都在 Windows 小節之前，並寫明要放進應用程式資料夾才能自動更新的是 macOS。
 
 結論：NOT READY
+
+## 複審（第 3 輪）
+
+複審日 2026-10-26。對照 `feat/auto-update` @ `5abd7ba`（工作樹乾淨），只看第 2 輪兩則 [MED]。這次沒有重跑 vitest／vue-tsc／eslint；測試仍不涵蓋 MainApp 的更新狀態機。結論來自 `src/MainApp.vue`、`src/lib/updateGuard.ts`、`src/lib/autoUpdater.ts`，以及 reka-ui 2.8.2 的受控對話框：`DialogRoot` 在父層傳了 `open` 時 `useVModel` 不是 passive，寫入只 `emit('update:open')`。
+
+### [MED] 取消跟還在跑的「開始更新」— 已補上
+
+`src/MainApp.vue:305-336`、`347-356`。`canStartInstall` 仍只接受 `confirming` / `ready-to-install`（`src/lib/updateGuard.ts:38-44`）。
+
+`handleManualUpdate` 在任何 `await` 之前把 `updateState` 設成 `downloading`，第 2 輪補上的連點鎖還在。取消第一行就同步關掉確認框，`discardStagedUpdate()` 結束後才設 `idle`；等 `close()` 時狀態仍是 `downloading`。只看 `updateState !== "downloading"` 會漏掉這段。`isStillThisTransaction` 要狀態仍是 `downloading`、確認框還開著。`import()` 與 `ensureUpdateInstallLocation()` 之後各查一次，不過就 return：不下載、不設 `confirming`、不進 catch，不會跳出 2.5 秒的「更新失敗」。
+
+- 取消先發生、`close()` 還沒結束：確認框已關，兩次檢查都 return。`downloadInstallAndRelaunch()` 不會跟 `discardPendingUpdate()` 疊在一起。取消函式在 `close()` 成功或失敗之後都會設回 `idle`，側邊欄不會停在 `downloading`。
+- 取消已回到 `idle`、語音仍忙：檢查失敗就 return，不會把狀態寫回 `confirming`。確認框已關、pending update 已丟時，不會再把「檢查更新」和 15 分鐘自動檢查一起鎖死。
+- 語音在等待中變忙、人沒取消：兩次檢查都過，而且位置 ok，才設回 `confirming` 並 return。確認框留著，不呼叫 `downloadInstallAndRelaunch()`。語音回到 idle 之後可以再按「開始更新」。
+- 位置不 ok、人沒取消：仍先關確認框、清版本、`await discardPendingUpdate()`、再設 `idle`。等 `close()` 時狀態是 `downloading`，自動檢查進不來。
+- 點「開始更新」不會把這筆交易判成已取消。`AlertDialogAction` 底層是 `DialogClose`，點下去會 `onOpenChange(false)`，但 `MainApp.vue:611` 只有 `:open`，沒有 `@update:open`。父層的 ref 不會被清掉。確認框要等位置 ok、語音不忙，才在 `downloadInstallAndRelaunch()` 之前關掉（第 335 行）。下載開始後畫面上沒有取消鈕。
+
+位置檢查在回傳 false 之前就會打開安裝位置對話框（`ensureUpdateInstallLocation`）。人已經取消、結果又是不 ok 時，這次 return 不會再關那個對話框；上一輪也是這樣。這條不會因此去下載，也不會改成 `confirming`。
+
+`get_update_install_location` 是同步的路徑判斷加一次寫入探測（`src-tauri/src/lib.rs:180-226`、`263-274`）。舊的那次 `await` 不會晚到使用者做完下一輪「檢查更新 → 開始更新」才回來，把新的 `downloading` 誤認成舊交易。這次沒有另加交易代號。
+
+### [MED] 手動檢查找到更新時清掉持久失敗列 — 已補上
+
+`src/MainApp.vue:283-300`。`update-available` 在同一段同步程式裡把 `showAutoUpdateFailure` 設成 false（第 288 行），接著寫版本、設 `confirming`、打開確認框。同一輪渲染不會同時留下「更新失敗，請手動下載」和「發現新版本」。
+
+`UpdateCheckResult.status` 只有 `up-to-date` | `update-available` | `error`（`src/lib/autoUpdater.ts:4-8`）。前兩種會清失敗列；`else` 就是 `error`，catch 也不清。這跟自動檢查「不是 `error` 才清」（第 194–203 行）是同一種判斷。`up-to-date` 原本就會清，這次沒改掉。
+
+失敗列只在自動檢查的 `error` / catch 打開，而且那兩條都先把狀態設回 `idle`。`ready-to-install` 的提早 return 碰不到還開著的失敗列。手動檢查失敗與手動更新失敗仍走 `updateFeedback`（2.5 秒）。使用者關掉「發現新版本」之後，這次執行不會把已經消耗掉的自動失敗列再顯示一次；自動檢查找到更新就清掉，也是這條規則。
+
+結論：READY
