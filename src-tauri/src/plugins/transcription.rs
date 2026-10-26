@@ -73,7 +73,9 @@ pub enum TranscriptionError {
         message: String,
     },
     #[error("Apple speech error ({reason})")]
-    AppleSpeech { code: i32, reason: String },
+    // 只有 macOS 會建立；Windows 編譯時不算 dead code
+    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+    AppleSpeech { reason: String },
     #[error("This transcription provider is not supported on this platform")]
     ProviderUnsupported,
     #[error("Failed to parse API response: {0}")]
@@ -308,7 +310,8 @@ fn parse_wav_format(wav_data: &[u8]) -> Option<WavFormat> {
     None
 }
 
-/// 由 WAV data chunk 的長度與 fmt 推算音訊毫秒數。
+/// 由 WAV data chunk 的長度與 fmt 推算音訊毫秒數（只有 macOS 內建辨識用）。
+#[cfg(any(target_os = "macos", test))]
 fn wav_audio_duration_ms(wav_data: &[u8], format: &WavFormat) -> i32 {
     let data_offset = find_wav_data_offset(wav_data).unwrap_or(wav_data.len());
     let data_len = wav_data.len().saturating_sub(data_offset);
@@ -588,6 +591,7 @@ fn parse_byteplus_response(
 // ========== Retry Classification (gh-10) ==========
 
 /// 單次嘗試的失敗分類——決定要不要重試
+#[derive(Debug)]
 enum FailureKind {
     /// HTTP 429，帶 Retry-After 建議秒數（若可解析）
     RateLimited { retry_after_secs: Option<u64> },
@@ -599,6 +603,7 @@ enum FailureKind {
     NoRetry,
 }
 
+#[derive(Debug)]
 struct AttemptFailure {
     error: TranscriptionError,
     kind: FailureKind,
@@ -1032,7 +1037,6 @@ fn apple_error_from_code(code: i32) -> TranscriptionError {
         _ => "recognition_failed",
     };
     TranscriptionError::AppleSpeech {
-        code,
         reason: reason.to_string(),
     }
 }
