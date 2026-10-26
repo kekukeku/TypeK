@@ -77,6 +77,8 @@ pub enum TranscriptionError {
     #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
     AppleSpeech { reason: String },
     #[error("This transcription provider is not supported on this platform")]
+    // 只有非 macOS 會建立；macOS 編譯時不算 dead code
+    #[cfg_attr(target_os = "macos", allow(dead_code))]
     ProviderUnsupported,
     #[error("Failed to parse API response: {0}")]
     ParseError(String),
@@ -1845,7 +1847,7 @@ mod tests {
         bits_per_sample: u16,
     ) -> Vec<u8> {
         let bytes_per_sample = bits_per_sample as usize / 8;
-        let block_align = channels as u16 * bytes_per_sample as u16;
+        let block_align = channels * bytes_per_sample as u16;
         let data_len = samples.len() * bytes_per_sample;
         let mut v = Vec::new();
         v.extend_from_slice(b"RIFF");
