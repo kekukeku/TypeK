@@ -1657,11 +1657,24 @@ export const useSettingsStore = defineStore("settings", () => {
         const { enable } = await import("@tauri-apps/plugin-autostart");
         await enable();
         await store.set("hasInitAutoStart", true);
+        await store.set("autoStartRegisteredVersion", __APP_VERSION__);
         await store.save();
         isAutoStartEnabled.value = true;
         console.log("[useSettingsStore] Auto-start enabled on first launch");
       } else {
         await loadAutoStartStatus();
+        // 1.2.1 以前的執行檔叫 sayit；改名為 TypeK 後，舊的登入項目會指向不存在的檔案。
+        // 每個版本第一次啟動時，自動啟動若是開的就重新登記一次，寫入目前執行檔路徑。
+        const registeredVersion = await store.get<string>(
+          "autoStartRegisteredVersion",
+        );
+        if (isAutoStartEnabled.value && registeredVersion !== __APP_VERSION__) {
+          const { enable } = await import("@tauri-apps/plugin-autostart");
+          await enable();
+          await store.set("autoStartRegisteredVersion", __APP_VERSION__);
+          await store.save();
+          console.log("[useSettingsStore] Auto-start re-registered for this version");
+        }
       }
     } catch (err) {
       console.error(

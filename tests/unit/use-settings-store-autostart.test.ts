@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 
+// vitest 沒有 vite 的 define，測試自己提供 __APP_VERSION__
+const TEST_APP_VERSION = "9.9.9";
+
 const mockIsEnabled = vi.fn();
 const mockEnable = vi.fn();
 const mockDisable = vi.fn();
@@ -37,6 +40,7 @@ vi.mock("../../src/composables/useTauriEvents", () => ({
 describe("useSettingsStore — 自啟動功能", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    vi.stubGlobal("__APP_VERSION__", TEST_APP_VERSION);
     mockIsEnabled.mockReset();
     mockEnable.mockReset();
     mockDisable.mockReset();
@@ -160,9 +164,10 @@ describe("useSettingsStore — 自啟動功能", () => {
       expect(store.isAutoStartEnabled).toBe(true);
     });
 
-    it("[P0] 非首次啟動應讀取現有狀態", async () => {
+    it("[P0] 非首次啟動應讀取現有狀態（本版已登記過就不重登）", async () => {
       mockStoreGet.mockImplementation(async (key: string) => {
         if (key === "hasInitAutoStart") return true;
+        if (key === "autoStartRegisteredVersion") return TEST_APP_VERSION;
         return null;
       });
       mockIsEnabled.mockResolvedValue(true);
@@ -176,6 +181,51 @@ describe("useSettingsStore — 自啟動功能", () => {
       expect(mockEnable).not.toHaveBeenCalled();
       expect(mockIsEnabled).toHaveBeenCalledOnce();
       expect(store.isAutoStartEnabled).toBe(true);
+    });
+
+    it("[P0] 升級後第一次啟動、自動啟動開著 → 重新登記並記下版本（修正舊 sayit 路徑）", async () => {
+      mockStoreGet.mockImplementation(async (key: string) => {
+        if (key === "hasInitAutoStart") return true;
+        if (key === "autoStartRegisteredVersion") return "1.1.0";
+        return null;
+      });
+      mockIsEnabled.mockResolvedValue(true);
+      mockEnable.mockResolvedValue(undefined);
+
+      const { useSettingsStore } = await import(
+        "../../src/stores/useSettingsStore"
+      );
+      const store = useSettingsStore();
+      await store.initializeAutoStart();
+
+      expect(mockEnable).toHaveBeenCalledOnce();
+      expect(mockStoreSet).toHaveBeenCalledWith(
+        "autoStartRegisteredVersion",
+        TEST_APP_VERSION,
+      );
+      expect(mockStoreSave).toHaveBeenCalled();
+      expect(store.isAutoStartEnabled).toBe(true);
+    });
+
+    it("[P0] 升級後自動啟動是關的 → 不重新登記", async () => {
+      mockStoreGet.mockImplementation(async (key: string) => {
+        if (key === "hasInitAutoStart") return true;
+        return null;
+      });
+      mockIsEnabled.mockResolvedValue(false);
+
+      const { useSettingsStore } = await import(
+        "../../src/stores/useSettingsStore"
+      );
+      const store = useSettingsStore();
+      await store.initializeAutoStart();
+
+      expect(mockEnable).not.toHaveBeenCalled();
+      expect(mockStoreSet).not.toHaveBeenCalledWith(
+        "autoStartRegisteredVersion",
+        expect.anything(),
+      );
+      expect(store.isAutoStartEnabled).toBe(false);
     });
 
     it("[P0] 初始化失敗應靜默處理", async () => {

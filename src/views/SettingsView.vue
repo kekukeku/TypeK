@@ -1084,6 +1084,46 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="p-6 space-y-6 text-foreground">
+    <!-- 介面語言：放最上面，讓使用者第一眼就能選 -->
+    <Card>
+      <CardContent class="space-y-4">
+        <div class="flex items-center justify-between">
+          <Label for="locale-select">{{ $t("settings.app.language") }}</Label>
+          <Select
+            :model-value="settingsStore.selectedLocale"
+            @update:model-value="handleLocaleChange($event as SupportedLocale)"
+          >
+            <SelectTrigger id="locale-select" class="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                v-for="opt in LANGUAGE_OPTIONS"
+                :key="opt.locale"
+                :value="opt.locale"
+              >
+                {{ opt.displayName }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <transition name="feedback-fade">
+          <p
+            v-if="localeFeedback.message.value !== ''"
+            class="text-sm"
+            :class="
+              localeFeedback.type.value === 'success'
+                ? 'text-success'
+                : 'text-destructive'
+            "
+          >
+            {{ localeFeedback.message.value }}
+          </p>
+        </transition>
+      </CardContent>
+    </Card>
+
     <!-- 關於 TypeK -->
     <Card>
       <CardHeader class="border-b border-border">
@@ -2236,42 +2276,6 @@ onBeforeUnmount(() => {
             "
           >
             {{ themeFeedback.message.value }}
-          </p>
-        </transition>
-
-        <!-- 介面語言 -->
-        <div class="flex items-center justify-between">
-          <Label for="locale-select">{{ $t("settings.app.language") }}</Label>
-          <Select
-            :model-value="settingsStore.selectedLocale"
-            @update:model-value="handleLocaleChange($event as SupportedLocale)"
-          >
-            <SelectTrigger id="locale-select" class="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem
-                v-for="opt in LANGUAGE_OPTIONS"
-                :key="opt.locale"
-                :value="opt.locale"
-              >
-                {{ opt.displayName }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <transition name="feedback-fade">
-          <p
-            v-if="localeFeedback.message.value !== ''"
-            class="text-sm"
-            :class="
-              localeFeedback.type.value === 'success'
-                ? 'text-success'
-                : 'text-destructive'
-            "
-          >
-            {{ localeFeedback.message.value }}
           </p>
         </transition>
 
