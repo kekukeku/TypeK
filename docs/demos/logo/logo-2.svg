@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- macOS App Icon 陰影 -->
+    <filter id="icon-shadow-2" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="20" stdDeviation="28" flood-color="#a855f7" flood-opacity="0.22" />
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#ec4899" flood-opacity="0.14" />
+    </filter>
+
+    <!-- 背景果凍漸變 (草莓奶昔粉白 -> 夢幻薰衣草柔霧) -->
+    <linearGradient id="bg-grad-2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff8fc" />
+      <stop offset="60%" stop-color="#fae8ff" />
+      <stop offset="100%" stop-color="#f5d0fe" />
+    </linearGradient>
+
+    <!-- 內邊框高光 -->
+    <linearGradient id="rim-grad-2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#f0d1ea" stop-opacity="0.4" />
+    </linearGradient>
+
+    <!-- 上唇漸變 -->
+    <linearGradient id="upper-lip-2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fb7185" />
+      <stop offset="45%" stop-color="#f43f8e" />
+      <stop offset="100%" stop-color="#c026d3" />
+    </linearGradient>
+
+    <!-- 下唇氣泡漸變 -->
+    <linearGradient id="lower-lip-2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f8e" />
+      <stop offset="50%" stop-color="#ec4899" />
+      <stop offset="100%" stop-color="#a855f7" />
+    </linearGradient>
+
+    <!-- 游標霓虹微光 -->
+    <filter id="cursor-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#34d399" flood-opacity="0.6" />
+    </filter>
+  </defs>
+
+  <!-- macOS 標準 Squircle 圓角外殼 (824x824, 居中於 1024x1024) -->
+  <rect x="100" y="100" width="824" height="824" rx="188" ry="188"
+        fill="url(#bg-grad-2)" filter="url(#icon-shadow-2)" stroke="#f0d1ea" stroke-width="5" />
+  <rect x="108" y="108" width="808" height="808" rx="180" ry="180"
+        fill="none" stroke="url(#rim-grad-2)" stroke-width="4" />
+
+  <!-- 氛圍裝飾：左上魔法星塵 -->
+  <path d="M 235 255 Q 235 275 215 275 Q 235 275 235 295 Q 235 275 255 275 Q 235 275 235 255 Z"
+        fill="#38bdf8" opacity="0.8" />
+  <circle cx="280" cy="245" r="7" fill="#fbbf24" opacity="0.9" />
+
+  <!-- 右上 AI 轉寫魔法星芒 (Prompt Sparkle) -->
+  <g id="magic-sparkle">
+    <path d="M 770 270 Q 770 315 725 315 Q 770 315 770 360 Q 770 315 815 315 Q 770 315 770 270 Z"
+          fill="#fbbf24" filter="drop-shadow(0 2px 8px rgba(251,191,36,0.5))" />
+    <path d="M 830 255 Q 830 275 810 275 Q 830 275 830 295 Q 830 275 850 275 Q 830 275 830 255 Z"
+          fill="#f472b6" opacity="0.85" />
+    <circle cx="720" cy="260" r="6" fill="#34d399" />
+  </g>
+
+  <!-- 核心主體：氣泡打字唇 (Lips as Speech Bubble + Typing Cursor) -->
+  <g id="bubble-cursor-lips">
+    <!-- 口腔深紫底景 -->
+    <path d="M 192 500 C 284 475, 394 495, 512 490 C 630 495, 740 475, 832 500 C 740 535, 630 555, 512 555 C 394 555, 284 535, 192 500 Z"
+          fill="#2b0e36" />
+
+    <!-- 說話轉打字：唇中打字游標與彩虹語音音節 (Speech-to-Text Transcription) -->
+    <rect x="340" y="506" width="18" height="40" rx="9" fill="#34d399" filter="url(#cursor-glow)" />
+    <circle cx="420" cy="526" r="13" fill="#38bdf8" />
+    <circle cx="495" cy="526" r="13" fill="#c084fc" />
+    <circle cx="570" cy="526" r="13" fill="#f472b6" />
+    <circle cx="645" cy="526" r="13" fill="#fde047" />
+
+    <!-- 上唇 (邱比特之弓) -->
+    <path d="M 192 500 C 245 410, 305 340, 375 340 C 435 340, 475 385, 512 390 C 549 385, 589 340, 649 340 C 719 340, 779 410, 832 500 C 740 475, 630 495, 512 490 C 394 495, 284 475, 192 500 Z"
+          fill="url(#upper-lip-2)" />
+
+    <!-- 下唇結合對話氣泡尾巴 (Speech Bubble Tail) -->
+    <path d="M 192 500 C 284 535, 394 555, 512 555 C 630 555, 740 535, 832 500 C 785 620, 665 710, 512 710 C 400 710, 320 660, 275 615 L 195 705 Q 185 710 180 700 Q 175 690 185 675 L 215 595 C 200 560, 192 530, 192 500 Z"
+          fill="url(#lower-lip-2)" />
+
+    <!-- 果凍高光：上唇左峰水光 -->
+    <path d="M 315 395 C 345 365, 385 365, 405 375 C 390 395, 355 405, 320 420 Z"
+          fill="#ffffff" opacity="0.8" />
+    <!-- 上唇右峰柔光 -->
+    <path d="M 620 375 C 640 365, 680 365, 710 395 C 675 405, 640 395, 620 375 Z"
+          fill="#ffffff" opacity="0.55" />
+
+    <!-- 下唇大面積多汁果凍高光 -->
+    <path d="M 380 640 C 430 665, 530 670, 600 645 C 550 635, 450 630, 380 640 Z"
+          fill="#ffffff" opacity="0.85" />
+    <circle cx="635" cy="635" r="9" fill="#ffffff" opacity="0.7" />
+  </g>
+</svg>

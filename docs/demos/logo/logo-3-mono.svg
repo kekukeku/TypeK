@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- TypeK Concept 3 Menu Bar Mono Template (Gestalt K-Kiss, Pure #000 on transparent) -->
+  <defs>
+    <!-- 使用蒙版精準切出負空間字母 "K"，確保在 macOS 任何渲染環境下 Alpha 完全穿透 -->
+    <mask id="k-aperture-mask">
+      <rect width="1024" height="1024" fill="#ffffff" />
+      <!-- 字母 K 左側垂直主幹 (負空間切除) -->
+      <rect x="420" y="415" width="56" height="194" rx="28" fill="#000000" />
+      <!-- 字母 K 上方斜筆 (負空間切除) -->
+      <line x1="455" y1="505" x2="570" y2="430" stroke="#000000" stroke-width="56" stroke-linecap="round" />
+      <!-- 字母 K 下方斜筆 (負空間切除) -->
+      <line x1="455" y1="520" x2="580" y2="595" stroke="#000000" stroke-width="56" stroke-linecap="round" />
+    </mask>
+  </defs>
+
+  <!-- 飽滿邱比特雙唇剪影，中間透過蒙版鏤空出 TypeK 的 "K" -->
+  <g fill="#000000" mask="url(#k-aperture-mask)">
+    <!-- 上唇 (邱比特之弓) -->
+    <path d="M 140 480 C 205 375, 275 295, 360 295 C 425 295, 470 345, 512 355 C 554 345, 599 295, 664 295 C 749 295, 819 375, 884 480 C 785 450, 680 475, 512 470 C 344 475, 239 450, 140 480 Z" />
+
+    <!-- 下唇 (飽滿多汁弧線) -->
+    <path d="M 140 545 C 239 575, 344 595, 512 595 C 680 595, 785 575, 884 545 C 830 685, 695 765, 512 765 C 329 765, 194 685, 140 545 Z" />
+  </g>
+</svg>

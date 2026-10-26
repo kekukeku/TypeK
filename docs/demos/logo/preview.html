@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TypeK · Logo 重新設計提案展示（唇形語音意象）</title>
+  <style>
+    /* ══════════════════════════════════════════════════════════
+       TypeK Logo 刷新展示提案 · 繽紛少女風 (Option D 繼承規範)
+       ══════════════════════════════════════════════════════════ */
+    :root {
+      --radius: 1.25rem;
+      --bg: #fff6fa;
+      --fg: #3c1945;
+      --card: #ffffff;
+      --card-fg: #3c1945;
+      --primary: #ec4899;
+      --primary-hover: #db2777;
+      --secondary: #fce7f3;
+      --muted: #f5e8fc;
+      --muted-fg: #7d4d7f;
+      --accent: #fdf2f8;
+      --border: #f0d1ea;
+      --jelly-shadow: 0 10px 28px rgba(236, 72, 153, 0.14), 0 3px 8px rgba(168, 85, 247, 0.08);
+      --jelly-shadow-hover: 0 14px 34px rgba(236, 72, 153, 0.24), 0 5px 12px rgba(168, 85, 247, 0.15);
+      --menubar-bg: rgba(255, 255, 255, 0.82);
+      --menubar-fg: #1d1d1f;
+      --menubar-border: rgba(0, 0, 0, 0.08);
+      --dock-bg: rgba(255, 255, 255, 0.45);
+      --dock-border: rgba(255, 255, 255, 0.6);
+      --dock-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
+    }
+
+    html.dark {
+      --bg: #150d22;
+      --fg: #fdf2fe;
+      --card: #221434;
+      --card-fg: #fdf2fe;
+      --primary: #f43f8e;
+      --primary-hover: #fb7185;
+      --secondary: #2f1a45;
+      --muted: #2f1a45;
+      --muted-fg: #c29fcf;
+      --accent: #3d205a;
+      --border: #4a286a;
+      --jelly-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), 0 0 18px rgba(244, 63, 142, 0.2);
+      --jelly-shadow-hover: 0 16px 36px rgba(0, 0, 0, 0.55), 0 0 26px rgba(244, 63, 142, 0.32);
+      --menubar-bg: rgba(28, 20, 38, 0.85);
+      --menubar-fg: #f5f5f7;
+      --menubar-border: rgba(255, 255, 255, 0.1);
+      --dock-bg: rgba(34, 20, 52, 0.65);
+      --dock-border: rgba(244, 114, 182, 0.25);
+      --dock-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "SF Pro Rounded", "Avenir Next Rounded", "Arial Rounded MT Bold", -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", sans-serif;
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(circle at 10% 15%, rgba(244, 114, 182, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 10%, rgba(192, 132, 252, 0.18) 0%, transparent 45%),
+        radial-gradient(circle at 50% 90%, rgba(56, 189, 248, 0.12) 0%, transparent 50%);
+      background-attachment: fixed;
+      color: var(--fg);
+      line-height: 1.6;
+      font-size: 14px;
+      padding: 24px 20px 80px;
+      transition: background-color 0.25s ease, color 0.25s ease;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container { max-width: 1140px; margin: 0 auto; display: flex; flex-direction: column; gap: 36px; }
+
+    /* 頂部操作展示列 */
+    .demo-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 22px;
+      box-shadow: var(--jelly-shadow);
+      flex-wrap: wrap;
+    }
+    .demo-brand { display: flex; align-items: center; gap: 12px; }
+    .demo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11.5px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f472b6, #c084fc);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(236, 72, 153, 0.35);
+    }
+    .demo-title { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; }
+    .demo-subtitle { font-size: 12px; color: var(--muted-fg); margin-top: 2px; }
+
+    .demo-controls { display: flex; align-items: center; gap: 10px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 16px;
+      border-radius: 9999px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: var(--card);
+      color: var(--fg);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .btn:hover {
+      background: var(--accent);
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.2);
+    }
+    .btn:active { transform: translateY(0) scale(0.98); }
+    .btn.active {
+      background: linear-gradient(135deg, var(--primary), #c084fc);
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 4px 14px rgba(236, 72, 153, 0.35);
+    }
+
+    /* 區塊標題 */
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--fg);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 9999px;
+      background: var(--secondary);
+      color: var(--primary);
+      border: 1px solid var(--border);
+    }
+    .section-desc { font-size: 12.5px; color: var(--muted-fg); }
+
+    /* 糖果晶凍卡片 */
+    .card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--jelly-shadow);
+      padding: 22px;
+      transition: all 0.2s ease;
+    }
+    .card:hover { box-shadow: var(--jelly-shadow-hover); }
+
+    /* 提案三欄並列卡片 */
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .concept-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: var(--jelly-shadow);
+      position: relative;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .concept-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--jelly-shadow-hover);
+    }
+    .concept-card.recommended {
+      border: 2px solid var(--primary);
+    }
+    .rec-ribbon {
+      position: absolute;
+      top: -10px;
+      right: 18px;
+      background: linear-gradient(135deg, #f43f8e, #a855f7);
+      color: #ffffff;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      box-shadow: 0 2px 8px rgba(244, 63, 142, 0.4);
+    }
+
+    .concept-icon-hero {
+      width: 100%;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent);
+      border-radius: calc(var(--radius) - 4px);
+      padding: 20px;
+      border: 1px dashed var(--border);
+    }
+    .concept-icon-hero svg { width: 100%; height: 100%; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.06)); }
+
+    .concept-meta { display: flex; flex-direction: column; gap: 8px; }
+    .concept-name { font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: space-between; }
+    .concept-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-weight: 700;
+    }
+    .badge-c1 { background: #dcfce7; color: #047857; }
+    .badge-c2 { background: #e0f2fe; color: #0284c7; }
+    .badge-c3 { background: #fce7f3; color: #be185d; }
+
+    .concept-summary { font-size: 12.5px; color: var(--muted-fg); line-height: 1.55; }
+    .color-swatches { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+    .swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1.5px solid #ffffff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+      position: relative;
+      cursor: help;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       1024px 大師母版展示區 (Master View)
+       ══════════════════════════════════════════════════════════ */
+    .master-view-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .master-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--jelly-shadow);
+    }
+    .master-svg-wrap {
+      width: 100%;
+      max-width: 320px;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .master-svg-wrap svg { width: 100%; height: 100%; }
+    .master-caption { font-size: 12px; font-weight: 800; color: var(--muted-fg); }
+
+    /* ══════════════════════════════════════════════════════════
+       多尺寸階梯對比展臺 (Ladder Showcase)
+       ══════════════════════════════════════════════════════════ */
+    .ladder-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--card);
+    }
+    .ladder-table th {
+      background: var(--muted);
+      color: var(--fg);
+      font-size: 12.5px;
+      font-weight: 800;
+      padding: 12px 16px;
+      text-align: center;
+      border-bottom: 1.5px solid var(--border);
+    }
+    .ladder-table th:first-child { text-align: left; width: 160px; }
+    .ladder-table td {
+      padding: 16px;
+      text-align: center;
+      vertical-align: middle;
+      border-bottom: 1px dashed var(--border);
+    }
+    .ladder-table tr:last-child td { border-bottom: none; }
+    .ladder-table tr:hover td { background: var(--accent); }
+
+    .scale-pair {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .bg-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .bg-light { background: #fff6fa; }
+    .bg-dark { background: #150d22; }
+    .bg-label { font-size: 10px; font-weight: 700; opacity: 0.65; }
+    .bg-dark .bg-label { color: #fdf2fe; }
+
+    /* ══════════════════════════════════════════════════════════
+       macOS Menu Bar 實境模擬 (Fake Menu Bar)
+       ══════════════════════════════════════════════════════════ */
+    .menubar-showcase {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .mac-desktop-screen {
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 2px solid var(--border);
+      position: relative;
+      box-shadow: var(--jelly-shadow);
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+    }
+    .mac-desktop-light {
+      background: linear-gradient(135deg, #ffd3e2 0%, #d5e6ff 50%, #e8d5ff 100%);
+    }
+    .mac-desktop-dark {
+      background: linear-gradient(135deg, #1b0f2a 0%, #0d1a2d 50%, #201026 100%);
+    }
+
+    .mac-menubar {
+      height: 28px;
+      background: var(--menubar-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--menubar-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      color: var(--menubar-fg);
+      font-size: 13px;
+      font-weight: 500;
+      user-select: none;
+    }
+    .menubar-left { display: flex; align-items: center; gap: 14px; font-weight: 600; font-size: 13px; }
+    .apple-logo { font-size: 14px; margin-right: 2px; }
+    .menubar-right { display: flex; align-items: center; gap: 12px; font-size: 12.5px; }
+
+    .tray-item {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 22px;
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.15s ease;
+    }
+    .tray-item:hover { background: rgba(128, 128, 128, 0.18); }
+    .tray-item.active { background: rgba(128, 128, 128, 0.28); }
+    .tray-typek-badge {
+      position: absolute;
+      bottom: -1px;
+      right: -1px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #10b981;
+      border: 1px solid #ffffff;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       macOS Dock 實境展示列 (Fake Dock)
+       ══════════════════════════════════════════════════════════ */
+    .dock-showcase-box {
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 2px solid var(--border);
+      background:
+        radial-gradient(circle at 50% 120%, rgba(244, 114, 182, 0.3) 0%, transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(200,180,220,0.2) 100%);
+      padding: 40px 20px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      box-shadow: var(--jelly-shadow);
+    }
+    html.dark .dock-showcase-box {
+      background:
+        radial-gradient(circle at 50% 120%, rgba(244, 63, 142, 0.25) 0%, transparent 60%),
+        linear-gradient(180deg, #150d22 0%, #1e112e 100%);
+    }
+
+    .fake-dock {
+      background: var(--dock-bg);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1.5px solid var(--dock-border);
+      border-radius: 24px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: flex-end;
+      gap: 14px;
+      box-shadow: var(--dock-shadow);
+    }
+
+    .dock-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .dock-item:hover { transform: scale(1.15) translateY(-6px); }
+    .dock-icon {
+      width: 58px;
+      height: 58px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+    }
+    .dock-icon svg { width: 100%; height: 100%; }
+    .dock-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--fg);
+      opacity: 0.7;
+    }
+
+    .icon-finder { background: linear-gradient(180deg, #38bdf8, #0284c7); color: #fff; }
+    .icon-safari { background: linear-gradient(180deg, #60a5fa, #2563eb); color: #fff; }
+    .icon-messages { background: linear-gradient(180deg, #4ade80, #16a34a); color: #fff; }
+    .icon-notes { background: linear-gradient(180deg, #fef08a, #ca8a04); color: #713f12; }
+    .icon-settings { background: linear-gradient(180deg, #9ca3af, #4b5563); color: #fff; }
+
+    /* 評估推薦卡片 */
+    .rec-card {
+      background: linear-gradient(135deg, var(--card), var(--accent));
+      border: 2px solid var(--primary);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--jelly-shadow-hover);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .rec-header { display: flex; align-items: center; gap: 10px; }
+    .rec-title { font-size: 18px; font-weight: 800; color: var(--primary); }
+    .rec-body { font-size: 13.5px; line-height: 1.7; color: var(--fg); }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════
+       全域 SVG 符號庫 (Spritesheet - 完全內嵌，無任何外連或外部請求)
+       ══════════════════════════════════════════════════════════ -->
+  <svg style="display:none;" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- 共同濾鏡與漸變 -->
+      <filter id="sym-shadow-1" x="-10%" y="-10%" width="125%" height="125%">
+        <feDropShadow dx="0" dy="20" stdDeviation="28" flood-color="#ec4899" flood-opacity="0.22" />
+        <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#a855f7" flood-opacity="0.12" />
+      </filter>
+      <linearGradient id="sym-bg-1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#fff8fc" />
+        <stop offset="50%" stop-color="#fff0f7" />
+        <stop offset="100%" stop-color="#fce7f3" />
+      </linearGradient>
+      <linearGradient id="sym-rim-1" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+        <stop offset="100%" stop-color="#f0d1ea" stop-opacity="0.4" />
+      </linearGradient>
+      <linearGradient id="sym-up-1" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#fb7185" />
+        <stop offset="40%" stop-color="#f43f8e" />
+        <stop offset="100%" stop-color="#db2777" />
+      </linearGradient>
+      <linearGradient id="sym-low-1" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#f43f8e" />
+        <stop offset="60%" stop-color="#ec4899" />
+        <stop offset="100%" stop-color="#be185d" />
+      </linearGradient>
+      <linearGradient id="sym-w-1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#34d399" /><stop offset="100%" stop-color="#10b981" />
+      </linearGradient>
+      <linearGradient id="sym-w-2" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#38bdf8" /><stop offset="100%" stop-color="#0284c7" />
+      </linearGradient>
+      <linearGradient id="sym-w-3" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#c084fc" /><stop offset="100%" stop-color="#9333ea" />
+      </linearGradient>
+
+      <!-- 提案 2 漸變 -->
+      <filter id="sym-shadow-2" x="-10%" y="-10%" width="125%" height="125%">
+        <feDropShadow dx="0" dy="20" stdDeviation="28" flood-color="#a855f7" flood-opacity="0.22" />
+        <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#ec4899" flood-opacity="0.14" />
+      </filter>
+      <linearGradient id="sym-bg-2" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#fff8fc" />
+        <stop offset="60%" stop-color="#fae8ff" />
+        <stop offset="100%" stop-color="#f5d0fe" />
+      </linearGradient>
+      <linearGradient id="sym-up-2" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#fb7185" />
+        <stop offset="45%" stop-color="#f43f8e" />
+        <stop offset="100%" stop-color="#c026d3" />
+      </linearGradient>
+      <linearGradient id="sym-low-2" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#f43f8e" />
+        <stop offset="50%" stop-color="#ec4899" />
+        <stop offset="100%" stop-color="#a855f7" />
+      </linearGradient>
+
+      <!-- 提案 3 漸變 -->
+      <filter id="sym-shadow-3" x="-10%" y="-10%" width="125%" height="125%">
+        <feDropShadow dx="0" dy="20" stdDeviation="28" flood-color="#ec4899" flood-opacity="0.2" />
+        <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#34d399" flood-opacity="0.12" />
+      </filter>
+      <linearGradient id="sym-bg-3" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#fffafd" />
+        <stop offset="50%" stop-color="#fdf2f8" />
+        <stop offset="100%" stop-color="#f5e8fc" />
+      </linearGradient>
+      <linearGradient id="sym-kc-3" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#ffffff" />
+        <stop offset="60%" stop-color="#fff5fa" />
+        <stop offset="100%" stop-color="#fae8ff" />
+      </linearGradient>
+      <linearGradient id="sym-up-3" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#fb7185" />
+        <stop offset="45%" stop-color="#f43f8e" />
+        <stop offset="100%" stop-color="#db2777" />
+      </linearGradient>
+      <linearGradient id="sym-low-3" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#f43f8e" />
+        <stop offset="55%" stop-color="#ec4899" />
+        <stop offset="100%" stop-color="#9333ea" />
+      </linearGradient>
+
+      <!-- Mono 3 負空間蒙版 -->
+      <mask id="sym-k-mask">
+        <rect width="1024" height="1024" fill="#ffffff" />
+        <rect x="420" y="415" width="56" height="194" rx="28" fill="#000000" />
+        <line x1="455" y1="505" x2="570" y2="430" stroke="#000000" stroke-width="56" stroke-linecap="round" />
+        <line x1="455" y1="520" x2="580" y2="595" stroke="#000000" stroke-width="56" stroke-linecap="round" />
+      </mask>
+    </defs>
+
+    <!-- 符號 1：全彩 Logo-1 (Wave Lips) -->
+    <symbol id="icon-logo-1" viewBox="0 0 1024 1024">
+      <rect x="100" y="100" width="824" height="824" rx="188" ry="188" fill="url(#sym-bg-1)" filter="url(#sym-shadow-1)" stroke="#f0d1ea" stroke-width="5" />
+      <rect x="108" y="108" width="808" height="808" rx="180" ry="180" fill="none" stroke="url(#sym-rim-1)" stroke-width="4" />
+      <path d="M 230 250 Q 230 275 205 275 Q 230 275 230 300 Q 230 275 255 275 Q 230 275 230 250 Z" fill="#fbbf24" opacity="0.9" />
+      <circle cx="280" cy="240" r="7" fill="#f472b6" opacity="0.75" />
+      <circle cx="680" cy="280" r="9" fill="#38bdf8" opacity="0.65" />
+      <path d="M 750 240 Q 750 258 732 258 Q 750 258 750 276 Q 750 258 768 258 Q 750 258 750 240 Z" fill="#c084fc" opacity="0.85" />
+      <g>
+        <path d="M 190 515 C 265 500, 340 512, 415 508 C 490 512, 565 500, 640 515 C 565 540, 490 558, 415 558 C 340 558, 265 540, 190 515 Z" fill="#2b0e36" />
+        <path d="M 190 515 C 235 440, 280 375, 335 375 C 375 375, 395 412, 415 418 C 435 412, 455 375, 495 375 C 550 375, 595 440, 640 515 C 565 500, 490 512, 415 508 C 340 512, 265 500, 190 515 Z" fill="url(#sym-up-1)" />
+        <path d="M 190 515 C 265 540, 340 558, 415 558 C 490 558, 565 540, 640 515 C 605 635, 520 705, 415 705 C 310 705, 225 635, 190 515 Z" fill="url(#sym-low-1)" />
+        <path d="M 275 435 C 300 398, 335 395, 355 405 C 340 422, 310 432, 280 452 Z" fill="#ffffff" opacity="0.82" />
+        <path d="M 475 405 C 495 395, 530 398, 555 435 C 525 432, 495 422, 475 405 Z" fill="#ffffff" opacity="0.55" />
+        <path d="M 315 625 C 350 655, 420 665, 465 650 C 435 635, 360 630, 315 625 Z" fill="#ffffff" opacity="0.88" />
+        <circle cx="495" cy="635" r="9" fill="#ffffff" opacity="0.75" />
+        <path d="M 690 445 A 95 95 0 0 1 690 585" fill="none" stroke="url(#sym-w-1)" stroke-width="38" stroke-linecap="round" />
+        <path d="M 760 395 A 165 165 0 0 1 760 635" fill="none" stroke="url(#sym-w-2)" stroke-width="38" stroke-linecap="round" />
+        <path d="M 830 345 A 235 235 0 0 1 830 685" fill="none" stroke="url(#sym-w-3)" stroke-width="38" stroke-linecap="round" />
+      </g>
+    </symbol>
+
+    <!-- 符號 2：全彩 Logo-2 (Bubble Cursor) -->
+    <symbol id="icon-logo-2" viewBox="0 0 1024 1024">
+      <rect x="100" y="100" width="824" height="824" rx="188" ry="188" fill="url(#sym-bg-2)" filter="url(#sym-shadow-2)" stroke="#f0d1ea" stroke-width="5" />
+      <rect x="108" y="108" width="808" height="808" rx="180" ry="180" fill="none" stroke="url(#sym-rim-1)" stroke-width="4" />
+      <path d="M 235 255 Q 235 275 215 275 Q 235 275 235 295 Q 235 275 255 275 Q 235 275 235 255 Z" fill="#38bdf8" opacity="0.8" />
+      <path d="M 770 270 Q 770 315 725 315 Q 770 315 770 360 Q 770 315 815 315 Q 770 315 770 270 Z" fill="#fbbf24" />
+      <path d="M 830 255 Q 830 275 810 275 Q 830 275 830 295 Q 830 275 850 275 Q 830 275 830 255 Z" fill="#f472b6" opacity="0.85" />
+      <circle cx="720" cy="260" r="6" fill="#34d399" />
+      <g>
+        <path d="M 192 500 C 284 475, 394 495, 512 490 C 630 495, 740 475, 832 500 C 740 535, 630 555, 512 555 C 394 555, 284 535, 192 500 Z" fill="#2b0e36" />
+        <rect x="340" y="506" width="18" height="40" rx="9" fill="#34d399" />
+        <circle cx="420" cy="526" r="13" fill="#38bdf8" />
+        <circle cx="495" cy="526" r="13" fill="#c084fc" />
+        <circle cx="570" cy="526" r="13" fill="#f472b6" />
+        <circle cx="645" cy="526" r="13" fill="#fde047" />
+        <path d="M 192 500 C 245 410, 305 340, 375 340 C 435 340, 475 385, 512 390 C 549 385, 589 340, 649 340 C 719 340, 779 410, 832 500 C 740 475, 630 495, 512 490 C 394 495, 284 475, 192 500 Z" fill="url(#sym-up-2)" />
+        <path d="M 192 500 C 284 535, 394 555, 512 555 C 630 555, 740 535, 832 500 C 785 620, 665 710, 512 710 C 400 710, 320 660, 275 615 L 195 705 Q 185 710 180 700 Q 175 690 185 675 L 215 595 C 200 560, 192 530, 192 500 Z" fill="url(#sym-low-2)" />
+        <path d="M 315 395 C 345 365, 385 365, 405 375 C 390 395, 355 405, 320 420 Z" fill="#ffffff" opacity="0.8" />
+        <path d="M 620 375 C 640 365, 680 365, 710 395 C 675 405, 640 395, 620 375 Z" fill="#ffffff" opacity="0.55" />
+        <path d="M 380 640 C 430 665, 530 670, 600 645 C 550 635, 450 630, 380 640 Z" fill="#ffffff" opacity="0.85" />
+        <circle cx="635" cy="635" r="9" fill="#ffffff" opacity="0.7" />
+      </g>
+    </symbol>
+
+    <!-- 符號 3：全彩 Logo-3 (Gestalt K-Lips) -->
+    <symbol id="icon-logo-3" viewBox="0 0 1024 1024">
+      <rect x="100" y="100" width="824" height="824" rx="188" ry="188" fill="url(#sym-bg-3)" filter="url(#sym-shadow-3)" stroke="#f0d1ea" stroke-width="5" />
+      <rect x="108" y="108" width="808" height="808" rx="180" ry="180" fill="none" stroke="url(#sym-rim-1)" stroke-width="4" />
+      <path d="M 230 240 Q 230 260 210 260 Q 230 260 230 280 Q 230 260 250 260 Q 230 260 230 240 Z" fill="#34d399" opacity="0.85" />
+      <circle cx="780" cy="245" r="7" fill="#fbbf24" opacity="0.9" />
+      <g>
+        <rect x="160" y="160" width="704" height="704" rx="160" ry="160" fill="#fce7f3" stroke="#f0d1ea" stroke-width="3" />
+        <rect x="190" y="185" width="644" height="625" rx="130" ry="130" fill="url(#sym-kc-3)" stroke="#fdf2f8" stroke-width="2" />
+        <rect x="245" y="235" width="92" height="34" rx="17" fill="#fce7f3" stroke="#f0d1ea" stroke-width="2" />
+        <rect x="270" y="247" width="5" height="10" rx="2.5" fill="#f43f8e" />
+        <rect x="282" y="243" width="5" height="18" rx="2.5" fill="#a855f7" />
+        <rect x="294" y="245" width="5" height="14" rx="2.5" fill="#34d399" />
+        <circle cx="316" cy="252" r="4" fill="#fbbf24" />
+      </g>
+      <g>
+        <path d="M 235 505 C 322 475, 417 495, 512 490 C 607 495, 702 475, 789 505 C 702 540, 607 560, 512 560 C 417 560, 322 540, 235 505 Z" fill="#2b0e36" />
+        <rect x="425" y="475" width="38" height="100" rx="19" fill="#ffffff" />
+        <line x1="450" y1="520" x2="535" y2="475" stroke="#ffffff" stroke-width="38" stroke-linecap="round" />
+        <line x1="450" y1="530" x2="545" y2="575" stroke="#ffffff" stroke-width="38" stroke-linecap="round" />
+        <path d="M 235 505 C 285 415, 335 355, 385 355 C 435 355, 475 405, 512 410 C 549 405, 589 355, 639 355 C 689 355, 739 415, 789 505 C 702 475, 607 495, 512 490 C 417 495, 322 475, 235 505 Z" fill="url(#sym-up-3)" />
+        <path d="M 235 505 C 322 540, 417 560, 512 560 C 607 560, 702 540, 789 505 C 745 635, 640 710, 512 710 C 384 710, 279 635, 235 505 Z" fill="url(#sym-low-3)" />
+        <path d="M 330 405 C 360 375, 395 375, 415 385 C 400 405, 370 415, 335 430 Z" fill="#ffffff" opacity="0.82" />
+        <path d="M 610 385 C 630 375, 665 375, 695 405 C 660 415, 630 405, 610 385 Z" fill="#ffffff" opacity="0.55" />
+        <path d="M 380 640 C 430 665, 520 670, 580 650 C 535 635, 445 630, 380 640 Z" fill="#ffffff" opacity="0.88" />
+        <circle cx="615" cy="640" r="9" fill="#ffffff" opacity="0.75" />
+      </g>
+    </symbol>
+
+    <!-- 符號 4：Mono Logo-1 (Pure #000) -->
+    <symbol id="icon-logo-1-mono" viewBox="0 0 1024 1024">
+      <g fill="currentColor">
+        <path d="M 120 500 C 170 410, 230 335, 300 335 C 345 335, 370 380, 395 385 C 420 380, 445 335, 490 335 C 560 335, 620 410, 670 500 C 585 470, 485 490, 395 485 C 305 490, 205 470, 120 500 Z" />
+        <path d="M 120 545 C 205 575, 305 595, 395 595 C 485 595, 585 575, 670 545 C 625 675, 520 755, 395 755 C 270 755, 165 675, 120 545 Z" />
+      </g>
+      <path d="M 725 430 A 100 100 0 0 1 725 600" fill="none" stroke="currentColor" stroke-width="72" stroke-linecap="round" />
+      <path d="M 830 360 A 190 190 0 0 1 830 670" fill="none" stroke="currentColor" stroke-width="72" stroke-linecap="round" />
+    </symbol>
+
+    <!-- 符號 5：Mono Logo-2 (Pure #000) -->
+    <symbol id="icon-logo-2-mono" viewBox="0 0 1024 1024">
+      <g fill="currentColor">
+        <path d="M 170 485 C 225 390, 290 320, 365 320 C 425 320, 465 365, 500 370 C 535 365, 575 320, 635 320 C 710 320, 775 390, 830 485 C 730 455, 620 475, 500 470 C 380 475, 270 455, 170 485 Z" />
+        <path d="M 170 545 C 270 575, 380 595, 500 595 C 620 595, 730 575, 830 545 C 785 680, 655 765, 500 765 C 390 765, 305 710, 255 660 L 175 750 Q 160 755 155 745 Q 150 735 160 720 L 195 635 C 180 600, 170 570, 170 545 Z" />
+        <path d="M 780 250 Q 780 300 730 300 Q 780 300 780 350 Q 780 300 830 300 Q 780 300 780 250 Z" />
+      </g>
+    </symbol>
+
+    <!-- 符號 6：Mono Logo-3 (Pure #000) -->
+    <symbol id="icon-logo-3-mono" viewBox="0 0 1024 1024">
+      <g fill="currentColor" mask="url(#sym-k-mask)">
+        <path d="M 140 480 C 205 375, 275 295, 360 295 C 425 295, 470 345, 512 355 C 554 345, 599 295, 664 295 C 749 295, 819 375, 884 480 C 785 450, 680 475, 512 470 C 344 475, 239 450, 140 480 Z" />
+        <path d="M 140 545 C 239 575, 344 595, 512 595 C 680 595, 785 575, 884 545 C 830 685, 695 765, 512 765 C 329 765, 194 685, 140 545 Z" />
+      </g>
+    </symbol>
+  </svg>
+
+  <div class="container">
+
+    <!-- 頂部導航控制列 -->
+    <header class="demo-bar">
+      <div class="demo-brand">
+        <span class="demo-badge">TypeK · 標誌重塑</span>
+        <div>
+          <h1 class="demo-title">TypeK · 唇形 Logo 重新設計提案展示</h1>
+          <p class="demo-subtitle">繽紛少女風（Option D）· 1024px 全彩 App Icon 與 16px Menu Bar 模板高保真驗證</p>
+        </div>
+      </div>
+      <div class="demo-controls">
+        <button class="btn active" id="theme-btn" onclick="toggleTheme()">切換深淺外觀 🌗</button>
+      </div>
+    </header>
+
+    <!-- ══════════════════════════════════════════════════════════
+         區塊 1：三款提案核心意象與設計卡片
+         ══════════════════════════════════════════════════════════ -->
+    <section>
+      <div class="section-header">
+        <div class="section-title">
+          <span>三款唇形原創設計概念</span>
+          <span class="section-tag">Distinct Concepts</span>
+        </div>
+        <span class="section-desc">從語音輸入（Speak to Type）的核心互動出發，三種截然不同的幾何詮釋</span>
+      </div>
+
+      <div class="concept-grid">
+        <!-- 提案 1 卡片 -->
+        <div class="concept-card">
+          <div class="concept-icon-hero">
+            <svg viewBox="0 0 1024 1024"><use href="#icon-logo-1" /></svg>
+          </div>
+          <div class="concept-meta">
+            <div class="concept-name">
+              <span>提案 1 · 聲波果凍唇</span>
+              <span class="concept-badge badge-c1">Wave Lips</span>
+            </div>
+            <p class="concept-summary">
+              核心聚焦「Speak」的語音放射感。飽滿多汁的邱比特之弓嘟嘟唇，右側自然擴散三道薄荷綠、天空藍與薰衣草紫聲波弧線，直覺展現按鍵說話的聲控頻譜跳動。
+            </p>
+            <div class="color-swatches">
+              <span class="swatch" style="background:#f43f8e" title="草莓亮粉 #f43f8e"></span>
+              <span class="swatch" style="background:#34d399" title="薄荷綠 #34d399"></span>
+              <span class="swatch" style="background:#38bdf8" title="天空藍 #38bdf8"></span>
+              <span class="swatch" style="background:#c084fc" title="薰衣草紫 #c084fc"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 提案 2 卡片 -->
+        <div class="concept-card">
+          <div class="concept-icon-hero">
+            <svg viewBox="0 0 1024 1024"><use href="#icon-logo-2" /></svg>
+          </div>
+          <div class="concept-meta">
+            <div class="concept-name">
+              <span>提案 2 · 氣泡打字唇</span>
+              <span class="concept-badge badge-c2">Bubble Cursor</span>
+            </div>
+            <p class="concept-summary">
+              核心聚焦「Speak to Type」的對話轉打字過程。下唇自然向左下伸出圓潤的對話氣泡指針，唇心跳動霓虹薄荷綠打字游標與彩虹轉寫珠，右上伴隨閃爍的 AI 魔法星芒。
+            </p>
+            <div class="color-swatches">
+              <span class="swatch" style="background:#ec4899" title="泡泡糖粉 #ec4899"></span>
+              <span class="swatch" style="background:#c026d3" title="電光洋紅 #c026d3"></span>
+              <span class="swatch" style="background:#34d399" title="霓虹薄荷 #34d399"></span>
+              <span class="swatch" style="background:#fbbf24" title="金黃星芒 #fbbf24"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 提案 3 卡片 (推薦) -->
+        <div class="concept-card recommended">
+          <span class="rec-ribbon">小 A 推薦款 ★</span>
+          <div class="concept-icon-hero">
+            <svg viewBox="0 0 1024 1024"><use href="#icon-logo-3" /></svg>
+          </div>
+          <div class="concept-meta">
+            <div class="concept-name">
+              <span>提案 3 · 鍵印 K 唇</span>
+              <span class="concept-badge badge-c3">Gestalt K-Lips</span>
+            </div>
+            <p class="concept-summary">
+              核心聚焦「TypeK」的按鍵與品牌符號。將立體棉花糖鍵帽與性感唇印極致融合，唇縫中以格式塔負空間巧妙孕育出發光的字母「K」，具備最高的品牌獨占性與微縮清晰度。
+            </p>
+            <div class="color-swatches">
+              <span class="swatch" style="background:#f43f8e" title="電光草莓 #f43f8e"></span>
+              <span class="swatch" style="background:#ffffff" title="純白高光 #ffffff"></span>
+              <span class="swatch" style="background:#fae8ff" title="薰衣草白 #fae8ff"></span>
+              <span class="swatch" style="background:#9333ea" title="深邃莓紫 #9333ea"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         區塊 2：1024 px 母版視覺細節 (Master Hero View)
+         ══════════════════════════════════════════════════════════ -->
+    <section>
+      <div class="section-header">
+        <div class="section-title">
+          <span>1024 px 原生向量母版預覽</span>
+          <span class="section-tag">Master 1024px View</span>
+        </div>
+        <span class="section-desc">包含果凍高光層、唇部邱比特之弓、macOS Squircle 邊界與氛圍裝飾</span>
+      </div>
+
+      <div class="master-view-container">
+        <div class="master-item">
+          <div class="master-svg-wrap">
+            <svg viewBox="0 0 1024 1024"><use href="#icon-logo-1" /></svg>
+          </div>
+          <span class="master-caption">提案 1：聲波果凍唇 (1024 Master)</span>
+        </div>
+        <div class="master-item">
+          <div class="master-svg-wrap">
+            <svg viewBox="0 0 1024 1024"><use href="#icon-logo-2" /></svg>
+          </div>
+          <span class="master-caption">提案 2：氣泡打字唇 (1024 Master)</span>
+        </div>
+        <div class="master-item">
+          <div class="master-svg-wrap">
+            <svg viewBox="0 0 1024 1024"><use href="#icon-logo-3" /></svg>
+          </div>
+          <span class="master-caption">提案 3：鍵印 K 唇 (1024 Master ★)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         區塊 3：全尺寸階梯展臺 (256, 64, 32, 16 px，含淺色與深色背景)
+         ══════════════════════════════════════════════════════════ -->
+    <section>
+      <div class="section-header">
+        <div class="section-title">
+          <span>全尺寸階梯驗證展臺（256px、64px、32px、16px · 淺/深色雙背景）</span>
+          <span class="section-tag">Icon Scaling Ladder</span>
+        </div>
+        <span class="section-desc">同步驗證全彩 App 圖示與單色 Menu Bar 模板在淺色與深色背景下的對比表現</span>
+      </div>
+
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table class="ladder-table">
+          <thead>
+            <tr>
+              <th>規格維度</th>
+              <th>提案 1 · 聲波果凍唇</th>
+              <th>提案 2 · 氣泡打字唇</th>
+              <th>提案 3 · 鍵印 K 唇 ★</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- 256px -->
+            <tr>
+              <td>
+                <strong>256 px</strong><br/>
+                <span class="section-desc">Finder 大圖示 / Retina</span>
+              </td>
+              <td>
+                <div class="scale-pair">
+                  <div class="bg-box bg-light">
+                    <svg width="128" height="128" viewBox="0 0 1024 1024"><use href="#icon-logo-1" /></svg>
+                    <span class="bg-label">淺色</span>
+                  </div>
+                  <div class="bg-box bg-dark">
+                    <svg width="128" height="128" viewBox="0 0 1024 1024"><use href="#icon-logo-1" /></svg>
+                    <span class="bg-label">深色</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="scale-pair">
+                  <div class="bg-box bg-light">
+                    <svg width="128" height="128" viewBox="0 0 1024 1024"><use href="#icon-logo-2" /></svg>
+                    <span class="bg-label">淺色</span>
+                  </div>
+                  <div class="bg-box bg-dark">
+                    <svg width="128" height="128" viewBox="0 0 1024 1024"><use href="#icon-logo-2" /></svg>
+                    <span class="bg-label">深色</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="scale-pair">
+                  <div class="bg-box bg-light">
+                    <svg width="128" height="128" viewBox="0 0 1024 1024"><use href="#icon-logo-3" /></svg>
+                    <span class="bg-label">淺色</span>
+                  </div>
+                  <div class="bg-box bg-dark">
+                    <svg width="128" height="128" viewBox="0 0 1024 1024"><use href="#icon-logo-3" /></svg>
+                    <span class="bg-label">深色</span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- 64px -->
+            <tr>
+              <td>
+                <strong>64 px</strong><br/>
+                <span class="section-desc">Spotlight / 通知中心</span>
+              </td>
+              <td>
+                <div class="scale-pair">
+                  <div class="bg-box bg-light"><svg width="64" height="64" viewBox="0 0 1024 1024"><use href="#icon-logo-1" /></svg></div>
+                  <div class="bg-box bg-dark"><svg width="64" height="64" viewBox="0 0 1024 1024"><use href="#icon-logo-1" /></svg></div>
+                </div>
+              </td>
+              <td>
+                <div class="scale-pair">
+                  <div class="bg-box bg-light"><svg width="64" height="64" viewBox="0 0 1024 1024"><use href="#icon-logo-2" /></svg></div>
+                  <div class="bg-box bg-dark"><svg width="64" height="64" viewBox="0 0 1024 1024"><use href="#icon-logo-2" /></svg></div>
+                </div>
+              </td>
+              <td>
+                <div class="scale-pair">
+                  <div class="bg-box bg-light"><svg width="64" height="64" viewBox="0 0 1024 1024"><use href="#icon-logo-3" /></svg></div>
+                  <div class="bg-box bg-dark"><svg width="64" height="64" viewBox="0 0 1024 1024"><use href="#icon-logo-3" /></svg></div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- 32px -->
+            <tr>
+              <td>
+                <strong>32 px</strong><br/>
+                <span class="section-desc">檔案列表 / 邊欄導航</span>
+              </td>
+              <td>
+                <div class="scale-pair">
+                  <div class="bg-box bg-light"><svg width="32" height="32" viewBox="0 0 1024 1024"><use href="#icon-logo-1" /></svg></div>
+                  <div class="bg-box bg-dark"><svg width="32" height="32" viewBox="0 0 1024 1024"><use href="#icon-logo-1" /></svg></div>
+                </div>
+              </td>
+              <td>
+                <div class="scale-pair">
+                  <div class="bg-box bg-light"><svg width="32" height="32" viewBox="0 0 1024 1024"><use href="#icon-logo-2" /></svg></div>
+                  <div class="bg-box bg-dark"><svg width="32" height="32" viewBox="0 0 1024 1024"><use href="#icon-logo-2" /></svg></div>
+                </div>
+              </td>
+              <td>
+                <div class="scale-pair">
+                  <div class="bg-box bg-light"><svg width="32" height="32" viewBox="0 0 1024 1024"><use href="#icon-logo-3" /></svg></div>
+                  <div class="bg-box bg-dark"><svg width="32" height="32" viewBox="0 0 1024 1024"><use href="#icon-logo-3" /></svg></div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- 16px (全彩) -->
+            <tr>
+              <td>
+                <strong>16 px (全彩)</strong><br/>
+                <span class="section-desc">Favicon / 極致微縮</span>
+              </td>
+              <td>
+                <div class="scale-pair">
+                  <div class="bg-box bg-light"><svg width="16" height="16" viewBox="0 0 1024 1024"><use href="#icon-logo-1" /></svg></div>
+                  <div class="bg-box bg-dark"><svg width="16" height="16" viewBox="0 0 1024 1024"><use href="#icon-logo-1" /></svg></div>
+                </div>
+              </td>
+              <td>
+                <div class="scale-pair">
+                  <div class="bg-box bg-light"><svg width="16" height="16" viewBox="0 0 1024 1024"><use href="#icon-logo-2" /></svg></div>
+                  <div class="bg-box bg-dark"><svg width="16" height="16" viewBox="0 0 1024 1024"><use href="#icon-logo-2" /></svg></div>
+                </div>
+              </td>
+              <td>
+                <div class="scale-pair">
+                  <div class="bg-box bg-light"><svg width="16" height="16" viewBox="0 0 1024 1024"><use href="#icon-logo-3" /></svg></div>
+                  <div class="bg-box bg-dark"><svg width="16" height="16" viewBox="0 0 1024 1024"><use href="#icon-logo-3" /></svg></div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- 16px (Mono Menu Bar) -->
+            <tr>
+              <td>
+                <strong>16 px (單色 Template)</strong><br/>
+                <span class="section-desc">macOS 選單列托盤真實尺寸</span>
+              </td>
+              <td>
+                <div class="scale-pair">
+                  <div class="bg-box bg-light" style="color:#000;"><svg width="18" height="18" viewBox="0 0 1024 1024"><use href="#icon-logo-1-mono" /></svg></div>
+                  <div class="bg-box bg-dark" style="color:#fff;"><svg width="18" height="18" viewBox="0 0 1024 1024"><use href="#icon-logo-1-mono" /></svg></div>
+                </div>
+              </td>
+              <td>
+                <div class="scale-pair">
+                  <div class="bg-box bg-light" style="color:#000;"><svg width="18" height="18" viewBox="0 0 1024 1024"><use href="#icon-logo-2-mono" /></svg></div>
+                  <div class="bg-box bg-dark" style="color:#fff;"><svg width="18" height="18" viewBox="0 0 1024 1024"><use href="#icon-logo-2-mono" /></svg></div>
+                </div>
+              </td>
+              <td>
+                <div class="scale-pair">
+                  <div class="bg-box bg-light" style="color:#000;"><svg width="18" height="18" viewBox="0 0 1024 1024"><use href="#icon-logo-3-mono" /></svg></div>
+                  <div class="bg-box bg-dark" style="color:#fff;"><svg width="18" height="18" viewBox="0 0 1024 1024"><use href="#icon-logo-3-mono" /></svg></div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         區塊 4：macOS Menu Bar 頂部選單列實境模擬
+         ══════════════════════════════════════════════════════════ -->
+    <section>
+      <div class="section-header">
+        <div class="section-title">
+          <span>macOS 頂部選單列（Menu Bar）實境模擬</span>
+          <span class="section-tag">Status Bar Template</span>
+        </div>
+        <span class="section-desc">模擬純黑 #000 向量模板在淺色與深色琉璃頂部選單列的穿透與對比度</span>
+      </div>
+
+      <div class="menubar-showcase">
+        <!-- 淺色選單列 -->
+        <div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--muted-fg);">▲ 淺色桌面環境（Light Menu Bar · 18px 實際選單列常駐呈現）</div>
+          <div class="mac-desktop-screen mac-desktop-light">
+            <div class="mac-menubar">
+              <div class="menubar-left">
+                <span class="apple-logo"></span>
+                <span>TypeK</span>
+                <span style="font-weight:400;opacity:0.8;">編輯</span>
+                <span style="font-weight:400;opacity:0.8;">語音</span>
+                <span style="font-weight:400;opacity:0.8;">視窗</span>
+                <span style="font-weight:400;opacity:0.8;">說明</span>
+              </div>
+              <div class="menubar-right" style="color:#1d1d1f;">
+                <!-- 提案 1 Mono -->
+                <div class="tray-item" title="提案 1 · 聲波果凍唇 (Mono)">
+                  <svg width="18" height="18" viewBox="0 0 1024 1024"><use href="#icon-logo-1-mono" /></svg>
+                </div>
+                <!-- 提案 2 Mono -->
+                <div class="tray-item" title="提案 2 · 氣泡打字唇 (Mono)">
+                  <svg width="18" height="18" viewBox="0 0 1024 1024"><use href="#icon-logo-2-mono" /></svg>
+                </div>
+                <!-- 提案 3 Mono (聚焦選中態) -->
+                <div class="tray-item active" title="提案 3 · 鍵印 K 唇 (Mono - 小 A 推薦)">
+                  <svg width="18" height="18" viewBox="0 0 1024 1024"><use href="#icon-logo-3-mono" /></svg>
+                  <span class="tray-typek-badge"></span>
+                </div>
+                <span style="font-size:11.5px;margin-left:6px;">週日 10月26日 01:10</span>
+              </div>
+            </div>
+            <div style="padding:20px;font-size:12px;color:rgba(0,0,0,0.45);font-weight:600;">
+              ✨ macOS 淺色琉璃桌面 · TypeK 托盤圖示常駐於選單列右側
+            </div>
+          </div>
+        </div>
+
+        <!-- 深色選單列 -->
+        <div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--muted-fg);">▲ 深色午夜星空環境（Dark Menu Bar · 系統自動反白為純白）</div>
+          <div class="mac-desktop-screen mac-desktop-dark">
+            <div class="mac-menubar" style="color:#ffffff;">
+              <div class="menubar-left">
+                <span class="apple-logo"></span>
+                <span>TypeK</span>
+                <span style="font-weight:400;opacity:0.75;">編輯</span>
+                <span style="font-weight:400;opacity:0.75;">語音</span>
+                <span style="font-weight:400;opacity:0.75;">視窗</span>
+                <span style="font-weight:400;opacity:0.75;">說明</span>
+              </div>
+              <div class="menubar-right" style="color:#ffffff;">
+                <div class="tray-item" title="提案 1 · 聲波果凍唇 (Mono Dark)">
+                  <svg width="18" height="18" viewBox="0 0 1024 1024"><use href="#icon-logo-1-mono" /></svg>
+                </div>
+                <div class="tray-item" title="提案 2 · 氣泡打字唇 (Mono Dark)">
+                  <svg width="18" height="18" viewBox="0 0 1024 1024"><use href="#icon-logo-2-mono" /></svg>
+                </div>
+                <div class="tray-item active" title="提案 3 · 鍵印 K 唇 (Mono Dark - 小 A 推薦)">
+                  <svg width="18" height="18" viewBox="0 0 1024 1024"><use href="#icon-logo-3-mono" /></svg>
+                  <span class="tray-typek-badge"></span>
+                </div>
+                <span style="font-size:11.5px;margin-left:6px;">01:10</span>
+              </div>
+            </div>
+            <div style="padding:20px;font-size:12px;color:rgba(255,255,255,0.45);font-weight:600;">
+              🌌 macOS 深色模式桌面 · 透過 Alpha 蒙版在暗黑壁紙上維持銳利辨識度
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         區塊 5：macOS Dock 實境展示列
+         ══════════════════════════════════════════════════════════ -->
+    <section>
+      <div class="section-header">
+        <div class="section-title">
+          <span>macOS Dock 實境體驗展臺</span>
+          <span class="section-tag">Dock Harmonization</span>
+        </div>
+        <span class="section-desc">與 macOS 原生系統圖標排列對比，檢驗 Squircle 弧度與色彩重量平衡</span>
+      </div>
+
+      <div class="dock-showcase-box">
+        <div style="font-size:12.5px;font-weight:700;color:var(--muted-fg);margin-bottom:4px;">
+          請將滑鼠懸停於 Dock 圖標上查看微動效與視覺共鳴
+        </div>
+        <div class="fake-dock">
+          <!-- Finder -->
+          <div class="dock-item" title="Finder">
+            <div class="dock-icon icon-finder">
+              <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="4" />
+                <path d="M 8 9 C 9 11, 10 11, 10 9" />
+                <path d="M 14 9 C 15 11, 16 11, 16 9" />
+                <path d="M 7 14 C 9 17, 15 17, 17 14" />
+              </svg>
+            </div>
+            <span class="dock-dot"></span>
+          </div>
+
+          <!-- Safari -->
+          <div class="dock-item" title="Safari">
+            <div class="dock-icon icon-safari">
+              <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="9" />
+                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" />
+              </svg>
+            </div>
+            <span class="dock-dot"></span>
+          </div>
+
+          <!-- Messages -->
+          <div class="dock-item" title="Messages">
+            <div class="dock-icon icon-messages">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+              </svg>
+            </div>
+            <span class="dock-dot"></span>
+          </div>
+
+          <!-- TypeK (提案 1) -->
+          <div class="dock-item" title="TypeK · 提案 1 (聲波果凍唇)">
+            <div class="dock-icon">
+              <svg viewBox="0 0 1024 1024"><use href="#icon-logo-1" /></svg>
+            </div>
+            <span class="dock-dot"></span>
+          </div>
+
+          <!-- TypeK (提案 2) -->
+          <div class="dock-item" title="TypeK · 提案 2 (氣泡打字唇)">
+            <div class="dock-icon">
+              <svg viewBox="0 0 1024 1024"><use href="#icon-logo-2" /></svg>
+            </div>
+            <span class="dock-dot"></span>
+          </div>
+
+          <!-- TypeK (提案 3 - 推薦款) -->
+          <div class="dock-item" title="TypeK · 提案 3 ★ (鍵印 K 唇)" style="transform: scale(1.08) translateY(-2px);">
+            <div class="dock-icon" style="box-shadow: 0 0 18px rgba(244, 63, 142, 0.5);">
+              <svg viewBox="0 0 1024 1024"><use href="#icon-logo-3" /></svg>
+            </div>
+            <span class="dock-dot" style="background:var(--primary);width:5px;height:5px;"></span>
+          </div>
+
+          <!-- Notes -->
+          <div class="dock-item" title="Notes">
+            <div class="dock-icon icon-notes">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+            </div>
+            <span class="dock-dot"></span>
+          </div>
+
+          <!-- Settings -->
+          <div class="dock-item" title="System Settings">
+            <div class="dock-icon icon-settings">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </div>
+            <span class="dock-dot"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         區塊 6：小 A 專業設計評估與落地推薦
+         ══════════════════════════════════════════════════════════ -->
+    <section class="rec-card">
+      <div class="rec-header">
+        <span style="font-size:24px;">🍓</span>
+        <h2 class="rec-title">小 A 總體設計結論與推薦：首選「提案 3 · 鍵印 K 唇」</h2>
+      </div>
+      <div class="rec-body">
+        <p>
+          三款設計皆完整對齊 Option D（繽紛少女風）色彩 Token，完全由乾淨向量原生手寫（無外連、無文字標籤、無點陣圖，單檔體積均 &lt; 5 KB），並兼顧 macOS HIG 規範。
+        </p>
+        <p style="margin-top:10px;">
+          <strong>為什麼強烈推薦「提案 3（Gestalt K-Lips）」：</strong><br/>
+          1. <strong>語意雙重閉環</strong>：TypeK 的核心互動是「按住按鍵（Type）→ 說話（Lips）→ 生成文字」。提案 3 直接以棉花糖鍵帽承托飽滿雙唇，並在唇心以格式塔負空間融出品牌字「K」，故事性最純粹且無懈可擊。<br/>
+          2. <strong>16px 極致抗模糊性</strong>：在 macOS Menu Bar 的 16–22px 嚴苛微縮尺度下，提案 1 的聲波細線與提案 2 的氣泡尾巴容易在遠距視覺下分散視覺重量；而提案 3 的「實心黑唇 + 負空間 K 字母」擁有最大的幾何實體面積與最高邊界對比，即使在低解析度或眼角餘光中也一眼可辨。<br/>
+          3. <strong>品牌專屬識別度</strong>：純唇印容易與美妝、時尚或通用 Emoji 混淆，但帶有「鍵帽質感」與「唇中 K 印」的符號，在 macOS Dock 上兼具俏皮少女感與軟體工具的專業度。
+        </p>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        html.classList.add('light');
+      } else {
+        html.classList.remove('light');
+        html.classList.add('dark');
+      }
+    }
+  </script>
+</body>
+</html>

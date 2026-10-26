@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- macOS App Icon 陰影 -->
+    <filter id="icon-shadow-3" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="20" stdDeviation="28" flood-color="#ec4899" flood-opacity="0.2" />
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#34d399" flood-opacity="0.12" />
+    </filter>
+
+    <!-- 鍵帽 3D 浮雕投影 -->
+    <filter id="keycap-shadow" x="-8%" y="-8%" width="120%" height="124%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#3c1945" flood-opacity="0.12" />
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#ec4899" flood-opacity="0.1" />
+    </filter>
+
+    <!-- 背景漸變 (清新草莓薄荷白 -> 夢幻薰衣草) -->
+    <linearGradient id="bg-grad-3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fffafd" />
+      <stop offset="50%" stop-color="#fdf2f8" />
+      <stop offset="100%" stop-color="#f5e8fc" />
+    </linearGradient>
+
+    <!-- 內邊框高光 -->
+    <linearGradient id="rim-grad-3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#f0d1ea" stop-opacity="0.4" />
+    </linearGradient>
+
+    <!-- 糖果鍵帽材質漸變 (Marshmallow Cream) -->
+    <linearGradient id="keycap-grad-3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="60%" stop-color="#fff5fa" />
+      <stop offset="100%" stop-color="#fae8ff" />
+    </linearGradient>
+
+    <!-- 上唇漸變 -->
+    <linearGradient id="upper-lip-3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fb7185" />
+      <stop offset="45%" stop-color="#f43f8e" />
+      <stop offset="100%" stop-color="#db2777" />
+    </linearGradient>
+
+    <!-- 下唇漸變 -->
+    <linearGradient id="lower-lip-3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f8e" />
+      <stop offset="55%" stop-color="#ec4899" />
+      <stop offset="100%" stop-color="#9333ea" />
+    </linearGradient>
+
+    <!-- K 字光暈 -->
+    <filter id="k-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#34d399" flood-opacity="0.65" />
+    </filter>
+  </defs>
+
+  <!-- macOS 標準 Squircle 圓角外殼 (824x824, 居中於 1024x1024) -->
+  <rect x="100" y="100" width="824" height="824" rx="188" ry="188"
+        fill="url(#bg-grad-3)" filter="url(#icon-shadow-3)" stroke="#f0d1ea" stroke-width="5" />
+  <rect x="108" y="108" width="808" height="808" rx="180" ry="180"
+        fill="none" stroke="url(#rim-grad-3)" stroke-width="4" />
+
+  <!-- 背景氛圍星芒 (薄荷綠 + 檸檬黃) -->
+  <path d="M 230 240 Q 230 260 210 260 Q 230 260 230 280 Q 230 260 250 260 Q 230 260 230 240 Z"
+        fill="#34d399" opacity="0.85" />
+  <circle cx="780" cy="245" r="7" fill="#fbbf24" opacity="0.9" />
+
+  <!-- 3D 糖果機械鍵帽基座 (Keyboard Keycap Base) -->
+  <g id="candy-keycap" filter="url(#keycap-shadow)">
+    <!-- 鍵帽外殼底座 -->
+    <rect x="160" y="160" width="704" height="704" rx="160" ry="160"
+          fill="#fce7f3" stroke="#f0d1ea" stroke-width="3" />
+    <!-- 鍵帽內凹頂面盤 (Concave Dish) -->
+    <rect x="190" y="185" width="644" height="625" rx="130" ry="130"
+          fill="url(#keycap-grad-3)" stroke="#fdf2f8" stroke-width="2" />
+
+    <!-- 鍵帽左上微標識：語音按鍵指示 (Speech Key Pill) -->
+    <rect x="245" y="235" width="92" height="34" rx="17"
+          fill="#fce7f3" stroke="#f0d1ea" stroke-width="2" />
+    <!-- 膠囊內三道微小聲波條 -->
+    <rect x="270" y="247" width="5" height="10" rx="2.5" fill="#f43f8e" />
+    <rect x="282" y="243" width="5" height="18" rx="2.5" fill="#a855f7" />
+    <rect x="294" y="245" width="5" height="14" rx="2.5" fill="#34d399" />
+    <circle cx="316" cy="252" r="4" fill="#fbbf24" />
+  </g>
+
+  <!-- 核心主體：鍵印 K 唇 (Lips with "K" Gestalt Aperture) -->
+  <g id="key-k-lips">
+    <!-- 口腔深色陰影內景 -->
+    <path d="M 235 505 C 322 475, 417 495, 512 490 C 607 495, 702 475, 789 505 C 702 540, 607 560, 512 560 C 417 560, 322 540, 235 505 Z"
+          fill="#2b0e36" />
+
+    <!-- 唇間孕育的標誌性 "K" 字母 (TypeK Brand Signature in Negative Space) -->
+    <g id="aperture-k">
+      <!-- 字母 K 左側垂直主幹 -->
+      <rect x="425" y="475" width="38" height="100" rx="19" fill="#ffffff" filter="url(#k-glow)" />
+      <!-- 字母 K 上方斜筆 -->
+      <line x1="450" y1="520" x2="535" y2="475" stroke="#ffffff" stroke-width="38" stroke-linecap="round" filter="url(#k-glow)" />
+      <!-- 字母 K 下方斜筆 -->
+      <line x1="450" y1="530" x2="545" y2="575" stroke="#ffffff" stroke-width="38" stroke-linecap="round" filter="url(#k-glow)" />
+    </g>
+
+    <!-- 上唇 (邱比特之弓) -->
+    <path d="M 235 505 C 285 415, 335 355, 385 355 C 435 355, 475 405, 512 410 C 549 405, 589 355, 639 355 C 689 355, 739 415, 789 505 C 702 475, 607 495, 512 490 C 417 495, 322 475, 235 505 Z"
+          fill="url(#upper-lip-3)" />
+
+    <!-- 下唇 (飽滿果凍唇) -->
+    <path d="M 235 505 C 322 540, 417 560, 512 560 C 607 560, 702 540, 789 505 C 745 635, 640 710, 512 710 C 384 710, 279 635, 235 505 Z"
+          fill="url(#lower-lip-3)" />
+
+    <!-- 果凍高光：上唇左峰 -->
+    <path d="M 330 405 C 360 375, 395 375, 415 385 C 400 405, 370 415, 335 430 Z"
+          fill="#ffffff" opacity="0.82" />
+    <!-- 上唇右峰 -->
+    <path d="M 610 385 C 630 375, 665 375, 695 405 C 660 415, 630 405, 610 385 Z"
+          fill="#ffffff" opacity="0.55" />
+
+    <!-- 下唇飽滿反光條 -->
+    <path d="M 380 640 C 430 665, 520 670, 580 650 C 535 635, 445 630, 380 640 Z"
+          fill="#ffffff" opacity="0.88" />
+    <circle cx="615" cy="640" r="9" fill="#ffffff" opacity="0.75" />
+  </g>
+</svg>

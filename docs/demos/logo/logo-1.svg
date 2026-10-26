@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- macOS App Icon 陰影 -->
+    <filter id="icon-shadow-1" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="20" stdDeviation="28" flood-color="#ec4899" flood-opacity="0.22" />
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#a855f7" flood-opacity="0.12" />
+    </filter>
+
+    <!-- 背景果凍漸變 (Option D: 草莓棉花糖白 -> 夢幻薰衣草柔粉) -->
+    <linearGradient id="bg-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff8fc" />
+      <stop offset="50%" stop-color="#fff0f7" />
+      <stop offset="100%" stop-color="#fce7f3" />
+    </linearGradient>
+
+    <!-- 內邊框高光 -->
+    <linearGradient id="rim-grad-1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#f0d1ea" stop-opacity="0.4" />
+    </linearGradient>
+
+    <!-- 上唇漸變 (蜜桃草莓粉) -->
+    <linearGradient id="upper-lip-1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fb7185" />
+      <stop offset="40%" stop-color="#f43f8e" />
+      <stop offset="100%" stop-color="#db2777" />
+    </linearGradient>
+
+    <!-- 下唇漸變 (飽滿泡泡糖粉) -->
+    <linearGradient id="lower-lip-1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f43f8e" />
+      <stop offset="60%" stop-color="#ec4899" />
+      <stop offset="100%" stop-color="#be185d" />
+    </linearGradient>
+
+    <!-- 聲波光暈 -->
+    <linearGradient id="wave-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+    <linearGradient id="wave-grad-2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="wave-grad-3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc" />
+      <stop offset="100%" stop-color="#9333ea" />
+    </linearGradient>
+  </defs>
+
+  <!-- macOS 標準 Squircle 圓角外殼 (824x824, 居中於 1024x1024) -->
+  <rect x="100" y="100" width="824" height="824" rx="188" ry="188"
+        fill="url(#bg-grad-1)" filter="url(#icon-shadow-1)" stroke="#f0d1ea" stroke-width="5" />
+  <rect x="108" y="108" width="808" height="808" rx="180" ry="180"
+        fill="none" stroke="url(#rim-grad-1)" stroke-width="4" />
+
+  <!-- 夢幻星芒與氛圍泡泡 (Option D 少女風細節) -->
+  <path d="M 230 250 Q 230 275 205 275 Q 230 275 230 300 Q 230 275 255 275 Q 230 275 230 250 Z"
+        fill="#fbbf24" opacity="0.9" />
+  <circle cx="280" cy="240" r="7" fill="#f472b6" opacity="0.75" />
+  <circle cx="680" cy="280" r="9" fill="#38bdf8" opacity="0.65" />
+  <path d="M 750 240 Q 750 258 732 258 Q 750 258 750 276 Q 750 258 768 258 Q 750 258 750 240 Z"
+        fill="#c084fc" opacity="0.85" />
+
+  <!-- 核心主體：聲波果凍唇 (Lips + Soundwaves) -->
+  <g id="soundwave-lips">
+    <!-- 口腔深色陰影內景 (Deep Blackberry) -->
+    <path d="M 190 515 C 265 500, 340 512, 415 508 C 490 512, 565 500, 640 515 C 565 540, 490 558, 415 558 C 340 558, 265 540, 190 515 Z"
+          fill="#2b0e36" />
+
+    <!-- 上唇 (邱比特之弓 Cupid's Bow) -->
+    <path d="M 190 515 C 235 440, 280 375, 335 375 C 375 375, 395 412, 415 418 C 435 412, 455 375, 495 375 C 550 375, 595 440, 640 515 C 565 500, 490 512, 415 508 C 340 512, 265 500, 190 515 Z"
+          fill="url(#upper-lip-1)" />
+
+    <!-- 下唇 (飽滿多汁嘟嘟唇) -->
+    <path d="M 190 515 C 265 540, 340 558, 415 558 C 490 558, 565 540, 640 515 C 605 635, 520 705, 415 705 C 310 705, 225 635, 190 515 Z"
+          fill="url(#lower-lip-1)" />
+
+    <!-- 果凍高光 1：上唇左峰流線光澤 -->
+    <path d="M 275 435 C 300 398, 335 395, 355 405 C 340 422, 310 432, 280 452 Z"
+          fill="#ffffff" opacity="0.82" />
+
+    <!-- 果凍高光 2：上唇右峰微光 -->
+    <path d="M 475 405 C 495 395, 530 398, 555 435 C 525 432, 495 422, 475 405 Z"
+          fill="#ffffff" opacity="0.55" />
+
+    <!-- 果凍高光 3：下唇圓潤反光條 (Jelly Gloss) -->
+    <path d="M 315 625 C 350 655, 420 665, 465 650 C 435 635, 360 630, 315 625 Z"
+          fill="#ffffff" opacity="0.88" />
+    <!-- 下唇右側小水滴高光點 -->
+    <circle cx="495" cy="635" r="9" fill="#ffffff" opacity="0.75" />
+
+    <!-- 聲波弧線 1 (清新薄荷綠 #34d399) -->
+    <path d="M 690 445 A 95 95 0 0 1 690 585"
+          fill="none" stroke="url(#wave-grad-1)" stroke-width="38" stroke-linecap="round" />
+
+    <!-- 聲波弧線 2 (彈珠汽水天空藍 #38bdf8) -->
+    <path d="M 760 395 A 165 165 0 0 1 760 635"
+          fill="none" stroke="url(#wave-grad-2)" stroke-width="38" stroke-linecap="round" />
+
+    <!-- 聲波弧線 3 (夢幻薰衣草紫 #c084fc) -->
+    <path d="M 830 345 A 235 235 0 0 1 830 685"
+          fill="none" stroke="url(#wave-grad-3)" stroke-width="38" stroke-linecap="round" />
+  </g>
+</svg>

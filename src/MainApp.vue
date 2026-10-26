@@ -275,9 +275,8 @@ onUnmounted(() => {
   <SidebarProvider class="h-screen !min-h-0 pt-9">
     <Sidebar collapsible="offcanvas" class="border-r border-sidebar-border">
       <SidebarHeader class="flex-row h-14 items-center gap-3 border-b border-sidebar-border px-4">
-        <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-chart-1 to-chart-2 p-1 shadow-md">
-          <img src="@/assets/logo-yan.png" alt="言" class="h-full w-auto" />
-        </div>
+        <img src="@/assets/logo.png" alt="TypeK" class="h-8 w-8 shrink-0" />
+
         <span class="text-base font-extrabold text-sidebar-foreground tracking-wide">TypeK</span>
       </SidebarHeader>
       <SidebarContent class="px-2 py-3">
