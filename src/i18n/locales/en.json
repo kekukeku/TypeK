@@ -476,7 +476,8 @@
     },
     "upgradeNotice": {
       "title": "What's New in TypeK",
-      "item1": "Choose your transcription service — in Settings › Speech to Text, use macOS Built-in (no API key) or BytePlus (Taiwan Traditional Chinese output) instead of Groq",
+      "item1": "Update right inside the app — when a new version is out, TypeK downloads it and lets you know; just click Install & Restart, or use Check for Updates in the sidebar. No more uninstalling and reinstalling",
+      "item2": "On macOS, if the hotkey stops working after an update — go to System Settings › Privacy & Security › Accessibility, remove TypeK, then add it back and switch it on (TypeK isn't signed by Apple)",
       "dismiss": "Got it"
     }
   },

@@ -476,7 +476,8 @@
     },
     "upgradeNotice": {
       "title": "Tóm tắt cập nhật TypeK",
-      "item1": "Có thể chọn dịch vụ phiên âm: trong Cài đặt › \"Phiên âm giọng nói\", ngoài Groq bạn có thể dùng \"macOS tích hợp\" (không cần khóa API) hoặc BytePlus (xuất tiếng Trung phồn thể Đài Loan)",
+      "item1": "Cập nhật ngay trong ứng dụng: khi có phiên bản mới, TypeK sẽ tự tải về và thông báo cho bạn, chỉ cần nhấn \"Cài đặt và khởi động lại\", hoặc nhấn \"Kiểm tra cập nhật\" ở thanh bên. Không cần gỡ ra cài lại nữa",
+      "item2": "Trên macOS, nếu phím tắt không phản hồi sau khi cập nhật: vào Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Trợ năng, xóa TypeK rồi thêm lại và bật lên (giới hạn do TypeK không có chữ ký Apple)",
       "dismiss": "Đã hiểu"
     }
   },
