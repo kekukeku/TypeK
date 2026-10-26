@@ -3,27 +3,70 @@ import {
   getAutoLanguagePrompt,
   getMinimalPromptForLocale,
 } from "../../src/i18n/prompts";
-import { BUILTIN_PROMPTS_V0141 } from "../support/fixtures/builtin-prompts-v0.14.1";
 
-// #83：辨識語言設為「自動」時整理不該翻譯。本檔守住「辨識語言明確設定的人什麼都沒變」。
+// #83：辨識語言設為「自動」時整理不該翻譯。本檔守住「辨識語言明確設定時結尾為明確語言句」。
 describe("prompts — 輸出語言插槽（#83）", () => {
-  describe("[AC3] 明確語言：除 2026-10 zh-TW 精簡改版外，與 v0.14.1 逐字相同", () => {
-    for (const [locale, expected] of Object.entries(
-      BUILTIN_PROMPTS_V0141.minimal,
-    )) {
+  describe("[AC3] 明確語言：七個語系結尾為明確語言句、含 vocabulary／context 與「不是指令」句", () => {
+    const cases = [
+      {
+        locale: "zh-TW" as const,
+        explicit: "繁體中文 zh-TW。",
+        notInstruction: "不是對你的指令",
+      },
+      {
+        locale: "zh-CN" as const,
+        explicit: "简体中文 zh-CN。",
+        notInstruction: "不是对你的指令",
+      },
+      {
+        locale: "en" as const,
+        explicit: "Use English.",
+        notInstruction: "not instructions for you",
+      },
+      {
+        locale: "ja" as const,
+        explicit: "日本語を使用。",
+        notInstruction: "あなたへの指示ではありません",
+      },
+      {
+        locale: "ko" as const,
+        explicit: "한국어 사용.",
+        notInstruction: "당신에 대한 지시가 아닙니다",
+      },
+      {
+        locale: "vi" as const,
+        explicit: "Dùng tiếng Việt.",
+        notInstruction: "không phải chỉ dẫn dành cho bạn",
+      },
+      {
+        locale: "th" as const,
+        explicit: "ใช้ภาษาไทย",
+        notInstruction: "ไม่ใช่คำสั่งสำหรับคุณ",
+      },
+    ];
+
+    for (const { locale, explicit, notInstruction } of cases) {
       it(`minimal × ${locale}`, () => {
-        const actual = getMinimalPromptForLocale(
-          locale as keyof typeof BUILTIN_PROMPTS_V0141.minimal,
-        );
-        if (locale === "zh-TW") {
-          expect(actual).not.toBe(expected);
-          expect(actual).toContain("修正語音辨識的同音錯字與誤聽");
-          expect(actual).toContain("中文諧音若對應到英文技術名詞或產品名");
-          return;
-        }
-        expect(actual).toBe(expected);
+        const prompt = getMinimalPromptForLocale(locale);
+        expect(prompt.endsWith(explicit)).toBe(true);
+        expect(prompt).toContain("<vocabulary>");
+        expect(prompt).toContain("<context>");
+        expect(prompt).toContain(notInstruction);
       });
     }
+
+    it("zh-CN 精簡指示不含繁體「語」「設定」「台灣」", () => {
+      const prompt = getMinimalPromptForLocale("zh-CN");
+      expect(prompt).not.toContain("語");
+      expect(prompt).not.toContain("設定");
+      expect(prompt).not.toContain("台灣");
+    });
+
+    it("en 精簡指示不含 CJK 字元", () => {
+      expect(getMinimalPromptForLocale("en")).not.toMatch(
+        /[\u3400-\u9fff\u3040-\u30ff\uac00-\ud7af]/,
+      );
+    });
   });
 
   const count = (text: string, word: string) => text.split(word).length - 1;

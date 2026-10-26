@@ -421,7 +421,8 @@
     },
     "upgradeNotice": {
       "title": "What's New in TypeK",
-      "item1": "Recording a custom trigger key on Windows no longer requires clicking another window first — with the TypeK window in front, nothing used to register; now you can press the key right in TypeK",
+      "item1": "Vietnamese and Thai added — pick Tiếng Việt or ไทย for both Interface Language and Transcription Language in Settings; your speech is tidied into clean text as usual",
+      "item2": "Cantonese option removed — if you had it selected, it now uses Auto Detect; choose a specific language again in Settings if you need one",
       "dismiss": "Got it"
     }
   },

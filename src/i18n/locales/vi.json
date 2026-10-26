@@ -421,7 +421,8 @@
     },
     "upgradeNotice": {
       "title": "Tóm tắt cập nhật TypeK",
-      "item1": "Ghi lại phím kích hoạt tùy chỉnh trên Windows không cần nhấn sang cửa sổ khác trước: trước đây khi cửa sổ cài đặt ở phía trước thì nhấn gì cũng không ghi được, giờ có thể nhấn ngay trong cửa sổ TypeK",
+      "item1": "Đã thêm tiếng Việt và tiếng Thái: trong Cài đặt, bạn có thể chọn tiếng Việt hoặc tiếng Thái cho cả \"Ngôn ngữ giao diện\" và \"Ngôn ngữ phiên âm\"; lời nói vẫn được chỉnh thành văn bản mạch lạc như trước",
+      "item2": "Đã bỏ tùy chọn tiếng Quảng Đông: nếu trước đây bạn chọn tiếng Quảng Đông, cài đặt đã tự chuyển sang \"Tự động nhận diện\"; nếu cần chỉ định ngôn ngữ, hãy chọn lại trong Cài đặt",
       "dismiss": "Đã hiểu"
     }
   },
