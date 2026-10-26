@@ -23,10 +23,9 @@ TypeK is a fork of the open-source project [SayIt](https://github.com/chenjackle
 | Platform | Download |
 |------|---------|
 | macOS (Apple Silicon: M1/M2/M3/M4…) | [TypeK-mac-arm64.dmg](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-arm64.dmg) |
-| macOS (Intel) | [TypeK-mac-x64.dmg](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-x64.dmg) |
 | Windows | [TypeK-windows-x64.exe](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-windows-x64.exe) |
 
-Not sure which Mac you have? Click  in the top-left → "About This Mac". If "Chip" starts with Apple M, pick Apple Silicon; if it says Intel, pick Intel.
+The macOS build supports Apple Silicon (M1/M2/M3/M4…) only; Intel Macs are no longer supported as of 1.3.3.
 
 ### Installing on macOS
 

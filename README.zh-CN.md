@@ -23,10 +23,9 @@ TypeK 是开源项目 [SayIt](https://github.com/chenjackle45/SayIt) 的 fork，
 | 平台 | 下载链接 |
 |------|---------|
 | macOS（Apple Silicon：M1／M2／M3／M4…） | [TypeK-mac-arm64.dmg](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-arm64.dmg) |
-| macOS（Intel） | [TypeK-mac-x64.dmg](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-x64.dmg) |
 | Windows | [TypeK-windows-x64.exe](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-windows-x64.exe) |
 
-不确定是哪种 Mac：点左上角  →“关于本机”，“芯片”写着 Apple M 开头就选 Apple Silicon，写着 Intel 就选 Intel。
+macOS 版只支持 Apple Silicon（M1／M2／M3／M4…）；从 1.3.3 起不再提供 Intel Mac 版本。
 
 ### macOS 安装步骤
 

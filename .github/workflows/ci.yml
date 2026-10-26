@@ -56,11 +56,3 @@ jobs:
         working-directory: src-tauri
         run: cargo test --workspace
 
-      - name: Add x86_64 macOS target
-        if: matrix.os == 'macos-latest'
-        run: rustup target add x86_64-apple-darwin
-
-      - name: Cargo clippy (macOS x86_64)
-        if: matrix.os == 'macos-latest'
-        working-directory: src-tauri
-        run: cargo clippy --target x86_64-apple-darwin --workspace --all-targets -- -D warnings

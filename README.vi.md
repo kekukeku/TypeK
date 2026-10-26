@@ -23,10 +23,9 @@ TypeK là bản fork của dự án mã nguồn mở [SayIt](https://github.com/
 | Nền tảng | Liên kết tải |
 |------|---------|
 | macOS (Apple Silicon: M1/M2/M3/M4…) | [TypeK-mac-arm64.dmg](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-arm64.dmg) |
-| macOS (Intel) | [TypeK-mac-x64.dmg](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-x64.dmg) |
 | Windows | [TypeK-windows-x64.exe](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-windows-x64.exe) |
 
-Không chắc máy Mac của mình là loại nào: nhấp vào biểu tượng Apple ở góc trên bên trái →「Giới thiệu về Máy Mac này (About This Mac)」, nếu mục「Chip」bắt đầu bằng Apple M thì chọn Apple Silicon, nếu ghi Intel thì chọn Intel.
+Bản macOS chỉ hỗ trợ Apple Silicon (M1/M2/M3/M4…); từ 1.3.3 không còn cung cấp bản cho Mac Intel.
 
 ### Các bước cài đặt trên macOS
 

@@ -23,7 +23,7 @@ paths:
  │  ci.yml  │         │  release.yml    │
  │ vue-tsc  │         │ 3 matrix jobs:  │
  │ vitest   │         │  macOS ARM      │
- │ rust-    │         │  macOS Intel    │
+ │ rust-    │         │  （無 Intel）    │
  │  check   │         │  Windows x64    │
  │ (mac+win)│         │                 │
  └──────────┘         │ + Updater .sig  │
@@ -82,7 +82,6 @@ Apple 簽章維持不做：`APPLE_CERTIFICATE`、`APPLE_CERTIFICATE_PASSWORD`、
 | 平台 | URL |
 |------|-----|
 | macOS ARM | `https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-arm64.dmg` |
-| macOS Intel | `https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-x64.dmg` |
 | Windows | `https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-windows-x64.exe` |
 
 ## Claude Code Review Workflow

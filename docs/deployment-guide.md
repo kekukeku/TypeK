@@ -16,7 +16,7 @@ push/PR to main           push tag v*
  │  ──────  │         │  ────────────────────────────   │
  │ vue-tsc  │         │  Job: build (matrix · 3)        │
  │ vitest   │         │   ├── macOS aarch64-apple-darwin│
- │ cargo    │         │   ├── macOS x86_64-apple-darwin │
+ │ cargo    │         │   │  （Intel Mac 1.3.3 起不打包）  │
  │  check   │         │   └── Windows x64               │
  │ (mac+win)│         │                                 │
  └──────────┘         │  + tauri-action                 │
@@ -60,12 +60,11 @@ steps:
   3. swatinem/rust-cache@v2 (workspaces: src-tauri)
   4. cargo clippy --workspace --all-targets -- -D warnings (working-directory: src-tauri)
   5. cargo test --workspace (working-directory: src-tauri)
-  6. macOS 另跑 x86_64 target clippy
 ```
 
 ### 2.3 CI 現況
 
-`ci.yml` 已跑 vue-tsc、ESLint、Vitest、`cargo clippy --workspace --all-targets -- -D warnings`、`cargo test`（macOS + Windows），macOS 另驗 x86_64 target。Playwright E2E 仍只在本機跑，未整合 CI。
+`ci.yml` 已跑 vue-tsc、ESLint、Vitest、`cargo clippy --workspace --all-targets -- -D warnings`、`cargo test`（macOS + Windows）；Intel Mac 自 1.3.3 起不支援，不另驗 x86_64。Playwright E2E 仍只在本機跑，未整合 CI。
 
 ---
 
@@ -87,7 +86,6 @@ on:
 | Platform        | Args                              | Stable Name                  | Sourcemaps |
 | --------------- | --------------------------------- | ---------------------------- | ---------- |
 | macos-latest    | `--target aarch64-apple-darwin`   | `TypeK-mac-arm64.dmg`        | **true**（唯一上傳） |
-| macos-latest    | `--target x86_64-apple-darwin`    | `TypeK-mac-x64.dmg`          | false      |
 | windows-latest  | （空）                             | `TypeK-windows-x64.exe`      | false      |
 
 ### 3.3 Release metadata 解析
@@ -253,7 +251,6 @@ tag push 後自動觸發 `release.yml`：
 1. GitHub Releases 頁面確認 v0.9.5 已 Published
 2. 檢查附件：
    - TypeK-mac-arm64.dmg（穩定檔名）
-   - TypeK-mac-x64.dmg
    - TypeK-windows-x64.exe
    - 自動命名版（TypeK_0.9.5_*.dmg / .exe）
    - latest.json（updater）
@@ -371,9 +368,6 @@ Apple（`APPLE_CERTIFICATE`、`APPLE_CERTIFICATE_PASSWORD`、`APPLE_SIGNING_IDEN
 ```
 macOS ARM:
   https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-arm64.dmg
-
-macOS Intel:
-  https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-x64.dmg
 
 Windows:
   https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-windows-x64.exe

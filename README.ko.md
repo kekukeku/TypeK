@@ -23,10 +23,9 @@ TypeK는 오픈소스 프로젝트 [SayIt](https://github.com/chenjackle45/SayIt
 | 플랫폼 | 다운로드 |
 |------|---------|
 | macOS (Apple Silicon: M1/M2/M3/M4…) | [TypeK-mac-arm64.dmg](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-arm64.dmg) |
-| macOS (Intel) | [TypeK-mac-x64.dmg](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-x64.dmg) |
 | Windows | [TypeK-windows-x64.exe](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-windows-x64.exe) |
 
-어떤 Mac인지 모르겠다면: 왼쪽 위  → '이 Mac에 관하여'를 열어 '칩'이 Apple M으로 시작하면 Apple Silicon을, Intel이라고 적혀 있으면 Intel을 선택하세요.
+macOS 버전은 Apple Silicon(M1/M2/M3/M4…)만 지원합니다. Intel Mac 버전은 1.3.3부터 제공하지 않습니다.
 
 ### macOS 설치 방법
 

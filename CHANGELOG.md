@@ -8,6 +8,8 @@ TypeK 版本更新紀錄。
 
 1.3.2 的 macOS 安裝檔沒打包完（GitHub 的 Apple Silicon 打包機器排不到）、沒有公開，內容改由這一版一起發出。
 
+**不再提供 Intel Mac 版**：macOS 只打包 Apple Silicon（M 系列晶片）。Intel Mac 上的舊版不會再收到更新。
+
 ### Fixed
 
 - Groq 預設整理模型 `qwen/qwen3.6-27b` 已被 Groq 下架（每次回 404），選 Groq 又用預設模型時 AI 整理一律失敗、默默貼上原文。預設改成 `qwen/qwen3.8-27b`，存著舊模型的設定會自動換成新的

@@ -23,10 +23,9 @@ TypeK เป็น fork ของโปรเจกต์โอเพนซอ�
 | แพลตฟอร์ม | ลิงก์ดาวน์โหลด |
 |------|---------|
 | macOS (Apple Silicon: M1/M2/M3/M4…) | [TypeK-mac-arm64.dmg](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-arm64.dmg) |
-| macOS (Intel) | [TypeK-mac-x64.dmg](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-x64.dmg) |
 | Windows | [TypeK-windows-x64.exe](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-windows-x64.exe) |
 
-ไม่แน่ใจว่าเป็น Mac แบบไหน: คลิกมุมซ้ายบน → "เกี่ยวกับ Mac เครื่องนี้ (About This Mac)" ถ้า "ชิป (Chip)" ขึ้นต้นด้วย Apple M ให้เลือก Apple Silicon ถ้าเป็น Intel ให้เลือก Intel
+เวอร์ชัน macOS รองรับเฉพาะ Apple Silicon (M1/M2/M3/M4…) ตั้งแต่ 1.3.3 ไม่มีเวอร์ชันสำหรับ Mac ที่ใช้ Intel แล้ว
 
 ### ขั้นตอนการติดตั้งบน macOS
 

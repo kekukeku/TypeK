@@ -27,12 +27,6 @@ jobs:
             stable_name: TypeK-mac-arm64.dmg
             dmg_glob: "*.dmg"
             upload_sourcemaps: "true"
-          - platform: macos-latest
-            args: --target x86_64-apple-darwin
-            rust_target: x86_64-apple-darwin
-            stable_name: TypeK-mac-x64.dmg
-            dmg_glob: "*.dmg"
-            upload_sourcemaps: "false"
           - platform: windows-latest
             args: ""
             rust_target: ""
@@ -325,7 +319,7 @@ jobs:
             exit 1
           fi
 
-          for PLATFORM in darwin-aarch64 darwin-x86_64 windows-x86_64; do
+          for PLATFORM in darwin-aarch64 windows-x86_64; do  # Intel Mac 自 1.3.3 起不再打包
             URL=$(jq -r --arg platform "$PLATFORM" '.platforms[$platform].url // ""' latest.json)
             SIGNATURE=$(jq -r --arg platform "$PLATFORM" '.platforms[$platform].signature // ""' latest.json)
             if [ -z "$URL" ] || [ -z "$SIGNATURE" ]; then
