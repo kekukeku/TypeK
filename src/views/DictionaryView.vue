@@ -47,10 +47,10 @@ const showDuplicateHint = computed(
     vocabularyStore.isDuplicateTerm(newTermInput.value),
 );
 
-function getWeightVariant(weight: number): "default" | "secondary" | "outline" {
-  if (weight >= 30) return "default";
-  if (weight >= 10) return "secondary";
-  return "outline";
+function getWeightClass(weight: number): string {
+  if (weight >= 30) return "border-chart-1/40 bg-chart-1/20 text-primary";
+  if (weight >= 10) return "border-chart-2/40 bg-chart-2/20 text-foreground";
+  return "text-muted-foreground";
 }
 
 async function handleAddTerm() {
@@ -252,7 +252,7 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Description -->
-    <div class="mt-4 rounded-lg border border-border bg-muted/50 p-4">
+    <div class="mt-4 rounded-[var(--radius)] border border-border bg-secondary/50 p-4">
       <div class="flex gap-3">
         <Info class="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
         <div class="space-y-1 text-sm text-muted-foreground">
@@ -268,7 +268,7 @@ onBeforeUnmount(() => {
       <p
         v-if="feedback.message.value !== ''"
         class="mt-3 text-sm"
-        :class="feedback.type.value === 'success' ? 'text-emerald-500' : 'text-destructive'"
+        :class="feedback.type.value === 'success' ? 'text-success' : 'text-destructive'"
       >
         {{ feedback.message.value }}
       </p>
@@ -324,10 +324,10 @@ onBeforeUnmount(() => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow v-for="entry in vocabularyStore.aiSuggestedTermList" :key="entry.id">
+              <TableRow v-for="entry in vocabularyStore.aiSuggestedTermList" :key="entry.id" class="transition-colors hover:bg-accent/40">
                 <TableCell class="font-medium text-foreground">{{ entry.term }}</TableCell>
                 <TableCell class="text-center">
-                  <Badge :variant="getWeightVariant(entry.weight)">{{ entry.weight }}</Badge>
+                  <Badge variant="outline" :class="getWeightClass(entry.weight)">{{ entry.weight }}</Badge>
                 </TableCell>
                 <TableCell class="text-muted-foreground">{{ formatDate(entry.createdAt) }}</TableCell>
                 <TableCell class="text-right">
@@ -366,10 +366,10 @@ onBeforeUnmount(() => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow v-for="entry in vocabularyStore.manualTermList" :key="entry.id">
+              <TableRow v-for="entry in vocabularyStore.manualTermList" :key="entry.id" class="transition-colors hover:bg-accent/40">
                 <TableCell class="font-medium text-foreground">{{ entry.term }}</TableCell>
                 <TableCell class="text-center">
-                  <Badge :variant="getWeightVariant(entry.weight)">{{ entry.weight }}</Badge>
+                  <Badge variant="outline" :class="getWeightClass(entry.weight)">{{ entry.weight }}</Badge>
                 </TableCell>
                 <TableCell class="text-muted-foreground">{{ formatDate(entry.createdAt) }}</TableCell>
                 <TableCell class="text-right">

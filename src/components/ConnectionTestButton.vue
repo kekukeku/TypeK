@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { Button } from "@/components/ui/button";
+import { CircleCheck, CircleX } from "lucide-vue-next";
 import type { TestResult } from "@/lib/connectionTest";
 
 const props = defineProps<{
@@ -42,17 +43,18 @@ async function handleTest() {
 
     <div
       v-if="result?.ok === true"
-      class="text-sm text-green-400"
+      class="flex items-center gap-1.5 text-sm text-success"
     >
-      ✅
+      <CircleCheck class="size-4" aria-hidden="true" />
       {{ t("settings.connectionTest.success", { ms: result.durationMs }) }}
     </div>
 
     <div
       v-else-if="result?.ok === false"
-      class="text-sm text-destructive"
+      class="flex items-center gap-1.5 text-sm text-destructive"
     >
-      ❌ {{ result.errorMessage }}
+      <CircleX class="size-4" aria-hidden="true" />
+      {{ result.errorMessage }}
     </div>
   </div>
 </template>

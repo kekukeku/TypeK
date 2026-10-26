@@ -6,9 +6,9 @@ defineProps<{
 
 <template>
   <header
-    class="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-card px-4"
+    class="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/80 px-6 backdrop-blur-md"
   >
-    <h1 class="text-base font-semibold text-foreground">
+    <h1 class="text-lg font-extrabold tracking-tight text-foreground">
       {{ title }}
     </h1>
   </header>

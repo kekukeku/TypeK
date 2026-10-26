@@ -14,10 +14,10 @@ body {
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 6px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -33,6 +33,7 @@ body {
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
   --color-warning: var(--warning);
   --color-border: var(--border);
   --color-input: var(--input);
@@ -53,74 +54,127 @@ body {
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --warning: oklch(0.702 0.191 56.568);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* 圓角：20px 飽滿親和大圓角（果凍氣泡美學） */
+  --radius: 1.25rem;
+
+  /* 淺色模式：草莓奶昔棉花糖色系 */
+  --background: #fff6fa;
+  --foreground: #3c1945;
+  --card: #ffffff;
+  --card-foreground: #3c1945;
+  --popover: #ffffff;
+  --popover-foreground: #3c1945;
+  --primary: #ec4899;
+  --primary-foreground: #ffffff;
+  --secondary: #fce7f3;
+  --secondary-foreground: #3c1945;
+  --muted: #f5e8fc;
+  --muted-foreground: #7d4d7f;
+  --accent: #fdf2f8;
+  --accent-foreground: #3c1945;
+  --destructive: #f43f5e;
+  --success: #047857;
+  --warning: #f59e0b;
+  --border: #f0d1ea;
+  --input: #f0d1ea;
+  --ring: #ec4899;
+
+  /* 五色糖果圖表色調 */
+  --chart-1: #f472b6;
+  --chart-2: #c084fc;
+  --chart-3: #38bdf8;
+  --chart-4: #34d399;
+  --chart-5: #facc15;
+
+  /* 側邊欄專屬色 */
+  --sidebar: #fff0f7;
+  --sidebar-foreground: #3c1945;
+  --sidebar-primary: #ec4899;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #fce7f3;
+  --sidebar-accent-foreground: #2d1035;
+  --sidebar-border: #f0d1ea;
+  --sidebar-ring: #ec4899;
+
+  /* 自訂裝飾與陰影變數 */
+  --jelly-shadow: 0 8px 24px rgba(236, 72, 153, 0.12), 0 2px 6px rgba(168, 85, 247, 0.08);
+  --jelly-shadow-hover: 0 12px 30px rgba(236, 72, 153, 0.22), 0 4px 10px rgba(168, 85, 247, 0.14);
+
+  /* Notch HUD 色彩（HUD 永遠是深莓琉璃外殼） */
+  --notch-bg: #281232;
+  --notch-fg: #fdecf6;
+  --notch-fg-soft: rgba(253, 236, 246, 0.65);
+  --notch-border: rgba(244, 114, 182, 0.3);
+  --notch-glow: 0 8px 24px rgba(236, 72, 153, 0.35);
+  --notch-drop-base: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --notch-star: #f472b6;
+  --notch-wave-1: #f472b6;
+  --notch-wave-2: #fbbf24;
+  --notch-wave-3: #34d399;
+  --notch-wave-4: #38bdf8;
+  --notch-wave-5: #c084fc;
+  --notch-wave-6: #f43f8e;
+  --notch-success-from: #34d399;
+  --notch-success-to: #10b981;
+  --notch-success-glow: rgba(52, 211, 153, 0.5);
+  --notch-success-glow-soft: rgba(52, 211, 153, 0.2);
+  --notch-learned-glow: rgba(249, 168, 212, 0.5);
+  --notch-learned-glow-soft: rgba(249, 168, 212, 0.2);
+  --notch-error-fg: #ffe4e6;
+  --notch-learned: #f9a8d4;
+  --notch-mode: #e9d5ff;
+  --notch-edit-bg: rgba(251, 191, 36, 0.25);
+  --notch-edit-fg: #fbbf24;
 }
 
 .dark {
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: #18181b;
-  --card-foreground: #fafafa;
-  --popover: #18181b;
-  --popover-foreground: #fafafa;
-  --primary: #fafafa;
-  --primary-foreground: #18181b;
-  --secondary: #27272a;
-  --secondary-foreground: #fafafa;
-  --muted: #27272a;
-  --muted-foreground: #a1a1aa;
-  --accent: #27272a;
-  --accent-foreground: #fafafa;
-  --destructive: #ef4444;
-  --warning: #f97316;
-  --border: #27272a;
-  --input: #27272a;
-  --ring: #a1a1aa;
-  --chart-1: #22c55e;
-  --chart-2: #a855f7;
-  --chart-3: #f97316;
-  --chart-4: #3b82f6;
-  --chart-5: #ef4444;
-  --sidebar: #18181b;
-  --sidebar-foreground: #fafafa;
-  --sidebar-primary: #fafafa;
-  --sidebar-primary-foreground: #18181b;
-  --sidebar-accent: #27272a;
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: #27272a;
-  --sidebar-ring: #a1a1aa;
+  /* 深色模式：魔法少女午夜星空黑曜深紫系 */
+  --background: #150d22;
+  --foreground: #fdf2fe;
+  --card: #221434;
+  --card-foreground: #fdf2fe;
+  --popover: #221434;
+  --popover-foreground: #fdf2fe;
+  --primary: #f43f8e;
+  --primary-foreground: #ffffff;
+  --secondary: #2f1a45;
+  --secondary-foreground: #fdf2fe;
+  --muted: #2f1a45;
+  --muted-foreground: #c29fcf;
+  --accent: #3d205a;
+  --accent-foreground: #ffffff;
+  --destructive: #fb7185;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --border: #4a286a;
+  --input: #4a286a;
+  --ring: #f43f8e;
+
+  /* 五色糖果圖表色調（深色模式保持通透亮眼） */
+  --chart-1: #f472b6;
+  --chart-2: #c084fc;
+  --chart-3: #38bdf8;
+  --chart-4: #34d399;
+  --chart-5: #fde047;
+
+  /* 側邊欄專屬色 */
+  --sidebar: #10091b;
+  --sidebar-foreground: #fdf2fe;
+  --sidebar-primary: #f43f8e;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #26123b;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #381c54;
+  --sidebar-ring: #f43f8e;
+
+  /* 自訂裝飾與陰影變數 */
+  --jelly-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 15px rgba(244, 63, 142, 0.15);
+  --jelly-shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 22px rgba(244, 63, 142, 0.28);
+
+  /* Notch HUD 色彩 */
+  --notch-bg: #12081d;
+  --notch-fg: #fdf2fe;
+  --notch-fg-soft: rgba(253, 242, 254, 0.6);
 }
 
 @layer base {
@@ -129,5 +183,90 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    font-family: "SF Pro Rounded", "Avenir Next Rounded", "Arial Rounded MT Bold", -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", sans-serif;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+}
+
+/* 1. 果凍晶透立體陰影 (Jelly Gloss Shadow) */
+.shadow-jelly {
+  box-shadow: var(--jelly-shadow);
+  transition: box-shadow 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.shadow-jelly:hover {
+  box-shadow: var(--jelly-shadow-hover);
+}
+
+/* 2. 手帳立體貼紙徽章 (Die-cut Sticker Badge) */
+.badge-sticker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #fef08a, #fed7aa);
+  color: #854d0e;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(234, 179, 8, 0.25);
+  transform: rotate(-1.5deg);
+}
+
+/* 3. 糖果果凍膠囊標籤 (Jelly Pill Badge) */
+.badge-jelly {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--secondary));
+  color: var(--primary);
+  border: 1px solid var(--border);
+}
+
+/* 4. 彩虹漸變果凍進度條 (Rainbow Progress Track) */
+.rainbow-track {
+  width: 100%;
+  height: 0.5rem;
+  background: var(--muted);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.rainbow-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #f472b6, #c084fc, #38bdf8);
+  box-shadow: 0 0 8px rgba(244, 114, 182, 0.4);
+  transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 5. 夢幻彩虹微光畫布背景 (Dreamy Pastel Aura Background) */
+.dreamy-aura-bg {
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(244, 114, 182, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 90% 10%, rgba(192, 132, 252, 0.1) 0%, transparent 45%),
+    radial-gradient(circle at 50% 85%, rgba(56, 189, 248, 0.07) 0%, transparent 50%);
+  background-attachment: fixed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shadow-jelly,
+  .btn,
+  .wave-candy-bar,
+  .magic-star,
+  .heart-pulse,
+  .notch-star,
+  .notch-wrapper,
+  .notch-hud,
+  .notch-shake,
+  .waveform-element,
+  .waveform-dot,
+  .checkmark-svg {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
   }
 }

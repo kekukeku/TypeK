@@ -230,7 +230,7 @@ onBeforeUnmount(() => {
         v-model="searchInput"
         type="text"
         :placeholder="$t('history.searchPlaceholder')"
-        class="w-full pl-9"
+        class="w-full rounded-full border-input pl-9 shadow-xs"
         @input="handleSearchInput"
       />
     </div>
@@ -278,7 +278,7 @@ onBeforeUnmount(() => {
                   </span>
                   <Badge
                     v-if="record.wasEnhanced"
-                    class="bg-emerald-500/20 text-emerald-400 border-0 text-[11px]"
+                    class="badge-jelly text-[11px]"
                   >
                     {{ $t("dashboard.aiEnhanced") }}
                   </Badge>
@@ -297,7 +297,7 @@ onBeforeUnmount(() => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    class="h-7 w-7"
+                    class="h-8 w-8 rounded-full"
                     :disabled="!record.audioFilePath"
                     :title="record.audioFilePath ? $t('history.playRecording') : $t('history.noRecordingFile')"
                     @click.stop="handlePlayRecording(record)"
@@ -308,16 +308,16 @@ onBeforeUnmount(() => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    class="h-7 w-7"
+                    class="h-8 w-8 rounded-full"
                     @click.stop="handleCopyText(record)"
                   >
-                    <Check v-if="copiedRecordId === record.id" class="h-3.5 w-3.5 text-green-400" />
+                    <Check v-if="copiedRecordId === record.id" class="h-3.5 w-3.5 text-success" />
                     <Copy v-else class="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    class="h-7 w-7"
+                    class="h-8 w-8 rounded-full"
                     data-testid="retranscribe-button"
                     :disabled="!record.audioFilePath || record.isEditMode || retryingId !== null"
                     :title="retryingId === record.id && retryingAction === 'transcribe' ? $t('history.retranscribing') : (record.audioFilePath ? $t('history.retranscribe') : $t('history.noRecordingFile'))"
@@ -329,7 +329,7 @@ onBeforeUnmount(() => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    class="h-7 w-7"
+                    class="h-8 w-8 rounded-full"
                     data-testid="reenhance-button"
                     :disabled="!record.rawText.trim() || record.isEditMode || retryingId !== null"
                     :title="retryingId === record.id && retryingAction === 'enhance' ? $t('history.reEnhancing') : $t('history.reEnhance')"
@@ -365,7 +365,7 @@ onBeforeUnmount(() => {
             >
               <!-- 整理後文字 -->
               <div v-if="record.wasEnhanced && record.processedText">
-                <p class="text-xs font-medium text-emerald-400 mb-1">{{ $t("history.enhancedText") }}</p>
+                <p class="text-xs font-medium text-success mb-1">{{ $t("history.enhancedText") }}</p>
                 <p class="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
                   {{ record.processedText }}
                 </p>
@@ -375,14 +375,16 @@ onBeforeUnmount(() => {
               <div>
                 <div class="flex items-center justify-between mb-1">
                   <p class="text-xs font-medium text-muted-foreground">{{ $t("history.rawText") }}</p>
-                  <button
-                    class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="h-auto gap-1 rounded-full px-1.5 text-xs text-muted-foreground hover:text-foreground"
                     @click.stop="handleCopyRawText(record)"
                   >
-                    <Check v-if="copiedRawRecordId === record.id" class="h-3 w-3 text-green-400" />
+                    <Check v-if="copiedRawRecordId === record.id" class="h-3 w-3 text-success" />
                     <Copy v-else class="h-3 w-3" />
                     <span>{{ copiedRawRecordId === record.id ? $t("history.copied") : $t("history.copy") }}</span>
-                  </button>
+                  </Button>
                 </div>
                 <p class="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
                   {{ record.rawText }}

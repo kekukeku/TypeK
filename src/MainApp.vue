@@ -267,18 +267,20 @@ onUnmounted(() => {
   <!-- macOS Overlay 自訂標題列：fixed z-20 蓋住 Sidebar(z-10)，整條可拖動 -->
   <div
     data-tauri-drag-region
-    class="fixed top-0 left-0 right-0 z-20 flex h-9 items-center justify-center border-b border-border bg-background"
+    class="fixed top-0 left-0 right-0 z-20 flex h-9 items-center justify-center border-b border-sidebar-border bg-sidebar/90 backdrop-blur-md"
   >
-    <span data-tauri-drag-region class="text-xs font-medium text-muted-foreground select-none">TypeK</span>
+    <span data-tauri-drag-region class="text-xs font-bold tracking-wide text-foreground select-none">TypeK</span>
   </div>
 
   <SidebarProvider class="h-screen !min-h-0 pt-9">
-    <Sidebar collapsible="offcanvas">
-      <SidebarHeader class="flex-row h-12 items-center gap-3 border-b border-sidebar-border px-4">
-        <img src="@/assets/logo-yan.png" alt="言" class="h-7 w-auto" />
-        <span class="text-base font-semibold text-sidebar-foreground tracking-wide" style="font-family: 'SF Pro Display', 'Inter', system-ui, sans-serif;">TypeK</span>
+    <Sidebar collapsible="offcanvas" class="border-r border-sidebar-border">
+      <SidebarHeader class="flex-row h-14 items-center gap-3 border-b border-sidebar-border px-4">
+        <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-chart-1 to-chart-2 p-1 shadow-md">
+          <img src="@/assets/logo-yan.png" alt="言" class="h-full w-auto" />
+        </div>
+        <span class="text-base font-extrabold text-sidebar-foreground tracking-wide">TypeK</span>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent class="px-2 py-3">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -286,6 +288,12 @@ onUnmounted(() => {
                 <SidebarMenuButton
                   as-child
                   :is-active="route.path.startsWith(item.path)"
+                  :class="[
+                    'rounded-full transition-all duration-200 hover:translate-x-1',
+                    route.path.startsWith(item.path)
+                      ? 'border border-border shadow-sm font-bold data-[active=true]:bg-gradient-to-r data-[active=true]:from-card data-[active=true]:to-accent data-[active=true]:text-primary data-[active=true]:[&>svg]:text-primary'
+                      : '',
+                  ]"
                 >
                   <RouterLink :to="item.path">
                     <component :is="item.icon" />
@@ -297,14 +305,14 @@ onUnmounted(() => {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter class="border-t border-sidebar-border px-4 py-2">
-        <div class="flex items-center justify-between">
+      <SidebarFooter class="border-t border-sidebar-border px-3 py-2">
+        <div class="flex items-center justify-between rounded-full border border-sidebar-border bg-card/60 px-3 py-1">
           <span class="text-xs text-muted-foreground">v{{ appVersion }}</span>
           <!-- ready-to-install 時不顯示檢查按鈕，改顯示安裝提示 -->
           <Button
             v-if="updateState !== 'ready-to-install'"
             variant="link"
-            class="h-auto p-0 text-xs text-muted-foreground"
+            class="h-auto rounded-full p-0 text-xs text-muted-foreground"
             :disabled="isUpdateBusy"
             @click="handleManualCheck"
           >
@@ -312,11 +320,11 @@ onUnmounted(() => {
           </Button>
         </div>
         <!-- 自動下載完成：顯示持久的安裝提示 -->
-        <div v-if="updateState === 'ready-to-install'" class="mt-1.5 flex items-center justify-between rounded-md bg-primary/10 px-2 py-1.5">
+        <div v-if="updateState === 'ready-to-install'" class="mt-1.5 flex items-center justify-between rounded-full border border-primary/20 bg-primary/15 px-3 py-1">
           <span class="text-xs font-medium text-primary">v{{ availableVersion }} {{ $t("mainApp.update.ready") }}</span>
           <Button
             size="sm"
-            class="h-6 gap-1 px-2 text-xs"
+            class="h-6 gap-1 rounded-full px-2 text-xs"
             @click="handleSidebarInstall"
           >
             <Download class="h-3 w-3" />
@@ -333,7 +341,7 @@ onUnmounted(() => {
       </SidebarFooter>
     </Sidebar>
 
-    <SidebarInset class="overflow-hidden">
+    <SidebarInset class="dreamy-aura-bg overflow-hidden">
       <SiteHeader :title="currentPageTitle" />
       <div
         v-if="databaseError"

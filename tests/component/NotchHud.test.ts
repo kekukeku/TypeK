@@ -64,17 +64,15 @@ describe("NotchHud", () => {
     expect(wrapper.find(".waveform-container").exists()).toBe(true);
   });
 
-  it("[P0] success 狀態應顯示 SVG checkmark 和 converge dots", async () => {
+  it("[P0] success 狀態應顯示薄荷勳章和 converge dots", async () => {
     const wrapper = mountNotchHud({
       status: "success",
       recordingElapsedSeconds: 0,
       message: "",
     });
 
-    expect(wrapper.find(".checkmark-svg").exists()).toBe(true);
-    expect(wrapper.find(".checkmark-svg path").attributes("stroke")).toBe(
-      "#22c55e",
-    );
+    expect(wrapper.find(".success-medal").exists()).toBe(true);
+    expect(wrapper.find(".success-medal svg").exists()).toBe(true);
     expect(wrapper.findAll(".waveform-converge").length).toBe(6);
   });
 

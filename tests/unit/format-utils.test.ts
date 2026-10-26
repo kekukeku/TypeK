@@ -8,6 +8,7 @@ import {
   formatDurationMs,
   formatNumber,
   formatCostCeiling,
+  splitNumberSegments,
 } from "../../src/lib/formatUtils";
 import type { TranscriptionRecord } from "../../src/types/transcription";
 
@@ -155,6 +156,56 @@ describe("formatUtils.ts", () => {
       expect(result).toContain("234");
       expect(result).toContain("567");
       expect(result.length).toBeGreaterThan(7);
+    });
+  });
+
+  describe("splitNumberSegments", () => {
+    const expectRoundTrip = (input: string) => {
+      const segments = splitNumberSegments(input);
+      expect(segments.map((segment) => segment.text).join("")).toBe(input);
+      return segments;
+    };
+
+    it("應拆分「0 分鐘」", () => {
+      expect(expectRoundTrip("0 分鐘")).toEqual([
+        { text: "0", isNumber: true },
+        { text: " 分鐘", isNumber: false },
+      ]);
+    });
+
+    it("應拆分「1 小時 5 分鐘」的兩個數字", () => {
+      expect(expectRoundTrip("1 小時 5 分鐘")).toEqual([
+        { text: "1", isNumber: true },
+        { text: " 小時 ", isNumber: false },
+        { text: "5", isNumber: true },
+        { text: " 分鐘", isNumber: false },
+      ]);
+    });
+
+    it("應拆分英文 '2 h 30 min'", () => {
+      expect(expectRoundTrip("2 h 30 min")).toEqual([
+        { text: "2", isNumber: true },
+        { text: " h ", isNumber: false },
+        { text: "30", isNumber: true },
+        { text: " min", isNumber: false },
+      ]);
+    });
+
+    it("應保留千分位逗號於同一數字段", () => {
+      expect(expectRoundTrip("1,234 words")).toEqual([
+        { text: "1,234", isNumber: true },
+        { text: " words", isNumber: false },
+      ]);
+    });
+
+    it("空字串應回傳空陣列", () => {
+      expect(expectRoundTrip("")).toEqual([]);
+    });
+
+    it("無數字字串應回傳單一非數字段", () => {
+      expect(expectRoundTrip("no digits here")).toEqual([
+        { text: "no digits here", isNumber: false },
+      ]);
     });
   });
 

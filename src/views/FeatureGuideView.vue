@@ -33,10 +33,12 @@ const featureList = [
       {{ t("featureGuide.subtitle") }}
     </p>
 
-    <Card v-for="feature in featureList" :key="feature.key">
+    <Card v-for="feature in featureList" :key="feature.key" class="shadow-jelly rounded-[var(--radius)] transition-transform hover:scale-[1.01]">
       <CardHeader class="border-b border-border py-3">
         <CardTitle class="text-base flex items-center gap-2">
-          <component :is="feature.icon" class="size-4 text-muted-foreground" />
+          <span class="flex size-7 items-center justify-center rounded-lg bg-secondary p-1.5 text-primary">
+            <component :is="feature.icon" class="size-4" />
+          </span>
           {{ t(`featureGuide.${feature.key}.title`) }}
         </CardTitle>
       </CardHeader>

@@ -15,6 +15,7 @@ import {
   getDisplayText,
   formatDurationFromMs,
   formatNumber,
+  splitNumberSegments,
 } from "../lib/formatUtils";
 import {
   findLlmModelConfig,
@@ -45,6 +46,18 @@ const router = useRouter();
 
 // 付費偵測依 LLM provider id：openai / anthropic 為計費方案（無免費額度）；
 // groq / gemini 提供免費額度。Whisper 目前僅 Groq，一律視為免費額度。
+const totalRecordingSegments = computed(() =>
+  splitNumberSegments(
+    formatDurationFromMs(historyStore.dashboardStats.totalRecordingDurationMs),
+  ),
+);
+
+const timeSavedSegments = computed(() =>
+  splitNumberSegments(
+    formatDurationFromMs(historyStore.dashboardStats.estimatedTimeSavedMs),
+  ),
+);
+
 const isPaidWhisperProvider = computed(() => false);
 
 const isPaidLlmProvider = computed(() => {
@@ -148,12 +161,9 @@ const quotaBottleneckLabel = computed(() => {
   return sorted[0].label;
 });
 
-const quotaBarColorClass = computed(() => {
-  const pct = quotaRemainingPercent.value;
-  if (pct >= 0.5) return "bg-emerald-500";
-  if (pct >= 0.2) return "bg-amber-500";
-  return "bg-destructive";
-});
+const quotaBarColorClass = computed(() =>
+  quotaRemainingPercent.value < 0.2 ? "bg-warning" : "rainbow-fill",
+);
 
 let unlistenTranscriptionCompleted: UnlistenFn | null = null;
 
@@ -185,57 +195,63 @@ onBeforeUnmount(() => {
   <div class="p-6">
     <!-- 統計卡片 -->
     <div class="mt-6 grid grid-cols-3 gap-4">
-      <Card>
+      <Card class="shadow-jelly rounded-[var(--radius)] border-border bg-card transition-all duration-200 hover:-translate-y-0.5">
         <CardHeader class="pb-2">
-          <CardDescription>{{ $t("dashboard.totalRecordingTime") }}</CardDescription>
+          <CardDescription class="font-bold text-muted-foreground">{{ $t("dashboard.totalRecordingTime") }}</CardDescription>
         </CardHeader>
         <CardContent>
-          <p class="text-2xl font-bold text-foreground">
-            {{ formatDurationFromMs(historyStore.dashboardStats.totalRecordingDurationMs) }}
+          <p class="text-3xl font-extrabold tabular-nums tracking-tight text-foreground">
+            <template v-for="(segment, index) in totalRecordingSegments" :key="index">
+              <span v-if="segment.isNumber" :class="index > 0 ? 'ml-1' : ''">{{ segment.text }}</span>
+              <span v-else-if="segment.text.trim()" class="ml-1 text-sm font-semibold text-primary">{{ segment.text.trim() }}</span>
+            </template>
           </p>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card class="shadow-jelly rounded-[var(--radius)] border-border bg-card transition-all duration-200 hover:-translate-y-0.5">
         <CardHeader class="pb-2">
-          <CardDescription>{{ $t("dashboard.totalCharacters") }}</CardDescription>
+          <CardDescription class="font-bold text-muted-foreground">{{ $t("dashboard.totalCharacters") }}</CardDescription>
         </CardHeader>
         <CardContent>
-          <p class="text-2xl font-bold text-foreground">
-            {{ formatNumber(historyStore.dashboardStats.totalCharacters) }} {{ $t("dashboard.characterUnit") }}
+          <p class="text-3xl font-extrabold tabular-nums tracking-tight text-foreground">
+            {{ formatNumber(historyStore.dashboardStats.totalCharacters) }} <span class="ml-1 text-sm font-semibold text-primary">{{ $t("dashboard.characterUnit") }}</span>
           </p>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card class="shadow-jelly rounded-[var(--radius)] border-border bg-card transition-all duration-200 hover:-translate-y-0.5">
         <CardHeader class="pb-2">
-          <CardDescription>{{ $t("dashboard.timeSaved") }}</CardDescription>
+          <CardDescription class="font-bold text-muted-foreground">{{ $t("dashboard.timeSaved") }}</CardDescription>
         </CardHeader>
         <CardContent>
-          <p class="text-2xl font-bold text-foreground">
-            {{ formatDurationFromMs(historyStore.dashboardStats.estimatedTimeSavedMs) }}
+          <p class="text-3xl font-extrabold tabular-nums tracking-tight text-foreground">
+            <template v-for="(segment, index) in timeSavedSegments" :key="index">
+              <span v-if="segment.isNumber" :class="index > 0 ? 'ml-1' : ''">{{ segment.text }}</span>
+              <span v-else-if="segment.text.trim()" class="ml-1 text-sm font-semibold text-primary">{{ segment.text.trim() }}</span>
+            </template>
           </p>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card class="shadow-jelly rounded-[var(--radius)] border-border bg-card transition-all duration-200 hover:-translate-y-0.5">
         <CardHeader class="pb-2">
-          <CardDescription>{{ $t("dashboard.totalTranscriptions") }}</CardDescription>
+          <CardDescription class="font-bold text-muted-foreground">{{ $t("dashboard.totalTranscriptions") }}</CardDescription>
         </CardHeader>
         <CardContent>
-          <p class="text-2xl font-bold text-foreground">
-            {{ formatNumber(historyStore.dashboardStats.totalTranscriptions) }} {{ $t("dashboard.transcriptionUnit") }}
+          <p class="text-3xl font-extrabold tabular-nums tracking-tight text-foreground">
+            {{ formatNumber(historyStore.dashboardStats.totalTranscriptions) }} <span class="ml-1 text-sm font-semibold text-primary">{{ $t("dashboard.transcriptionUnit") }}</span>
           </p>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card class="shadow-jelly rounded-[var(--radius)] border-border bg-card transition-all duration-200 hover:-translate-y-0.5">
         <CardHeader class="pb-2">
-          <CardDescription>{{ $t("dashboard.avgCharacters") }}</CardDescription>
+          <CardDescription class="font-bold text-muted-foreground">{{ $t("dashboard.avgCharacters") }}</CardDescription>
         </CardHeader>
         <CardContent>
-          <p class="text-2xl font-bold text-foreground">
-            {{ historyStore.dashboardStats.totalTranscriptions > 0 ? formatNumber(Math.round(historyStore.dashboardStats.totalCharacters / historyStore.dashboardStats.totalTranscriptions)) : 0 }} {{ $t("dashboard.characterUnit") }}
+          <p class="text-3xl font-extrabold tabular-nums tracking-tight text-foreground">
+            {{ historyStore.dashboardStats.totalTranscriptions > 0 ? formatNumber(Math.round(historyStore.dashboardStats.totalCharacters / historyStore.dashboardStats.totalTranscriptions)) : 0 }} <span class="ml-1 text-sm font-semibold text-primary">{{ $t("dashboard.characterUnit") }}</span>
           </p>
         </CardContent>
       </Card>
@@ -243,20 +259,20 @@ onBeforeUnmount(() => {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger as-child>
-            <Card class="cursor-default">
+            <Card class="cursor-default shadow-jelly rounded-[var(--radius)] border-border bg-card transition-all duration-200 hover:-translate-y-0.5">
               <CardHeader class="pb-2">
                 <div class="flex items-center justify-between gap-2">
-                  <CardDescription>{{ hasFreeQuota ? $t("dashboard.dailyQuota") : $t("dashboard.dailyUsage") }}</CardDescription>
+                  <CardDescription class="font-bold text-muted-foreground">{{ hasFreeQuota ? $t("dashboard.dailyQuota") : $t("dashboard.dailyUsage") }}</CardDescription>
                   <Badge v-if="hasAnyPaidProvider" variant="secondary">{{ $t("dashboard.billedPlan") }}</Badge>
                 </div>
               </CardHeader>
               <CardContent>
                 <!-- 免費額度（免費服務）-->
                 <template v-if="hasFreeQuota">
-                  <p class="text-2xl font-bold text-foreground">
+                  <p class="text-3xl font-extrabold tabular-nums tracking-tight text-foreground">
                     {{ Math.round(quotaRemainingPercent * 100) }}%
                   </p>
-                  <div class="mt-2 h-1.5 w-full rounded-full bg-muted">
+                  <div class="rainbow-track mt-2">
                     <div
                       class="h-full rounded-full transition-all"
                       :class="quotaBarColorClass"
@@ -293,7 +309,7 @@ onBeforeUnmount(() => {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent class="w-72 p-3 bg-card text-card-foreground border border-border" side="bottom" :side-offset="6" hide-arrow>
+          <TooltipContent class="w-72 rounded-[var(--radius)] border border-border bg-card p-3 text-card-foreground shadow-jelly" side="bottom" :side-offset="6" hide-arrow>
             <p class="text-xs font-medium mb-2">{{ hasFreeQuota ? $t("dashboard.dailyQuotaDetail") : $t("dashboard.dailyUsage") }}</p>
             <div v-if="hasFreeQuota" class="space-y-2">
               <div v-for="(dim, idx) in quotaDimensionList" :key="idx">
@@ -349,10 +365,10 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- 每日使用趨勢圖表 -->
-    <Card class="mt-6">
+    <Card class="mt-6 shadow-jelly rounded-[var(--radius)] border-border bg-card">
       <CardHeader>
         <CardTitle class="text-base">{{ $t("dashboard.usageTrend") }}</CardTitle>
-        <CardDescription>{{ $t("dashboard.lastNDays", { days: historyStore.usageTrendDays }) }}</CardDescription>
+        <CardDescription class="font-bold text-muted-foreground">{{ $t("dashboard.lastNDays", { days: historyStore.usageTrendDays }) }}</CardDescription>
       </CardHeader>
       <CardContent>
         <DashboardUsageChart :data="historyStore.dailyUsageTrendList" />
@@ -360,7 +376,7 @@ onBeforeUnmount(() => {
     </Card>
 
     <!-- 最近轉錄 -->
-    <Card class="mt-6">
+    <Card class="mt-6 shadow-jelly rounded-[var(--radius)] border-border bg-card">
       <CardHeader class="flex-row items-center justify-between">
         <CardTitle class="text-base">{{ $t("dashboard.recentTranscriptions") }}</CardTitle>
         <Button
@@ -386,7 +402,7 @@ onBeforeUnmount(() => {
             v-for="record in historyStore.recentTranscriptionList"
             :key="record.id"
             variant="ghost"
-            class="w-full h-auto rounded-lg border border-border px-4 py-3 text-left flex flex-col items-start"
+            class="w-full h-auto rounded-2xl border border-border bg-card p-3.5 text-left flex flex-col items-start transition-all duration-150 hover:translate-x-1 hover:bg-accent/60"
             @click="navigateToHistory"
           >
             <div class="flex w-full items-center justify-between gap-2">
@@ -395,7 +411,7 @@ onBeforeUnmount(() => {
               </span>
               <Badge
                 v-if="record.wasEnhanced"
-                class="bg-emerald-500/20 text-emerald-400 border-0"
+                class="badge-jelly"
               >
                 {{ $t("dashboard.aiEnhanced") }}
               </Badge>

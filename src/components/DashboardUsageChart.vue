@@ -21,8 +21,9 @@ const chartConfig = computed(() => ({
 
 const svgDefs = `
   <linearGradient id="fillCount" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="5%" stop-color="var(--color-count)" stop-opacity="0.8" />
-    <stop offset="95%" stop-color="var(--color-count)" stop-opacity="0.1" />
+    <stop offset="5%" stop-color="var(--chart-1)" stop-opacity="0.75" />
+    <stop offset="55%" stop-color="var(--chart-2)" stop-opacity="0.35" />
+    <stop offset="95%" stop-color="var(--chart-1)" stop-opacity="0.02" />
   </linearGradient>
 `;
 
@@ -68,11 +69,11 @@ function formatDateLabel(d: number): string {
 </script>
 
 <template>
-  <div v-if="props.data.length === 0" class="rounded-lg border border-dashed border-border px-4 py-8 text-center text-muted-foreground">
+  <div v-if="props.data.length === 0" class="rounded-[var(--radius)] border border-dashed border-border px-4 py-8 text-center text-muted-foreground">
     {{ $t("dashboard.noRecords") }}
   </div>
 
-  <ChartContainer v-else :config="chartConfig" class="aspect-auto h-[200px] w-full" :cursor="false">
+  <ChartContainer v-else :config="chartConfig" class="aspect-auto h-[200px] w-full rounded-[var(--radius)] p-2" :cursor="false">
     <VisXYContainer
       :data="props.data"
       :svg-defs="svgDefs"
@@ -88,7 +89,7 @@ function formatDateLabel(d: number): string {
         :x="xAccessor"
         :y="yAccessor"
         :color="lineColor"
-        :line-width="1.5"
+        :line-width="2.5"
       />
       <VisAxis
         type="x"

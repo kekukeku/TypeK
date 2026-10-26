@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TypeK · UI 刷新提案 D：繽紛少女風（Colourful Girly Pop）</title>
+  <style>
+    /* ══════════════════════════════════════════════════════════
+       方向 D：繽紛少女風 · 夢幻糖果色與立體果凍氣泡美學
+       主色調：草莓粉 (Pastel Pink) + 夢幻薰衣草紫 + 薄荷蘇打綠 + 天空藍 + 檸檬黃
+       特色：膠囊大圓角 (Pill)、果凍高光 (Jelly Gloss)、立體貼紙徽章 (Sticker)、彩虹跳動波形
+       ══════════════════════════════════════════════════════════ */
+    :root {
+      --radius: 1.25rem; /* 20px 飽滿親和大圓角 */
+      --background: #fff6fa; /* 草莓棉花糖奶霜白 */
+      --foreground: #3c1945; /* 濃郁黑醋栗葡萄深紫，對比度 > 12:1 */
+      --card: #ffffff; /* 果凍牛奶純白卡片 */
+      --card-foreground: #3c1945;
+      --popover: #ffffff;
+      --popover-foreground: #3c1945;
+      --primary: #ec4899; /* 亮麗熱情泡泡糖粉 (Bubblegum Pink) */
+      --primary-foreground: #ffffff;
+      --secondary: #fce7f3; /* 草莓奶昔柔粉底色 */
+      --secondary-foreground: #3c1945;
+      --muted: #f5e8fc; /* 夢幻薰衣草柔霧 */
+      --muted-foreground: #7d4d7f; /* 柔和梅紫，對比度 > 5.2:1 */
+      --accent: #fdf2f8; /* 櫻花仙氣淡粉高光 */
+      --accent-foreground: #3c1945;
+      --destructive: #f43f5e; /* 多汁西瓜軟糖紅 */
+      --warning: #f59e0b; /* 蜜糖檸檬金黃 */
+      --success: #10b981; /* 清新薄荷甜心綠 */
+      --border: #f0d1ea; /* 棉花糖粉紫柔邊線 */
+      --input: #f0d1ea;
+      --ring: #ec4899;
+      --chart-1: #f472b6; /* 蜜桃草莓粉 */
+      --chart-2: #c084fc; /* 夢幻薰衣草紫 */
+      --chart-3: #38bdf8; /* 彈珠汽水天空藍 */
+      --chart-4: #34d399; /* 清涼薄荷綠 */
+      --chart-5: #facc15; /* 璀璨星星檸檬黃 */
+      --sidebar: #fff0f7; /* 浪漫草莓牛奶冰淇淋側邊欄 */
+      --sidebar-foreground: #3c1945;
+      --sidebar-primary: #ec4899;
+      --sidebar-primary-foreground: #ffffff;
+      --sidebar-accent: #fce7f3;
+      --sidebar-accent-foreground: #2d1035;
+      --sidebar-border: #f0d1ea;
+      --sidebar-ring: #ec4899;
+      --jelly-shadow: 0 8px 24px rgba(236, 72, 153, 0.12), 0 2px 6px rgba(168, 85, 247, 0.08);
+      --jelly-shadow-hover: 0 12px 30px rgba(236, 72, 153, 0.22), 0 4px 10px rgba(168, 85, 247, 0.14);
+      --notch-bg: #281232; /* 奇幻莓果黑夜琉璃 Notch */
+      --notch-fg: #fdecf6; /* 星光草莓米白光 */
+      --notch-fg-soft: rgba(253, 236, 246, 0.65);
+    }
+
+    html.dark {
+      --background: #150d22; /* 魔法少女午夜星空深紫 */
+      --foreground: #fdf2fe; /* 璀璨星塵粉白，對比度 > 14:1 */
+      --card: #221434; /* 晶瑩紫水晶果凍卡片 */
+      --card-foreground: #fdf2fe;
+      --popover: #221434;
+      --popover-foreground: #fdf2fe;
+      --primary: #f43f8e; /* 霓虹耀眼電光草莓粉 */
+      --primary-foreground: #ffffff;
+      --secondary: #2f1a45; /* 深夜黑莓酒紅 */
+      --secondary-foreground: #fdf2fe;
+      --muted: #2f1a45;
+      --muted-foreground: #c29fcf; /* 薰衣草星塵粉紫，對比度 > 5.5:1 */
+      --accent: #3d205a; /* 霓虹紫光薄霧 */
+      --accent-foreground: #ffffff;
+      --destructive: #fb7185;
+      --warning: #fbbf24;
+      --success: #34d399;
+      --border: #4a286a; /* 霓虹微光柔邊 */
+      --input: #4a286a;
+      --ring: #f43f8e;
+      --chart-1: #f472b6;
+      --chart-2: #c084fc;
+      --chart-3: #38bdf8;
+      --chart-4: #34d399;
+      --chart-5: #fde047;
+      --sidebar: #10091b; /* 浩瀚夜空黑曜紫 */
+      --sidebar-foreground: #fdf2fe;
+      --sidebar-primary: #f43f8e;
+      --sidebar-primary-foreground: #ffffff;
+      --sidebar-accent: #26123b;
+      --sidebar-accent-foreground: #ffffff;
+      --sidebar-border: #381c54;
+      --sidebar-ring: #f43f8e;
+      --jelly-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 15px rgba(244, 63, 142, 0.15);
+      --jelly-shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 22px rgba(244, 63, 142, 0.28);
+      --notch-bg: #12081d;
+      --notch-fg: #fdf2fe;
+      --notch-fg-soft: rgba(253, 242, 254, 0.6);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "SF Pro Rounded", "Avenir Next Rounded", "Arial Rounded MT Bold", -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", sans-serif;
+      background-color: var(--background);
+      /* 夢幻漸變彩虹微暈 (Dreamy Pastel Aura) */
+      background-image:
+        radial-gradient(circle at 10% 20%, rgba(244, 114, 182, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 90% 10%, rgba(192, 132, 252, 0.15) 0%, transparent 45%),
+        radial-gradient(circle at 50% 85%, rgba(56, 189, 248, 0.1) 0%, transparent 50%);
+      background-attachment: fixed;
+      color: var(--foreground);
+      line-height: 1.5;
+      font-size: 13.5px;
+      -webkit-font-smoothing: antialiased;
+      padding: 24px 20px 80px;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    /* 頂部操作展示列 */
+    .demo-bar {
+      max-width: 1040px;
+      margin: 0 auto 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 20px;
+      box-shadow: var(--jelly-shadow);
+    }
+    .demo-title-group { display: flex; align-items: baseline; gap: 10px; }
+    .demo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #f472b6, #c084fc);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(236, 72, 153, 0.3);
+    }
+    .demo-title { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+    .demo-subtitle { font-size: 12px; color: var(--muted-foreground); }
+    .demo-controls { display: flex; align-items: center; gap: 8px; }
+
+    /* 糖果晶凍按鈕 (Jelly Buttons) */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: var(--card);
+      color: var(--foreground);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .btn:hover {
+      background: var(--accent);
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.2);
+    }
+    .btn:active {
+      transform: translateY(0) scale(0.98);
+    }
+    .btn.active {
+      background: linear-gradient(135deg, var(--primary), #d946ef);
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 4px 14px rgba(236, 72, 153, 0.35);
+    }
+    .btn-sm { padding: 4px 11px; font-size: 11.5px; }
+
+    /* 容器架構 */
+    .container { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+    .section-header { margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+    .section-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--muted-foreground);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* macOS 視窗外殼（果凍圓角氣泡質感） */
+    .mac-window {
+      width: 100%;
+      background: var(--background);
+      border: 2px solid var(--border);
+      border-radius: calc(var(--radius) + 4px);
+      overflow: hidden;
+      box-shadow: var(--jelly-shadow);
+      display: flex;
+      flex-direction: column;
+      height: 720px;
+    }
+    .mac-titlebar {
+      height: 42px;
+      background: var(--sidebar);
+      border-bottom: 1.5px solid var(--sidebar-border);
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      position: relative;
+      user-select: none;
+    }
+    .window-dots { display: flex; gap: 7px; }
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.4);
+    }
+    .dot-close { background: #ff6b8b; }
+    .dot-min { background: #feca57; }
+    .dot-max { background: #1dd1a1; }
+    .window-title {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--foreground);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sparkle-icon { font-size: 12px; }
+
+    .mac-body { display: flex; flex: 1; overflow: hidden; }
+
+    /* 側邊欄 Sidebar（果凍棉花糖浮雕） */
+    .sidebar {
+      width: 220px;
+      background: var(--sidebar);
+      border-right: 1.5px solid var(--sidebar-border);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 18px 14px;
+      flex-shrink: 0;
+    }
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 16px;
+      border-bottom: 1.5px dashed var(--sidebar-border);
+      margin-bottom: 14px;
+    }
+    .app-logo-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f472b6, #c084fc);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.35);
+    }
+    .app-name { font-size: 15px; font-weight: 800; letter-spacing: -0.01em; }
+    .app-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, #fce7f3, #e9d5ff);
+      color: #be185d;
+      border: 1px solid var(--sidebar-border);
+      margin-left: auto;
+    }
+
+    .nav-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px;
+      border-radius: 9999px;
+      color: var(--sidebar-foreground);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .nav-item:hover {
+      background: var(--sidebar-accent);
+      transform: translateX(3px) scale(1.02);
+    }
+    .nav-item.active {
+      background: linear-gradient(135deg, var(--card), var(--accent));
+      color: var(--primary);
+      border: 1.5px solid var(--border);
+      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.15);
+      font-weight: 700;
+    }
+    .nav-item svg { width: 17px; height: 17px; stroke-width: 2.2; flex-shrink: 0; }
+    .nav-item.active svg { color: var(--primary); }
+
+    .sidebar-footer {
+      border-top: 1.5px dashed var(--sidebar-border);
+      padding-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .status-pill-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, #dcfce7, #e0f2fe);
+      color: #047857;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    /* 主視圖區域 */
+    .main-content {
+      flex: 1;
+      background: var(--background);
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .view-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding-bottom: 8px;
+    }
+    .view-title { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px; }
+    .view-caption { font-size: 12.5px; color: var(--muted-foreground); margin-top: 2px; }
+
+    /* 糖果貼紙氣泡卡片 (Card) */
+    .card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--jelly-shadow);
+      overflow: hidden;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    .card:hover {
+      box-shadow: var(--jelly-shadow-hover);
+    }
+    .card-header {
+      padding: 14px 18px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--foreground);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sticker-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #fef08a, #fed7aa);
+      color: #854d0e;
+      border: 1.5px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(234, 179, 8, 0.25);
+      transform: rotate(-1.5deg);
+    }
+    .card-content { padding: 12px 18px 18px; }
+
+    /* 統計網格 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .stat-card {
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 98px;
+      border-radius: var(--radius);
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted-foreground);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .stat-value {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--foreground);
+      font-variant-numeric: tabular-nums;
+      margin-top: 4px;
+      letter-spacing: -0.02em;
+    }
+    .stat-unit { font-size: 13px; font-weight: 600; color: var(--primary); margin-left: 3px; }
+    .stat-meta { font-size: 11.5px; color: var(--muted-foreground); margin-top: 4px; }
+
+    /* 彩虹漸變果凍進度條 */
+    .rainbow-track {
+      width: 100%;
+      height: 8px;
+      background: var(--muted);
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .rainbow-fill {
+      height: 100%;
+      border-radius: 9999px;
+      background: linear-gradient(90deg, #f472b6, #c084fc, #38bdf8);
+      box-shadow: 0 0 8px rgba(244, 114, 182, 0.4);
+    }
+
+    /* 7 日趨勢圖展臺（糖果色漸變膠囊柱狀圖） */
+    .chart-container {
+      margin-top: 8px;
+      height: 130px;
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      padding: 10px 14px 4px;
+      background: var(--card);
+      border-radius: var(--radius);
+    }
+    .chart-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .chart-bar-wrap { width: 100%; height: 88px; display: flex; align-items: flex-end; justify-content: center; }
+    .chart-bar {
+      width: 22px;
+      border-radius: 9999px;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .chart-bar:hover { transform: scaleY(1.08); filter: brightness(1.08); }
+    .bar-pink { background: linear-gradient(180deg, #f472b6, #ec4899); }
+    .bar-purple { background: linear-gradient(180deg, #c084fc, #a855f7); }
+    .bar-blue { background: linear-gradient(180deg, #38bdf8, #0ea5e9); }
+    .bar-mint { background: linear-gradient(180deg, #34d399, #10b981); }
+    .bar-lemon { background: linear-gradient(180deg, #fde047, #eab308); }
+    .chart-label { font-size: 11px; color: var(--muted-foreground); font-weight: 600; }
+
+    /* 最近記錄卡片 */
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: calc(var(--radius) - 4px);
+      margin-bottom: 8px;
+      background: var(--card);
+      transition: all 0.15s ease;
+    }
+    .history-item:hover {
+      background: var(--accent);
+      transform: translateX(2px);
+    }
+    .history-item:last-child { margin-bottom: 0; }
+    .history-left { display: flex; flex-direction: column; gap: 3px; max-width: 78%; }
+    .history-text { font-size: 13px; font-weight: 600; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-time { font-size: 11px; color: var(--muted-foreground); }
+    .badge-jelly {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #fdf2f8, #f5d0fe);
+      color: #a21caf;
+      border: 1px solid var(--border);
+    }
+
+    /* 設定頁面樣式 */
+    .settings-stack { display: flex; flex-direction: column; gap: 16px; }
+    .field-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 8px 0;
+    }
+    .field-info { display: flex; flex-direction: column; gap: 3px; }
+    .field-label { font-size: 13.5px; font-weight: 700; color: var(--foreground); display: flex; align-items: center; gap: 6px; }
+    .field-hint { font-size: 12px; color: var(--muted-foreground); }
+    .input-box {
+      background: var(--background);
+      border: 1.5px solid var(--input);
+      color: var(--foreground);
+      padding: 8px 14px;
+      border-radius: 9999px;
+      font-size: 12.5px;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .input-box:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.25);
+    }
+
+    .provider-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .provider-card {
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: var(--card);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .provider-card:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: var(--jelly-shadow);
+    }
+    .provider-card.selected {
+      border-color: var(--primary);
+      background: linear-gradient(135deg, var(--card), var(--accent));
+      box-shadow: 0 4px 16px rgba(236, 72, 153, 0.22);
+    }
+    .provider-name { font-size: 13px; font-weight: 800; display: flex; justify-content: space-between; }
+    .provider-sub { font-size: 11px; color: var(--muted-foreground); }
+
+    /* 糖果果凍 Switch 開關 */
+    .switch-ui {
+      width: 46px;
+      height: 26px;
+      background: var(--muted);
+      border-radius: 9999px;
+      position: relative;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      transition: background 0.25s ease;
+    }
+    .switch-ui.on {
+      background: linear-gradient(135deg, var(--primary), #c084fc);
+      border-color: transparent;
+      box-shadow: 0 2px 8px rgba(236, 72, 153, 0.35);
+    }
+    .switch-thumb {
+      width: 18px;
+      height: 18px;
+      background: #ffffff;
+      border-radius: 50%;
+      position: absolute;
+      top: 2.5px;
+      left: 3px;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    }
+    .switch-ui.on .switch-thumb {
+      transform: translateX(20px);
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       HUD 展示臺：夢幻繽紛 Notch · 軟糖彩虹頻譜波形
+       ══════════════════════════════════════════════════════════ */
+    .hud-showcase-box {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      box-shadow: var(--jelly-shadow);
+    }
+    .hud-desktop-preview {
+      background: #14081c;
+      border-radius: 18px;
+      height: 140px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: 1.5px solid rgba(244, 114, 182, 0.25);
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.6);
+    }
+    .hud-desktop-bg {
+      position: absolute;
+      inset: 0;
+      opacity: 0.35;
+      background:
+        radial-gradient(circle at 50% 0%, #ec4899 0%, transparent 60%),
+        radial-gradient(circle at 80% 30%, #a855f7 0%, transparent 50%);
+    }
+
+    /* 夢幻瀏海實體 Notch 外殼 (果凍光暈) */
+    .notch-island {
+      position: relative;
+      z-index: 10;
+      background: var(--notch-bg);
+      color: var(--notch-fg);
+      height: 42px;
+      border-radius: 0 0 20px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      min-width: 410px;
+      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.35), 0 0 1px rgba(255,255,255,0.4);
+      border: 1px solid rgba(244, 114, 182, 0.3);
+      border-top: none;
+      transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .notch-star-dot {
+      font-size: 11px;
+      color: #f472b6;
+      animation: twinkle 1.5s infinite ease-in-out alternate;
+    }
+    @keyframes twinkle {
+      0% { opacity: 0.4; transform: scale(0.85); }
+      100% { opacity: 1; transform: scale(1.15); }
+    }
+
+    /* 狀態 1：錄音中（繽紛跳動彩虹軟糖波形） */
+    .rainbow-waveform {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      height: 24px;
+    }
+    .wave-candy-bar {
+      width: 4px;
+      border-radius: 9999px;
+      animation: candyBounce 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+    }
+    .wave-candy-bar:nth-child(1) { height: 9px; background: #f472b6; animation-delay: 0.1s; }
+    .wave-candy-bar:nth-child(2) { height: 18px; background: #fbbf24; animation-delay: 0.25s; }
+    .wave-candy-bar:nth-child(3) { height: 26px; background: #34d399; animation-delay: 0.4s; }
+    .wave-candy-bar:nth-child(4) { height: 16px; background: #38bdf8; animation-delay: 0.15s; }
+    .wave-candy-bar:nth-child(5) { height: 22px; background: #c084fc; animation-delay: 0.3s; }
+    .wave-candy-bar:nth-child(6) { height: 12px; background: #f43f8e; animation-delay: 0.05s; }
+
+    @keyframes candyBounce {
+      0% { transform: scaleY(0.35); opacity: 0.7; }
+      100% { transform: scaleY(1.15); opacity: 1; filter: drop-shadow(0 0 3px currentColor); }
+    }
+
+    .heart-rec-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: #f43f8e;
+      font-size: 11.5px;
+      font-weight: 800;
+    }
+    .heart-pulse {
+      animation: heartBeat 1s infinite;
+      display: inline-block;
+    }
+    @keyframes heartBeat {
+      0%, 100% { transform: scale(1); }
+      20% { transform: scale(1.3); }
+      40% { transform: scale(0.95); }
+    }
+
+    /* 狀態 2：整理中（魔法精靈光塵脈衝） */
+    .magic-dots-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .magic-star {
+      font-size: 12px;
+      animation: spinMagic 2s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spinMagic {
+      100% { transform: rotate(360deg); }
+    }
+    .fairy-text {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #fce7f3;
+      letter-spacing: 0.02em;
+    }
+
+    /* 狀態 3：已貼上（草莓蝴蝶結勳章） */
+    .ribbon-success-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ribbon-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #34d399, #10b981);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 900;
+      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);
+    }
+    .ribbon-text {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #e6fffa;
+    }
+
+    /* 狀態 4：錯誤（心碎草莓泡泡提示） */
+    .error-candy-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .error-candy-text { font-size: 12px; font-weight: 700; color: #ffe4e6; }
+    .candy-retry-btn {
+      background: linear-gradient(135deg, #f43f5e, #e11d48);
+      color: #ffffff;
+      border: 1px solid #fda4af;
+      border-radius: 9999px;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(244, 63, 94, 0.35);
+    }
+
+    /* HUD 狀態四格平鋪矩陣 */
+    .hud-matrix {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+    .hud-matrix-card {
+      background: var(--notch-bg);
+      border: 1.5px solid rgba(244, 114, 182, 0.3);
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--notch-fg);
+      box-shadow: var(--jelly-shadow);
+    }
+    .hud-matrix-label {
+      font-size: 10.5px;
+      color: var(--notch-fg-soft);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+    }
+
+    /* 頁面切換控制 */
+    .tab-view { display: none; }
+    .tab-view.active-tab { display: flex; flex-direction: column; gap: 20px; }
+  </style>
+</head>
+<body>
+
+  <!-- 頂部控制展臺 -->
+  <header class="demo-bar">
+    <div class="demo-title-group">
+      <span class="demo-badge">提案 D ✨</span>
+      <h1 class="demo-title">繽紛少女風（Colourful Girly Pop）</h1>
+      <span class="demo-subtitle">草莓粉 · 薰衣草紫 · 薄荷蘇打 · 糖果高光果凍氣泡 · 彩虹跳動波形</span>
+    </div>
+    <div class="demo-controls">
+      <button class="btn btn-sm active" id="tab-btn-all" onclick="switchView('all')">全景對照</button>
+      <button class="btn btn-sm" id="tab-btn-dash" onclick="switchView('dash')">儀表板</button>
+      <button class="btn btn-sm" id="tab-btn-set" onclick="switchView('set')">偏好設定</button>
+      <button class="btn btn-sm" id="tab-btn-hud" onclick="switchView('hud')">Notch HUD</button>
+      <button class="btn btn-sm" onclick="toggleTheme()" id="theme-btn">☀️ 切換淺色</button>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ══ 主視窗架構 ══ -->
+    <section id="view-section-window">
+      <div class="section-header">
+        <h2 class="section-title">主視窗架構（960 × 720 · 糖果果凍大圓角視窗）</h2>
+      </div>
+
+      <div class="mac-window">
+        <!-- 標題列 -->
+        <div class="mac-titlebar">
+          <div class="window-dots">
+            <span class="dot dot-close"></span>
+            <span class="dot dot-min"></span>
+            <span class="dot dot-max"></span>
+          </div>
+          <span class="window-title">
+            <span class="sparkle-icon">✨</span>
+            <span>TypeK</span>
+            <span style="font-size: 11px; color: var(--primary); font-weight: 800;">Sweet Edition</span>
+          </span>
+        </div>
+
+        <div class="mac-body">
+          <!-- 側邊欄 -->
+          <aside class="sidebar">
+            <div>
+              <div class="sidebar-header">
+                <div class="app-logo-badge">K</div>
+                <div>
+                  <div class="app-name">TypeK</div>
+                  <div style="font-size: 11px; color: var(--muted-foreground);">語音整理平臺 💖</div>
+                </div>
+                <span class="app-tag">Ready!</span>
+              </div>
+
+              <ul class="nav-list">
+                <li>
+                  <a class="nav-item active" id="nav-dash" onclick="switchInnerTab('dash')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="7" height="9" x="3" y="3" rx="2"/><rect width="7" height="5" x="14" y="3" rx="2"/><rect width="7" height="9" x="14" y="12" rx="2"/><rect width="7" height="5" x="3" y="16" rx="2"/></svg>
+                    <span>儀表板</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>
+                    <span>轉錄歷史</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+                    <span>自訂詞庫</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="nav-item" id="nav-set" onclick="switchInnerTab('set')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span>偏好設定</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.76.76 1.23 1.52 1.41 2.5"/></svg>
+                    <span>使用指南</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <div class="sidebar-footer">
+              <div class="status-pill-badge">
+                <span>🎀 語音小精靈待命</span>
+              </div>
+              <div style="font-size: 11px; color: var(--muted-foreground); text-align: center; margin-top: 4px;">版本 v0.5.2 · Sweet</div>
+            </div>
+          </aside>
+
+          <!-- 內容呈現區 -->
+          <main class="main-content">
+
+            <!-- 視圖 A：儀表板 (Dashboard) -->
+            <div id="content-dash" class="tab-view active-tab">
+              <div class="view-header">
+                <div>
+                  <h2 class="view-title">儀表板（Dashboard）✨</h2>
+                  <p class="view-caption">今天也為你捕捉心裡閃閃發亮的靈感筆記！</p>
+                </div>
+                <span class="sticker-badge">💖 今日元氣滿滿</span>
+              </div>
+
+              <!-- 6 格統計卡片 -->
+              <div class="stats-grid">
+                <div class="card stat-card">
+                  <span class="stat-label">🎀 累計整理字數</span>
+                  <div class="stat-value">128,450<span class="stat-unit">字</span></div>
+                  <div class="stat-meta">超越 92% 的創作者夥伴～</div>
+                </div>
+
+                <div class="card stat-card">
+                  <span class="stat-label">⏳ 節省時間</span>
+                  <div class="stat-value">14.6<span class="stat-unit">小時</span></div>
+                  <div class="stat-meta">省下來喝 10 杯草莓奶茶 🍓</div>
+                </div>
+
+                <div class="card stat-card">
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <span class="stat-label">⭐ 今日額度 (GROQ)</span>
+                    <span style="font-size: 11.5px; font-weight: 700; color: var(--primary);">78% 滿滿</span>
+                  </div>
+                  <div class="stat-value">1,560<span class="stat-unit">/ 2,000 次</span></div>
+                  <div class="rainbow-track">
+                    <div class="rainbow-fill" style="width: 78%;"></div>
+                  </div>
+                </div>
+
+                <div class="card stat-card">
+                  <span class="stat-label">🍭 今日轉錄次數</span>
+                  <div class="stat-value">38<span class="stat-unit">次</span></div>
+                  <div class="stat-meta">總計口述 42 分鐘好聲音</div>
+                </div>
+
+                <div class="card stat-card">
+                  <span class="stat-label">⚡ 平均處理耗時</span>
+                  <div class="stat-value">0.82<span class="stat-unit">秒</span></div>
+                  <div class="stat-meta">眨個眼就魔法貼好囉！</div>
+                </div>
+
+                <div class="card stat-card">
+                  <span class="stat-label">🌸 語音辨識精準度</span>
+                  <div class="stat-value">99.4<span class="stat-unit">%</span></div>
+                  <div class="stat-meta">智慧上下文貼心校正</div>
+                </div>
+              </div>
+
+              <!-- 7 日使用趨勢（糖果膠囊柱狀圖） -->
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                    近 7 日口述活動頻率（每日轉錄段數）
+                  </span>
+                  <span class="sticker-badge">🌈 ACTIVITY</span>
+                </div>
+                <div class="card-content">
+                  <div class="chart-container">
+                    <div class="chart-col">
+                      <div class="chart-bar-wrap"><div class="chart-bar bar-pink" style="height: 48px;"></div></div>
+                      <span class="chart-label">10/20</span>
+                    </div>
+                    <div class="chart-col">
+                      <div class="chart-bar-wrap"><div class="chart-bar bar-purple" style="height: 64px;"></div></div>
+                      <span class="chart-label">10/21</span>
+                    </div>
+                    <div class="chart-col">
+                      <div class="chart-bar-wrap"><div class="chart-bar bar-blue" style="height: 38px;"></div></div>
+                      <span class="chart-label">10/22</span>
+                    </div>
+                    <div class="chart-col">
+                      <div class="chart-bar-wrap"><div class="chart-bar bar-mint" style="height: 76px;"></div></div>
+                      <span class="chart-label">10/23</span>
+                    </div>
+                    <div class="chart-col">
+                      <div class="chart-bar-wrap"><div class="chart-bar bar-lemon" style="height: 52px;"></div></div>
+                      <span class="chart-label">10/24</span>
+                    </div>
+                    <div class="chart-col">
+                      <div class="chart-bar-wrap"><div class="chart-bar bar-pink" style="height: 82px;"></div></div>
+                      <span class="chart-label">10/25</span>
+                    </div>
+                    <div class="chart-col">
+                      <div class="chart-bar-wrap"><div class="chart-bar bar-purple" style="height: 68px;"></div></div>
+                      <span class="chart-label">今天</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 最近轉錄歷史 -->
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">最近轉錄歷史（Cute Notes）</span>
+                  <span class="sticker-badge">🎀 RECENT</span>
+                </div>
+                <div class="card-content">
+                  <div class="history-item">
+                    <div class="history-left">
+                      <span class="history-text">「請把今天下午兩點跨部門產品架構評審會議的會議記錄整理成三個主要決策事項與行動清單。」</span>
+                      <span class="history-time">剛剛 · 42 字 · 耗時 0.74s · 來源：Notion</span>
+                    </div>
+                    <span class="badge-jelly">✨ AI 精修完成</span>
+                  </div>
+                  <div class="history-item">
+                    <div class="history-left">
+                      <span class="history-text">「關於 TypeK 的繽紛少女風提案，融合了草莓粉、夢幻紫、天空藍與果凍氣泡圓角，超級可愛！」</span>
+                      <span class="history-time">15 分鐘前 · 68 字 · 耗時 0.88s · 來源：Discord</span>
+                    </div>
+                    <span class="badge-jelly">💖 完美貼上</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 視圖 B：偏好設定 (Settings) -->
+            <div id="content-set" class="tab-view">
+              <div class="view-header">
+                <div>
+                  <h2 class="view-title">偏好設定（Settings）🌸</h2>
+                  <p class="view-caption">調校你的專屬 AI 夥伴與甜心快捷鍵！</p>
+                </div>
+                <span class="sticker-badge">⚙️ TWEAKS</span>
+              </div>
+
+              <div class="settings-stack">
+                <!-- AI 服務平臺卡片 -->
+                <div class="card">
+                  <div class="card-header">
+                    <span class="card-title">AI 服務平臺與模型設定（AI Engine）</span>
+                    <span class="sticker-badge">✨ CLOUD</span>
+                  </div>
+                  <div class="card-content">
+                    <div class="field-info">
+                      <span class="field-label">選擇主要語音整理平臺</span>
+                      <span class="field-hint">選取後系統將自動導流語音辨識與文字潤飾請求</span>
+                    </div>
+                    <div class="provider-cards">
+                      <div class="provider-card selected">
+                        <div class="provider-name">Groq<span style="color:var(--primary)">★ 超推</span></div>
+                        <div class="provider-sub">Whisper Large + Llama 3.3 (光速免費用)</div>
+                      </div>
+                      <div class="provider-card">
+                        <div class="provider-name">OpenAI</div>
+                        <div class="provider-sub">Whisper-1 + GPT-4o-mini (官方雲端)</div>
+                      </div>
+                      <div class="provider-card">
+                        <div class="provider-name">Anthropic</div>
+                        <div class="provider-sub">Claude 3.5 Sonnet (文筆最溫柔)</div>
+                      </div>
+                      <div class="provider-card">
+                        <div class="provider-name">Gemini</div>
+                        <div class="provider-sub">Flash 2.5 (超長記憶大容量)</div>
+                      </div>
+                    </div>
+
+                    <div style="margin-top: 16px;">
+                      <div class="field-label" style="margin-bottom: 6px;">Groq API Key 密鑰憑證 🔑</div>
+                      <input class="input-box" style="width: 100%;" type="password" value="gsk_99a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 快捷鍵設定卡片 -->
+                <div class="card">
+                  <div class="card-header">
+                    <span class="card-title">全域快速鍵控制（Magic Hotkeys）</span>
+                    <span class="sticker-badge">🪄 SHORTCUTS</span>
+                  </div>
+                  <div class="card-content">
+                    <div class="field-row">
+                      <div class="field-info">
+                        <span class="field-label">啟動語音錄製熱鍵</span>
+                        <span class="field-hint">按下即可立刻喚醒 Notch HUD 聽你說話</span>
+                      </div>
+                      <div style="display: flex; gap: 8px;">
+                        <span class="badge-jelly" style="font-size: 13px; padding: 5px 14px;">Right Option (雙擊) 💖</span>
+                        <button class="btn btn-sm">錄製新鍵</button>
+                      </div>
+                    </div>
+                    <div class="field-row" style="border-top: 1.5px dashed var(--border); margin-top: 6px;">
+                      <div class="field-info">
+                        <span class="field-label">切換整理模式熱鍵</span>
+                        <span class="field-hint">在「直寫逐字」、「精準潤飾」、「條列清單」間切換</span>
+                      </div>
+                      <span class="badge-jelly" style="font-size: 13px; padding: 5px 14px;">Cmd + Shift + Space</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 上下文感知 Toggle 卡片 -->
+                <div class="card">
+                  <div class="card-header">
+                    <span class="card-title">上下文感知與隱私守護（Context AI）</span>
+                    <span class="sticker-badge">🛡️ PRIVACY</span>
+                  </div>
+                  <div class="card-content">
+                    <div class="field-row">
+                      <div class="field-info">
+                        <span class="field-label">啟用視窗上下文感知（Context-Aware Typing）</span>
+                        <span class="field-hint">自動讀取當前聚焦視窗（如 IDE、Email、瀏覽器）的最近內容，讓 AI 精準理解術語</span>
+                      </div>
+                      <div class="switch-ui on" onclick="toggleSwitch(this)">
+                        <div class="switch-thumb"></div>
+                      </div>
+                    </div>
+                    <div style="margin-top: 12px; padding: 12px 16px; background: var(--secondary); border: 1.5px solid var(--border); border-radius: var(--radius); font-size: 12px; color: var(--foreground); line-height: 1.5;">
+                      <strong>✨ 甜心隱私承諾</strong>：所有周邊視窗上下文快照均僅在記憶體中進行單次推論比對，永不存入磁碟，亦不提供任何雲端模型進行次級訓練。
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </main>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ══ Notch HUD 展示臺 ══ -->
+    <section id="view-section-hud">
+      <div class="section-header">
+        <h2 class="section-title">Notch HUD 實體狀態展示（夢幻彩虹跳動軟糖風格）</h2>
+      </div>
+
+      <div class="hud-showcase-box">
+        <div>
+          <div style="font-size: 14.5px; font-weight: 700; margin-bottom: 4px;">實體螢幕頂部瀏海預覽（MacBook Notch 果凍微光貼合）</div>
+          <div style="font-size: 12px; color: var(--muted-foreground);">深莓黑夜琉璃外殼 + 晶瑩星星高光 + 6 色彩虹彈跳波形 + 魔法小精靈</div>
+        </div>
+
+        <!-- 桌面環境即時模擬 -->
+        <div class="hud-desktop-preview">
+          <div class="hud-desktop-bg"></div>
+
+          <!-- 瀏海實體 -->
+          <div class="notch-island" id="interactive-notch">
+            <span class="notch-star-dot">✦</span>
+
+            <!-- 動態狀態切換容器 -->
+            <div id="notch-state-content" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 10px;">
+              <!-- 狀態 1：錄音中預設 -->
+              <div class="heart-rec-badge">
+                <span class="heart-pulse">💖</span>
+                <span>REC 聽寫中...</span>
+              </div>
+
+              <!-- 繽紛彩虹軟糖波形條 -->
+              <div class="rainbow-waveform">
+                <div class="wave-candy-bar"></div>
+                <div class="wave-candy-bar"></div>
+                <div class="wave-candy-bar"></div>
+                <div class="wave-candy-bar"></div>
+                <div class="wave-candy-bar"></div>
+                <div class="wave-candy-bar"></div>
+              </div>
+
+              <span class="badge-jelly" style="font-size: 11px; padding: 2px 8px;">00:14.8</span>
+            </div>
+
+            <span class="notch-star-dot">✦</span>
+          </div>
+
+          <div style="position: absolute; bottom: 12px; display: flex; gap: 8px;">
+            <button class="btn btn-sm" onclick="setNotchPreview(1)">1. 錄音中 (彩虹波形)</button>
+            <button class="btn btn-sm" onclick="setNotchPreview(2)">2. 整理中 (魔法光塵)</button>
+            <button class="btn btn-sm" onclick="setNotchPreview(3)">3. 已貼上 (蝴蝶結)</button>
+            <button class="btn btn-sm" onclick="setNotchPreview(4)">4. 錯誤 (心碎泡泡)</button>
+          </div>
+        </div>
+
+        <!-- 狀態平鋪四矩陣 -->
+        <div style="margin-top: 10px;">
+          <div style="font-size: 13.5px; font-weight: 700; margin-bottom: 10px;">四大核心生命週期狀態對照矩陣</div>
+          <div class="hud-matrix">
+
+            <!-- 狀態 1 -->
+            <div class="hud-matrix-card">
+              <div>
+                <div class="hud-matrix-label">STATE 01 · 錄音中 (RECORDING)</div>
+                <div class="heart-rec-badge" style="margin-top: 4px;">
+                  <span class="heart-pulse">💖</span>
+                  <span>正在聆聽你的心聲...</span>
+                </div>
+              </div>
+              <div class="rainbow-waveform">
+                <div class="wave-candy-bar" style="height: 9px; background: #f472b6;"></div>
+                <div class="wave-candy-bar" style="height: 18px; background: #fbbf24;"></div>
+                <div class="wave-candy-bar" style="height: 26px; background: #34d399;"></div>
+                <div class="wave-candy-bar" style="height: 16px; background: #38bdf8;"></div>
+                <div class="wave-candy-bar" style="height: 22px; background: #c084fc;"></div>
+                <div class="wave-candy-bar" style="height: 12px; background: #f43f8e;"></div>
+              </div>
+              <span class="badge-jelly" style="font-size: 10.5px;">00:14</span>
+            </div>
+
+            <!-- 狀態 2 -->
+            <div class="hud-matrix-card">
+              <div>
+                <div class="hud-matrix-label">STATE 02 · 整理中 (PROCESSING)</div>
+                <div class="fairy-text" style="margin-top: 4px;">小精靈魔法潤飾中... 🪄</div>
+              </div>
+              <div class="magic-dots-group">
+                <span class="magic-star">✨</span>
+                <span style="font-size: 13px;">🍓</span>
+                <span class="magic-star">⭐</span>
+              </div>
+              <span class="badge-jelly" style="font-size: 10px;">MAGIC</span>
+            </div>
+
+            <!-- 狀態 3 -->
+            <div class="hud-matrix-card">
+              <div>
+                <div class="hud-matrix-label">STATE 03 · 已貼上 (PASTED / SUCCESS)</div>
+                <div class="ribbon-text" style="margin-top: 4px;">文字已溫柔貼上 🎀</div>
+              </div>
+              <div class="ribbon-success-group">
+                <div class="ribbon-icon">✓</div>
+                <span class="badge-jelly" style="font-size: 11px;">0.8s 達成</span>
+              </div>
+            </div>
+
+            <!-- 狀態 4 -->
+            <div class="hud-matrix-card">
+              <div>
+                <div class="hud-matrix-label">STATE 04 · 錯誤 (ERROR / OOPS)</div>
+                <div class="error-candy-text" style="margin-top: 4px;">💔 連線迷路了 · 請檢查金鑰</div>
+              </div>
+              <div class="error-candy-group">
+                <button class="candy-retry-btn">重新施法 ↺</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.classList.contains('dark');
+      const btn = document.getElementById('theme-btn');
+      if (isDark) {
+        html.classList.remove('dark');
+        btn.textContent = '🌙 切換深色';
+      } else {
+        html.classList.add('dark');
+        btn.textContent = '☀️ 切換淺色';
+      }
+    }
+
+    function switchInnerTab(tab) {
+      document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active-tab'));
+      document.getElementById('nav-dash').classList.remove('active');
+      document.getElementById('nav-set').classList.remove('active');
+
+      if (tab === 'dash') {
+        document.getElementById('content-dash').classList.add('active-tab');
+        document.getElementById('nav-dash').classList.add('active');
+      } else {
+        document.getElementById('content-set').classList.add('active-tab');
+        document.getElementById('nav-set').classList.add('active');
+      }
+    }
+
+    function switchView(mode) {
+      document.querySelectorAll('.demo-controls .btn').forEach(b => {
+        if (b.id.startsWith('tab-btn')) b.classList.remove('active');
+      });
+
+      const winSec = document.getElementById('view-section-window');
+      const hudSec = document.getElementById('view-section-hud');
+
+      if (mode === 'all') {
+        document.getElementById('tab-btn-all').classList.add('active');
+        winSec.style.display = 'block';
+        hudSec.style.display = 'block';
+        switchInnerTab('dash');
+      } else if (mode === 'dash') {
+        document.getElementById('tab-btn-dash').classList.add('active');
+        winSec.style.display = 'block';
+        hudSec.style.display = 'none';
+        switchInnerTab('dash');
+      } else if (mode === 'set') {
+        document.getElementById('tab-btn-set').classList.add('active');
+        winSec.style.display = 'block';
+        hudSec.style.display = 'none';
+        switchInnerTab('set');
+      } else if (mode === 'hud') {
+        document.getElementById('tab-btn-hud').classList.add('active');
+        winSec.style.display = 'none';
+        hudSec.style.display = 'block';
+      }
+    }
+
+    function toggleSwitch(el) {
+      el.classList.toggle('on');
+    }
+
+    function setNotchPreview(state) {
+      const container = document.getElementById('notch-state-content');
+      if (state === 1) {
+        container.innerHTML = `
+          <div class="heart-rec-badge"><span class="heart-pulse">💖</span><span>REC 聽寫中...</span></div>
+          <div class="rainbow-waveform">
+            <div class="wave-candy-bar"></div>
+            <div class="wave-candy-bar"></div>
+            <div class="wave-candy-bar"></div>
+            <div class="wave-candy-bar"></div>
+            <div class="wave-candy-bar"></div>
+            <div class="wave-candy-bar"></div>
+          </div>
+          <span class="badge-jelly" style="font-size: 11px; padding: 2px 8px;">00:14.8</span>
+        `;
+      } else if (state === 2) {
+        container.innerHTML = `
+          <div class="magic-dots-group">
+            <span class="magic-star">✨</span>
+            <span class="fairy-text">小精靈魔法潤飾中... 🪄</span>
+          </div>
+          <span class="badge-jelly" style="font-size: 10px;">MAGIC</span>
+        `;
+      } else if (state === 3) {
+        container.innerHTML = `
+          <div class="ribbon-success-group">
+            <div class="ribbon-icon">✓</div>
+            <span class="ribbon-text">文字已溫柔貼上 🎀</span>
+          </div>
+          <span class="badge-jelly" style="font-size: 11px;">0.8s 達成</span>
+        `;
+      } else if (state === 4) {
+        container.innerHTML = `
+          <div class="error-candy-group">
+            <span style="font-size: 14px;">💔</span>
+            <span class="error-candy-text">連線迷路了，請檢查 API Key</span>
+          </div>
+          <button class="candy-retry-btn">重新施法 ↺</button>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>

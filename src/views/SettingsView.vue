@@ -386,8 +386,8 @@ const apiKeyStatusLabel = computed(() =>
 );
 const apiKeyStatusClass = computed(() =>
   settingsStore.hasApiKey
-    ? "bg-green-500/20 text-green-400"
-    : "bg-red-500/20 text-red-400",
+    ? "border-0 bg-success/15 text-success"
+    : "border-0 bg-destructive/15 text-destructive",
 );
 const shouldShowOnboardingHint = computed(() => !settingsStore.hasApiKey);
 
@@ -1065,31 +1065,23 @@ onBeforeUnmount(() => {
         <!-- 簡易 / 自訂 模式切換 -->
         <div class="flex items-center justify-between">
           <Label>{{ $t("settings.hotkey.triggerKeyMode") }}</Label>
-          <div class="flex rounded-lg border border-border overflow-hidden">
-            <button
-              type="button"
-              class="px-4 py-2 text-sm font-medium transition-colors"
-              :class="
-                !isCustomMode
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent'
-              "
+          <div class="flex items-center gap-1 rounded-full border border-border bg-muted/40 p-1">
+            <Button
+              size="sm"
+              :variant="!isCustomMode ? 'default' : 'ghost'"
+              class="rounded-full px-4"
               @click="switchToPreset"
             >
               {{ $t("settings.hotkey.preset") }}
-            </button>
-            <button
-              type="button"
-              class="px-4 py-2 text-sm font-medium transition-colors"
-              :class="
-                isCustomMode
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent'
-              "
+            </Button>
+            <Button
+              size="sm"
+              :variant="isCustomMode ? 'default' : 'ghost'"
+              class="rounded-full px-4"
               @click="switchToCustom"
             >
               {{ $t("settings.hotkey.custom") }}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -1120,13 +1112,14 @@ onBeforeUnmount(() => {
           <div class="flex items-center justify-between">
             <Label>{{ $t("settings.hotkey.customTriggerKey") }}</Label>
             <div class="flex items-center gap-3">
-              <span v-if="hasCustomKey" class="text-sm font-medium text-foreground">
+              <span v-if="hasCustomKey" class="badge-jelly px-3.5 py-1.5 font-mono text-xs font-bold tracking-wider">
                 {{ currentCustomKeyDisplay }}
               </span>
               <span v-else class="text-sm text-muted-foreground">{{ $t("settings.hotkey.notSet") }}</span>
               <Button
                 :variant="isRecording ? 'destructive' : 'outline'"
                 size="sm"
+                class="rounded-full"
                 :class="{ 'animate-pulse': isRecording }"
                 @click="isRecording ? stopKeyRecording() : startRecording()"
               >
@@ -1168,7 +1161,7 @@ onBeforeUnmount(() => {
               <p
                 v-if="reportFeedback.message.value !== ''"
                 class="text-sm"
-                :class="reportFeedback.type.value === 'success' ? 'text-green-400' : 'text-red-400'"
+                :class="reportFeedback.type.value === 'success' ? 'text-success' : 'text-destructive'"
               >
                 {{ reportFeedback.message.value }}
               </p>
@@ -1179,31 +1172,23 @@ onBeforeUnmount(() => {
         <!-- 觸發模式 -->
         <div class="flex items-center justify-between">
           <Label for="trigger-mode">{{ $t("settings.hotkey.triggerMode") }}</Label>
-          <div class="flex rounded-lg border border-border overflow-hidden">
-            <button
-              type="button"
-              class="px-4 py-2 text-sm font-medium transition-colors"
-              :class="
-                settingsStore.triggerMode === 'hold'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent'
-              "
+          <div class="flex items-center gap-1 rounded-full border border-border bg-muted/40 p-1">
+            <Button
+              size="sm"
+              :variant="settingsStore.triggerMode === 'hold' ? 'default' : 'ghost'"
+              class="rounded-full px-4"
               @click="handleTriggerModeChange('hold')"
             >
               Hold
-            </button>
-            <button
-              type="button"
-              class="px-4 py-2 text-sm font-medium transition-colors"
-              :class="
-                settingsStore.triggerMode === 'toggle'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent'
-              "
+            </Button>
+            <Button
+              size="sm"
+              :variant="settingsStore.triggerMode === 'toggle' ? 'default' : 'ghost'"
+              class="rounded-full px-4"
               @click="handleTriggerModeChange('toggle')"
             >
               Toggle
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -1229,8 +1214,8 @@ onBeforeUnmount(() => {
             class="text-sm"
             :class="
               hotkeyFeedback.type.value === 'success'
-                ? 'text-green-400'
-                : 'text-red-400'
+                ? 'text-success'
+                : 'text-destructive'
             "
           >
             {{ hotkeyFeedback.message.value }}
@@ -1273,7 +1258,7 @@ onBeforeUnmount(() => {
 
           <p
             v-if="shouldShowOnboardingHint"
-            class="rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm text-blue-200"
+            class="rounded-[var(--radius)] border border-border bg-secondary/50 px-3 py-2 text-sm text-foreground"
           >
             {{ $t("settings.apiKey.onboarding") }}
           </p>
@@ -1311,7 +1296,7 @@ onBeforeUnmount(() => {
                 v-if="apiKeyFeedback.message.value !== ''"
                 class="text-sm"
                 :class="
-                  apiKeyFeedback.type.value === 'success' ? 'text-green-400' : 'text-red-400'
+                  apiKeyFeedback.type.value === 'success' ? 'text-success' : 'text-destructive'
                 "
               >
                 {{ apiKeyFeedback.message.value }}
@@ -1395,7 +1380,7 @@ onBeforeUnmount(() => {
           <p
             v-if="whisperModelFeedback.message.value !== ''"
             class="text-sm"
-            :class="whisperModelFeedback.type.value === 'success' ? 'text-green-400' : 'text-red-400'"
+            :class="whisperModelFeedback.type.value === 'success' ? 'text-success' : 'text-destructive'"
           >
             {{ whisperModelFeedback.message.value }}
           </p>
@@ -1407,8 +1392,8 @@ onBeforeUnmount(() => {
             class="text-sm"
             :class="
               transcriptionLocaleFeedback.type.value === 'success'
-                ? 'text-green-400'
-                : 'text-red-400'
+                ? 'text-success'
+                : 'text-destructive'
             "
           >
             {{ transcriptionLocaleFeedback.message.value }}
@@ -1429,15 +1414,17 @@ onBeforeUnmount(() => {
           <p class="text-xs text-muted-foreground">{{ $t("settings.provider.description") }}</p>
           <RadioGroup
             :model-value="settingsStore.selectedLlmProviderId"
-            class="grid grid-cols-2 gap-2"
+            class="grid grid-cols-2 gap-3 sm:grid-cols-4"
             @update:model-value="(v: unknown) => handleProviderChange(v as LlmProviderId)"
           >
             <Label
               v-for="provider in LLM_PROVIDER_LIST"
               :key="provider.id"
               :for="`provider-${provider.id}`"
-              class="flex cursor-pointer items-center gap-2.5 rounded-md border border-border p-3 transition-colors"
-              :class="settingsStore.selectedLlmProviderId === provider.id ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'"
+              class="flex cursor-pointer items-center gap-2.5 rounded-[var(--radius)] p-3 transition-all"
+              :class="settingsStore.selectedLlmProviderId === provider.id
+                ? 'border-2 border-primary bg-gradient-to-br from-card to-accent font-bold text-primary shadow-jelly'
+                : 'border border-border bg-card hover:border-primary/50 hover:scale-[1.02]'"
             >
               <RadioGroupItem :id="`provider-${provider.id}`" :value="provider.id" class="!size-0 !border-0 !shadow-none overflow-hidden" />
               <span class="text-sm font-medium">{{ $t(`settings.provider.${provider.id}`) }}</span>
@@ -1446,7 +1433,7 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Provider-specific API Key -->
-        <div v-if="settingsStore.selectedLlmProviderId === 'groq'" class="rounded-md bg-muted/50 p-3">
+        <div v-if="settingsStore.selectedLlmProviderId === 'groq'" class="rounded-[var(--radius)] bg-secondary/50 p-3">
           <p class="text-xs text-muted-foreground">
             {{ settingsStore.hasApiKey ? $t("settings.provider.groqNote") : $t("settings.provider.groqNoteNotSet") }}
           </p>
@@ -1566,7 +1553,7 @@ onBeforeUnmount(() => {
           <p
             v-if="providerFeedback.message.value !== ''"
             class="text-sm"
-            :class="providerFeedback.type.value === 'success' ? 'text-green-400' : 'text-red-400'"
+            :class="providerFeedback.type.value === 'success' ? 'text-success' : 'text-destructive'"
           >
             {{ providerFeedback.message.value }}
           </p>
@@ -1609,7 +1596,7 @@ onBeforeUnmount(() => {
           <p
             v-if="llmModelFeedback.message.value !== ''"
             class="text-sm"
-            :class="llmModelFeedback.type.value === 'success' ? 'text-green-400' : 'text-red-400'"
+            :class="llmModelFeedback.type.value === 'success' ? 'text-success' : 'text-destructive'"
           >
             {{ llmModelFeedback.message.value }}
           </p>
@@ -1637,8 +1624,10 @@ onBeforeUnmount(() => {
           >
             <Label
               for="mode-minimal"
-              class="flex cursor-pointer items-start gap-2.5 rounded-md border border-border p-3 transition-colors"
-              :class="selectedPromptMode === 'minimal' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'"
+              class="flex cursor-pointer items-start gap-2.5 rounded-[var(--radius)] p-3 transition-all"
+              :class="selectedPromptMode === 'minimal'
+                ? 'border-2 border-primary bg-gradient-to-br from-card to-accent font-bold text-primary shadow-jelly'
+                : 'border border-border bg-card hover:border-primary/50 hover:scale-[1.02]'"
             >
               <RadioGroupItem id="mode-minimal" value="minimal" class="!size-0 !border-0 !shadow-none overflow-hidden" />
               <div>
@@ -1648,8 +1637,10 @@ onBeforeUnmount(() => {
             </Label>
             <Label
               for="mode-active"
-              class="flex cursor-pointer items-start gap-2.5 rounded-md border border-border p-3 transition-colors"
-              :class="selectedPromptMode === 'active' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'"
+              class="flex cursor-pointer items-start gap-2.5 rounded-[var(--radius)] p-3 transition-all"
+              :class="selectedPromptMode === 'active'
+                ? 'border-2 border-primary bg-gradient-to-br from-card to-accent font-bold text-primary shadow-jelly'
+                : 'border border-border bg-card hover:border-primary/50 hover:scale-[1.02]'"
             >
               <RadioGroupItem id="mode-active" value="active" class="!size-0 !border-0 !shadow-none overflow-hidden" />
               <div>
@@ -1659,8 +1650,10 @@ onBeforeUnmount(() => {
             </Label>
             <Label
               for="mode-custom"
-              class="flex cursor-pointer items-start gap-2.5 rounded-md border border-border p-3 transition-colors"
-              :class="selectedPromptMode === 'custom' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'"
+              class="flex cursor-pointer items-start gap-2.5 rounded-[var(--radius)] p-3 transition-all"
+              :class="selectedPromptMode === 'custom'
+                ? 'border-2 border-primary bg-gradient-to-br from-card to-accent font-bold text-primary shadow-jelly'
+                : 'border border-border bg-card hover:border-primary/50 hover:scale-[1.02]'"
             >
               <RadioGroupItem id="mode-custom" value="custom" class="!size-0 !border-0 !shadow-none overflow-hidden" />
               <div>
@@ -1704,8 +1697,8 @@ onBeforeUnmount(() => {
             class="text-sm"
             :class="
               promptFeedback.type.value === 'success'
-                ? 'text-green-400'
-                : 'text-red-400'
+                ? 'text-success'
+                : 'text-destructive'
             "
           >
             {{ promptFeedback.message.value }}
@@ -1756,8 +1749,8 @@ onBeforeUnmount(() => {
             class="text-sm"
             :class="
               enhancementThresholdFeedback.type.value === 'success'
-                ? 'text-green-400'
-                : 'text-red-400'
+                ? 'text-success'
+                : 'text-destructive'
             "
           >
             {{ enhancementThresholdFeedback.message.value }}
@@ -1785,7 +1778,7 @@ onBeforeUnmount(() => {
           />
         </div>
 
-        <p class="text-xs text-muted-foreground">
+        <p class="rounded-[var(--radius)] border border-border bg-secondary/50 p-3.5 text-xs leading-relaxed text-foreground">
           {{ $t("settings.smartDictionary.privacyNote") }}
         </p>
 
@@ -1795,8 +1788,8 @@ onBeforeUnmount(() => {
             class="text-sm"
             :class="
               smartDictionaryFeedback.type.value === 'success'
-                ? 'text-green-400'
-                : 'text-red-400'
+                ? 'text-success'
+                : 'text-destructive'
             "
           >
             {{ smartDictionaryFeedback.message.value }}
@@ -1824,7 +1817,7 @@ onBeforeUnmount(() => {
           />
         </div>
 
-        <p class="text-xs text-muted-foreground">
+        <p class="rounded-[var(--radius)] border border-border bg-secondary/50 p-3.5 text-xs leading-relaxed text-foreground">
           {{ $t("settings.inputContext.privacyNote") }}
         </p>
 
@@ -1834,8 +1827,8 @@ onBeforeUnmount(() => {
             class="text-sm"
             :class="
               inputContextFeedback.type.value === 'success'
-                ? 'text-green-400'
-                : 'text-red-400'
+                ? 'text-success'
+                : 'text-destructive'
             "
           >
             {{ inputContextFeedback.message.value }}
@@ -1913,7 +1906,7 @@ onBeforeUnmount(() => {
           <p
             v-if="audioInputFeedback.message.value !== ''"
             class="text-sm"
-            :class="audioInputFeedback.type.value === 'success' ? 'text-green-400' : 'text-destructive'"
+            :class="audioInputFeedback.type.value === 'success' ? 'text-success' : 'text-destructive'"
           >
             {{ audioInputFeedback.message.value }}
           </p>
@@ -1995,8 +1988,8 @@ onBeforeUnmount(() => {
             class="text-sm"
             :class="
               recordingCleanupFeedback.type.value === 'success'
-                ? 'text-green-400'
-                : 'text-red-400'
+                ? 'text-success'
+                : 'text-destructive'
             "
           >
             {{ recordingCleanupFeedback.message.value }}
@@ -2039,7 +2032,7 @@ onBeforeUnmount(() => {
             class="text-sm"
             :class="
               themeFeedback.type.value === 'success'
-                ? 'text-green-400'
+                ? 'text-success'
                 : 'text-destructive'
             "
           >
@@ -2075,8 +2068,8 @@ onBeforeUnmount(() => {
             class="text-sm"
             :class="
               localeFeedback.type.value === 'success'
-                ? 'text-green-400'
-                : 'text-red-400'
+                ? 'text-success'
+                : 'text-destructive'
             "
           >
             {{ localeFeedback.message.value }}
@@ -2103,8 +2096,8 @@ onBeforeUnmount(() => {
             class="text-sm"
             :class="
               muteOnRecordingFeedback.type.value === 'success'
-                ? 'text-green-400'
-                : 'text-red-400'
+                ? 'text-success'
+                : 'text-destructive'
             "
           >
             {{ muteOnRecordingFeedback.message.value }}
@@ -2143,8 +2136,8 @@ onBeforeUnmount(() => {
             class="text-sm"
             :class="
               copyTranscriptionToClipboardFeedback.type.value === 'success'
-                ? 'text-green-400'
-                : 'text-red-400'
+                ? 'text-success'
+                : 'text-destructive'
             "
           >
             {{ copyTranscriptionToClipboardFeedback.message.value }}
@@ -2171,8 +2164,8 @@ onBeforeUnmount(() => {
             class="text-sm"
             :class="
               soundFeedbackFeedback.type.value === 'success'
-                ? 'text-green-400'
-                : 'text-red-400'
+                ? 'text-success'
+                : 'text-destructive'
             "
           >
             {{ soundFeedbackFeedback.message.value }}
@@ -2201,8 +2194,8 @@ onBeforeUnmount(() => {
               class="text-sm"
               :class="
                 hideDockIconFeedback.type.value === 'success'
-                  ? 'text-green-400'
-                  : 'text-red-400'
+                  ? 'text-success'
+                  : 'text-destructive'
               "
             >
               {{ hideDockIconFeedback.message.value }}
@@ -2231,8 +2224,8 @@ onBeforeUnmount(() => {
             class="text-sm"
             :class="
               autoStartFeedback.type.value === 'success'
-                ? 'text-green-400'
-                : 'text-red-400'
+                ? 'text-success'
+                : 'text-destructive'
             "
           >
             {{ autoStartFeedback.message.value }}
@@ -2259,8 +2252,8 @@ onBeforeUnmount(() => {
             class="text-sm"
             :class="
               startHiddenFeedback.type.value === 'success'
-                ? 'text-green-400'
-                : 'text-red-400'
+                ? 'text-success'
+                : 'text-destructive'
             "
           >
             {{ startHiddenFeedback.message.value }}
@@ -2307,7 +2300,7 @@ onBeforeUnmount(() => {
             class="text-sm"
             :class="
               debugLogFeedback.type.value === 'success'
-                ? 'text-green-400'
+                ? 'text-success'
                 : 'text-destructive'
             "
           >

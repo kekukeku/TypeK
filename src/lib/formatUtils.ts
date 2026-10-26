@@ -58,6 +58,20 @@ export function formatDurationMs(ms: number): string {
   return t("format.seconds", { count: (ms / 1000).toFixed(1) });
 }
 
+/**
+ * 將字串拆成「數字段」與「非數字段」交錯的序列。
+ * 數字段允許小數點與千分位逗號（如 "1,234.5"），所有字元皆保留，
+ * 將回傳片段的 text 串接起來必等於輸入字串。
+ */
+export function splitNumberSegments(
+  text: string,
+): { text: string; isNumber: boolean }[] {
+  return Array.from(text.matchAll(/\d[\d.,]*|[^\d]+/g), (match) => ({
+    text: match[0],
+    isNumber: /^\d/.test(match[0]),
+  }));
+}
+
 export function formatNumber(n: number): string {
   return n.toLocaleString(currentLocale());
 }

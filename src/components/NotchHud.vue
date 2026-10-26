@@ -10,6 +10,8 @@ import {
   VOCABULARY_LEARNED,
 } from "../composables/useTauriEvents";
 import { useI18n } from "vue-i18n";
+import { BookOpen, Check, Heart, RotateCcw, Sparkles, X } from "lucide-vue-next";
+import { Button } from "@/components/ui/button";
 import { useSettingsStore } from "../stores/useSettingsStore";
 
 const { t } = useI18n();
@@ -369,67 +371,53 @@ onUnmounted(() => {
       :class="[notchHudClassList, { 'notch-hud-expanded': isExpandedMode }]"
       :style="notchStyle"
     >
+      <Sparkles class="notch-star notch-star-left" :size="10" aria-hidden="true" />
       <div class="notch-content">
         <div class="notch-left">
           <!-- Cancelled: X icon -->
-          <svg
+          <X
             v-if="visualMode === 'cancelled'"
             class="cancelled-icon-svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="rgba(255, 255, 255, 0.6)"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+            :size="18"
+            aria-hidden="true"
+          />
           <!-- Learned: book icon -->
-          <svg
+          <BookOpen
             v-else-if="visualMode === 'learned'"
             class="learned-icon-svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="rgba(147, 197, 253, 0.95)"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-          </svg>
-          <!-- Other modes: waveform + checkmark -->
+            :size="18"
+            aria-hidden="true"
+          />
+          <!-- Other modes: waveform + state icon -->
           <template v-else>
+            <Heart
+              v-if="visualMode === 'recording'"
+              class="heart-pulse"
+              :size="16"
+              aria-hidden="true"
+            />
+            <Sparkles
+              v-else-if="visualMode === 'morphing' || visualMode === 'transcribing'"
+              class="magic-star"
+              :size="14"
+              aria-hidden="true"
+            />
             <div class="waveform-container">
               <span
                 v-for="(style, index) in barStyleList"
                 :key="index"
                 class="waveform-element"
-                :class="waveformElementClass"
+                :class="[
+                  waveformElementClass,
+                  visualMode === 'recording' ? 'wave-candy-bar' : '',
+                  visualMode === 'recording' ? `wave-candy-${index + 1}` : '',
+                ]"
                 :style="style"
               />
             </div>
-            <svg
-              v-if="visualMode === 'success'"
-              class="checkmark-svg"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M4 12l6 6L20 6"
-                fill="none"
-                stroke="#22c55e"
-                stroke-width="3"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
+            <span v-if="visualMode === 'success'" class="success-medal">
+              <Check :size="12" aria-hidden="true" />
+            </span>
           </template>
         </div>
 
@@ -448,15 +436,19 @@ onUnmounted(() => {
           <template v-else-if="visualMode === 'recording'">
             <span v-if="props.isEditMode" class="hud-badge edit-mode-badge">{{ t('voiceFlow.editMode') }}</span>
             <span v-else-if="props.promptModeLabel" class="hud-badge prompt-mode-badge">{{ props.promptModeLabel }}</span>
-            <span class="elapsed-timer">
+            <span class="elapsed-timer badge-jelly">
               {{ formattedElapsedTime }}
             </span>
           </template>
-          <span
+          <Button
             v-else-if="visualMode === 'error' && canRetry"
-            class="retry-icon"
+            variant="destructive"
+            size="sm"
+            class="retry-icon h-6 gap-1 rounded-full border border-destructive/40 bg-gradient-to-r from-destructive to-chart-1 px-2.5 text-xs font-bold shadow-sm"
             @click.stop="$emit('retry')"
-          >&#x21BB;</span>
+          >
+            <RotateCcw :size="12" aria-hidden="true" />
+          </Button>
         </div>
       </div>
 
@@ -468,6 +460,7 @@ onUnmounted(() => {
       <div v-if="hasErrorMessage" class="error-message-row">
         <span class="error-message">{{ props.message }}</span>
       </div>
+      <Sparkles class="notch-star notch-star-right" :size="10" aria-hidden="true" />
     </div>
   </div>
 </template>
@@ -480,19 +473,15 @@ onUnmounted(() => {
   width: 100%;
   display: flex;
   justify-content: center;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(var(--notch-glow));
   animation: notchEnter 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .notch-hud {
-  --notch-bg: #ffffff;
-  --notch-fg: #18181b;
-  --notch-fg-soft: rgba(24, 24, 27, 0.4);
-  --notch-learned: #1d4ed8;
-  --notch-mode: #6d28d9;
-  --notch-edit-bg: rgba(180, 83, 9, 0.15);
-  --notch-edit-fg: #b45309;
+  position: relative;
   background: var(--notch-bg);
+  border: 1px solid var(--notch-border);
+  box-shadow: var(--notch-glow);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -503,14 +492,20 @@ onUnmounted(() => {
     background 0.3s ease;
 }
 
-html.dark .notch-hud {
-  --notch-bg: #000000;
-  --notch-fg: #ffffff;
-  --notch-fg-soft: rgba(255, 255, 255, 0.4);
-  --notch-learned: rgba(147, 197, 253, 0.95);
-  --notch-mode: rgba(167, 139, 250, 0.95);
-  --notch-edit-bg: rgba(251, 191, 36, 0.25);
-  --notch-edit-fg: rgba(251, 191, 36, 0.9);
+/* ---- 裝飾星芒 ---- */
+.notch-star {
+  position: absolute;
+  top: 50%;
+  color: var(--notch-star);
+  animation: twinkle 1.5s infinite ease-in-out alternate;
+  pointer-events: none;
+}
+.notch-star-left { left: 14px; transform: translateY(-50%); }
+.notch-star-right { right: 14px; transform: translateY(-50%); }
+
+@keyframes twinkle {
+  0% { opacity: 0.4; transform: translateY(-50%) scale(0.85); }
+  100% { opacity: 1; transform: translateY(-50%) scale(1.15); }
 }
 
 @keyframes notchEnter {
@@ -555,7 +550,7 @@ html.dark .notch-hud {
 .waveform-container {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   height: 28px;
 }
 
@@ -570,9 +565,36 @@ html.dark .notch-hud {
     transform 0.3s ease;
 }
 
-/* Recording: dynamic bars */
+/* Recording: dynamic candy bars */
 .waveform-bar {
   /* height & width set via inline style */
+}
+.wave-candy-bar {
+  border-radius: 9999px;
+  animation: candyBounce 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+}
+.wave-candy-1 { background: var(--notch-wave-1); animation-delay: 0.1s; }
+.wave-candy-2 { background: var(--notch-wave-2); animation-delay: 0.25s; }
+.wave-candy-3 { background: var(--notch-wave-3); animation-delay: 0.4s; }
+.wave-candy-4 { background: var(--notch-wave-4); animation-delay: 0.15s; }
+.wave-candy-5 { background: var(--notch-wave-5); animation-delay: 0.3s; }
+.wave-candy-6 { background: var(--notch-wave-6); animation-delay: 0.05s; }
+
+@keyframes candyBounce {
+  0% { transform: scaleY(0.35); opacity: 0.7; }
+  100% { transform: scaleY(1.15); opacity: 1; }
+}
+
+/* ---- Recording: beating heart ---- */
+.heart-pulse {
+  color: var(--notch-wave-6);
+  margin-right: 8px;
+  animation: heartBeat 1s infinite;
+}
+@keyframes heartBeat {
+  0%, 100% { transform: scale(1); }
+  20% { transform: scale(1.3); }
+  40% { transform: scale(0.95); }
 }
 
 /* ---- Gap 2: Morphing stagger delay ---- */
@@ -587,6 +609,16 @@ html.dark .notch-hud {
 .waveform-morphing:nth-child(4) { transition-delay: 150ms; }
 .waveform-morphing:nth-child(5) { transition-delay: 200ms; }
 .waveform-morphing:nth-child(6) { transition-delay: 250ms; }
+
+/* ---- Processing: magic sparkle ---- */
+.magic-star {
+  color: var(--notch-mode);
+  margin-right: 8px;
+  animation: spinMagic 2s linear infinite;
+}
+@keyframes spinMagic {
+  100% { transform: rotate(360deg); }
+}
 
 /* ---- Gap 3: Transcribing dots sliding window ---- */
 .waveform-dot {
@@ -618,6 +650,7 @@ html.dark .notch-hud {
   width: 6px;
   height: 6px;
   border-radius: 50%;
+  background: var(--notch-success-from);
   animation: dotConverge 0.35s ease-in forwards;
 }
 .waveform-converge:nth-child(1) { --converge-offset: -12px; }
@@ -632,40 +665,46 @@ html.dark .notch-hud {
   to   { transform: translateX(0) scale(0); opacity: 0; }
 }
 
-/* Gap 5: SVG checkmark stroke animation */
-.checkmark-svg {
+/* Success: mint medal */
+.success-medal {
   position: absolute;
   left: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  color: var(--primary-foreground);
+  background: linear-gradient(135deg, var(--notch-success-from), var(--notch-success-to));
+  box-shadow: 0 2px 6px var(--notch-success-glow);
+  animation: medalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s both;
 }
-.checkmark-svg path {
-  stroke-dasharray: 30;
-  stroke-dashoffset: 30;
-  animation: drawCheck 0.3s ease-out 0.35s forwards;
-}
-@keyframes drawCheck {
-  to { stroke-dashoffset: 0; }
+@keyframes medalPop {
+  from { opacity: 0; transform: scale(0.4); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 /* ---- Success: green glow from notch edge ---- */
 .notch-wrapper-success {
   filter:
-    drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))
-    drop-shadow(0 0 10px rgba(34, 197, 94, 0.5))
-    drop-shadow(0 0 25px rgba(34, 197, 94, 0.2));
+    drop-shadow(var(--notch-drop-base))
+    drop-shadow(0 0 10px var(--notch-success-glow))
+    drop-shadow(0 0 25px var(--notch-success-glow-soft));
   animation: successGlow 0.8s ease-out forwards;
 }
 
 @keyframes successGlow {
   0% {
     filter:
-      drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))
-      drop-shadow(0 0 12px rgba(34, 197, 94, 0.6))
-      drop-shadow(0 0 30px rgba(34, 197, 94, 0.3));
+      drop-shadow(var(--notch-drop-base))
+      drop-shadow(0 0 12px var(--notch-success-glow))
+      drop-shadow(0 0 30px var(--notch-success-glow-soft));
   }
   100% {
     filter:
-      drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))
-      drop-shadow(0 0 2px rgba(34, 197, 94, 0));
+      drop-shadow(var(--notch-drop-base))
+      drop-shadow(0 0 2px transparent);
   }
 }
 
@@ -673,29 +712,28 @@ html.dark .notch-hud {
 /* ---- Learned: blue glow + text ---- */
 .notch-wrapper-learned {
   filter:
-    drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))
-    drop-shadow(0 0 10px rgba(59, 130, 246, 0.5))
-    drop-shadow(0 0 25px rgba(59, 130, 246, 0.2));
+    drop-shadow(var(--notch-drop-base))
+    drop-shadow(0 0 10px var(--notch-learned-glow))
+    drop-shadow(0 0 25px var(--notch-learned-glow-soft));
   animation: learnedGlow 2s ease-out forwards;
 }
 
 @keyframes learnedGlow {
   0% {
     filter:
-      drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))
-      drop-shadow(0 0 12px rgba(59, 130, 246, 0.6))
-      drop-shadow(0 0 30px rgba(59, 130, 246, 0.3));
+      drop-shadow(var(--notch-drop-base))
+      drop-shadow(0 0 12px var(--notch-learned-glow))
+      drop-shadow(0 0 30px var(--notch-learned-glow-soft));
   }
   100% {
     filter:
-      drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))
-      drop-shadow(0 0 2px rgba(59, 130, 246, 0));
+      drop-shadow(var(--notch-drop-base))
+      drop-shadow(0 0 2px transparent);
   }
 }
 
 .learned-icon-svg {
-  /* 用主題變數而非硬編碼淺藍：淺色主題下 --notch-learned 為深藍(#1d4ed8)才看得見。
-     inline stroke 屬性作為 fallback（CSS stroke 屬性優先度高於 presentation attribute）。 */
+  /* 用主題變數而非硬編碼色：HUD 永遠是深色外殼，粉紫學徒色須維持可見。 */
   stroke: var(--notch-learned);
   animation: learnedIconFadeIn 0.3s ease-out;
 }
@@ -785,14 +823,14 @@ html.dark .notch-hud {
 .edit-mode-badge   { background: var(--notch-edit-bg);  color: var(--notch-edit-fg); }
 /* 深色模式：prompt-mode badge 背景略調暗，避免在黑底上過亮（維護者 review 順手項）。
    只針對此 badge 覆蓋背景，不動共用的 --notch-fg-soft（錄音環邊框也用它）。 */
-html.dark .notch-hud .prompt-mode-badge { background: rgba(255, 255, 255, 0.2); }
+html.dark .notch-hud .prompt-mode-badge { background: color-mix(in srgb, var(--notch-fg) 20%, transparent); }
 
 /* ---- Error: scatter + shake ---- */
 .waveform-scatter {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #f97316;
+  background: var(--notch-wave-6);
   animation: dotScatter 0.4s ease-out forwards;
 }
 .waveform-scatter:nth-child(1) { --scatter-offset: -6; }
@@ -829,7 +867,6 @@ html.dark .notch-hud .prompt-mode-badge { background: rgba(255, 255, 255, 0.2); 
 /* ---- Gap 7: Timer font ---- */
 .elapsed-timer {
   font-family: 'JetBrains Mono', monospace;
-  color: var(--notch-fg-soft);
   font-size: 12px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
@@ -855,7 +892,7 @@ html.dark .notch-hud .prompt-mode-badge { background: rgba(255, 255, 255, 0.2); 
 }
 
 .error-message {
-  color: #f97316;
+  color: var(--notch-error-fg);
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
@@ -870,8 +907,6 @@ html.dark .notch-hud .prompt-mode-badge { background: rgba(255, 255, 255, 0.2); 
 
 /* ---- Retry Icon ---- */
 .retry-icon {
-  color: #f97316;
-  font-size: 16px;
   cursor: pointer;
 }
 
