@@ -469,8 +469,7 @@
     },
     "upgradeNotice": {
       "title": "Tóm tắt cập nhật TypeK",
-      "item1": "Đã thêm tiếng Việt và tiếng Thái: trong Cài đặt, bạn có thể chọn tiếng Việt hoặc tiếng Thái cho cả \"Ngôn ngữ giao diện\" và \"Ngôn ngữ phiên âm\"; lời nói vẫn được chỉnh thành văn bản mạch lạc như trước",
-      "item2": "Đã bỏ tùy chọn tiếng Quảng Đông: nếu trước đây bạn chọn tiếng Quảng Đông, cài đặt đã tự chuyển sang \"Tự động nhận diện\"; nếu cần chỉ định ngôn ngữ, hãy chọn lại trong Cài đặt",
+      "item1": "Có thể chọn dịch vụ phiên âm: trong Cài đặt › \"Phiên âm giọng nói\", ngoài Groq bạn có thể dùng \"macOS tích hợp\" (không cần khóa API) hoặc BytePlus (xuất tiếng Trung phồn thể Đài Loan)",
       "dismiss": "Đã hiểu"
     }
   },

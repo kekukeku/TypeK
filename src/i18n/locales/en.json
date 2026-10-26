@@ -469,8 +469,7 @@
     },
     "upgradeNotice": {
       "title": "What's New in TypeK",
-      "item1": "Vietnamese and Thai added — pick Tiếng Việt or ไทย for both Interface Language and Transcription Language in Settings; your speech is tidied into clean text as usual",
-      "item2": "Cantonese option removed — if you had it selected, it now uses Auto Detect; choose a specific language again in Settings if you need one",
+      "item1": "Choose your transcription service — in Settings › Speech to Text, use macOS Built-in (no API key) or BytePlus (Taiwan Traditional Chinese output) instead of Groq",
       "dismiss": "Got it"
     }
   },
