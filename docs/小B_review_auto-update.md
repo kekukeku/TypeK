@@ -96,3 +96,51 @@ async function handleManualUpdate() {
 - 七個 locale JSON 合法，鍵集合都是 410，`{version}` 都在。`accessibility.updateHint` 與 `mainApp.update.macPermissionHint` 七語都有。zh-TW 與計畫原文一致。七份 README 的側邊欄按鈕名稱與各語 `checkUpdate` 一致（例如「檢查更新」／「Check for Updates」／「更新を確認」）。`signingIdentity` 仍是 `"-"`（`tauri.conf.json:82`）。
 
 結論：NOT READY
+
+## 複審（第 2 輪）
+
+複審日 2026-10-26。對照 `feat/auto-update` @ `ba26947`，只看上一輪點名的修正。本輪重跑 `vitest run`：44 files / 712 tests 通過。測試裡沒有 MainApp 的更新狀態機，這 712 個測不了下面兩件事。未重跑 vue-tsc / eslint。
+
+### 上一輪 HIGH：連點安裝 — 主路徑已補上
+
+`src/MainApp.vue:304-318`、`322-324`。`canStartInstall` 只接受 `confirming` / `ready-to-install`（`src/lib/updateGuard.ts:38-44`）。
+
+`handleManualUpdate` 通過 guard 後、任何 `await` 之前就把 `updateState` 設成 `downloading`。第二下看到 `downloading` 會直接 return，不會對同一個 `pendingUpdate` 再呼叫一次 `downloadInstallAndRelaunch()`。
+
+位置不 ok：先關確認框、清版本、`await discardPendingUpdate()`，再設 `idle`。等待 `close()` 時狀態仍是 `downloading`，15 分鐘自動檢查進不來。
+
+語音在這段等待裡變忙：設回 `confirming` 並 return，確認框留著，不呼叫 `downloadInstallAndRelaunch()`。這條單獨看是對的。
+
+### [MED] 取消跟還在跑的「開始更新」會互相踩狀態
+
+`src/MainApp.vue:307-328` 與 `339-349`。
+
+確認框在 `import()` 與位置檢查結束前一直開著，「取消」點得到。取消會先 `await discardStagedUpdate()`（裡面把 `pendingUpdate` 清成 null 再 `close()`），然後才設 `idle`。`handleManualUpdate` 從 `await` 回來時不看狀態是不是還在 `downloading`，也不看確認框關了沒有。
+
+- 取消先回到 `idle`、語音仍是 idle：接著呼叫 `downloadInstallAndRelaunch()`。更新物件已經丟掉，通常丟出 `No pending update`，catch 顯示 2.5 秒的「更新失敗」。使用者按的是取消。
+- 取消先回到 `idle`、語音已忙：`322-324` 再把狀態寫成 `confirming` 然後 return。確認框已經關掉，也沒有 pending update。`isUpdateBusy` 含 `confirming`，側邊欄「檢查更新」停用；`canStartAutoCheck` 只放行 `idle`。沒有路徑回到 `idle`。這次執行的更新 UI 卡住，要重開 App。
+- 位置檢查先回來、下載已經開始，取消才 `close()`：下載與 `close()` 疊在一起。`downloadInstallAndRelaunch` 的 `install()` 讀的是模組上的 `pendingUpdate`，被清空後會丟錯並停住。上一輪「連點兩次 `install()`、macOS 把 App 移走」這條沒有回來。
+
+從確認框直接按取消、且沒有另一筆「開始更新」在跑時，LOW 要的順序是對的：先 `await discardStagedUpdate()`，再設 `idle`，自動檢查不會在 `close()` 期間插進來。
+
+修正：每個 `await` 之後若 `updateState !== "downloading"` 就 return，不要下載，也不要改成 `confirming`。只有狀態仍是 `downloading`、確認框還開著，才因為語音忙碌退回 `confirming`。
+
+### [MED] 手動檢查找到更新時，持久失敗列不會清掉
+
+`src/MainApp.vue:185-236`、`271-300`、`486-505`。
+
+自動檢查／下載失敗改走 `showAutoUpdateFailure`，不走會在 2.5 秒後清掉的 `updateFeedback.show`（`useFeedbackMessage.ts` 仍是 2500ms）。列上是 `mainApp.update.updateFailed`、前往下載頁（`openDownloadPage`）、關閉（`dismissFailure`）。七個 locale 都有這個鍵：zh-TW「關閉」、zh-CN「关闭」、en「Dismiss」、ja「閉じる」、ko「닫기」、vi「Đóng」、th「ปิด」。鍵集合都是 411，`mainApp.update.*` 的佔位符一致。手動檢查失敗（`checkFailed` / `checkError`）與手動更新失敗（`updateFailed`）仍走 `updateFeedback`。
+
+自動檢查只要不是 `error` 就在第 203 行清掉該列（已是最新，以及找到更新，都算）。手動檢查只在 `up-to-date`（第 284 行）清掉。`update-available`（第 287–290 行）會打開「發現新版本」，失敗列還留著。可重現：自動失敗列還在時按「檢查更新」且伺服器有新版，畫面上同時是「更新失敗，請手動下載」和「發現新版本」。
+
+修正：手動檢查在非 `error` 時也清掉 `showAutoUpdateFailure`，跟自動檢查同一種判斷。`error` 與 catch 不要清。
+
+### 上一輪另一則 MED、其餘 LOW — 已對上
+
+- `docs/deployment-guide.md:297`：`plugins.updater.pubkey` 已填入 `~/.tauri/typek.key.pub` 的全文；寫明是那段字串，不是路徑，不要再加引號或換行。`src/lib/autoUpdater.ts:17-18` 改成公鑰已填、不要清空。`tauri.conf.json:66` 仍是那段 minisign 公鑰。
+- `docs/deployment-guide.md:141`：Windows 的 primary key 用 NSIS `-setup.exe`，並寫明 macOS 仍是 `.app.tar.gz`。與 `release.yml` 的 `updaterJsonPreferNsis: true` 一致。
+- `docs/deployment-guide.md:227`：版本號是 `X.Y.Z`、不接受前導 0、必須大於 `tauri.conf.json` 目前的版本。與 `scripts/release.sh:18-26` 一致。
+- `docs/deployment-guide.md:266`：檢查清單第 6 點是 `0.9.5`，與同節其餘例子相同。
+- 七份 README（`README.md`、`README.en.md`、`README.ja.md`、`README.ko.md`、`README.th.md`、`README.vi.md`、`README.zh-CN.md`）的更新段都在 Windows 小節之前，並寫明要放進應用程式資料夾才能自動更新的是 macOS。
+
+結論：NOT READY

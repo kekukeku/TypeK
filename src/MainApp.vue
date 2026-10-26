@@ -285,6 +285,7 @@ async function handleManualCheck() {
       updateFeedback.show("success", t("mainApp.update.upToDate"));
       updateState.value = "idle";
     } else if (result.status === "update-available") {
+      showAutoUpdateFailure.value = false;
       availableVersion.value = result.version ?? "";
       updateState.value = "confirming";
       showManualUpdateDialog.value = true;
@@ -305,12 +306,19 @@ async function handleManualUpdate() {
   if (!canStartInstall(updateState.value, voiceFlowStatus.value)) return;
   // 任何 await 之前先鎖住交易，避免連點兩次對同一個 Update 安裝兩次
   updateState.value = "downloading";
+  // 每個 await 之後確認交易還是這一筆（使用者可能已取消）
+  const isStillThisTransaction = () =>
+    updateState.value === "downloading" && showManualUpdateDialog.value;
 
   try {
     const { downloadInstallAndRelaunch, discardPendingUpdate } =
       await import("./lib/autoUpdater");
+    if (!isStillThisTransaction()) return;
 
-    if (!(await ensureUpdateInstallLocation())) {
+    const isLocationOk = await ensureUpdateInstallLocation();
+    if (!isStillThisTransaction()) return;
+
+    if (!isLocationOk) {
       showManualUpdateDialog.value = false;
       availableVersion.value = "";
       await discardPendingUpdate();
