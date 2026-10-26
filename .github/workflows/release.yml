@@ -78,19 +78,39 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
 
+      # 簽章／公證／updater 金鑰都是選配：secret 沒設定時完全不傳（不傳空字串），
+      # 否則打包工具會拿空值去匯入憑證或送公證而失敗。TypeK 目前未簽章（ad-hoc，signingIdentity "-"）；
+      # 之後在 GitHub Secrets 補齊 Apple 與 TAURI_SIGNING_* 即自動改為正式簽章。見 docs/deployment-guide.md §5
+      - name: Export optional signing secrets
+        shell: bash
+        env:
+          OPT_TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          OPT_TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          OPT_APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          OPT_APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          OPT_APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          OPT_APPLE_ID: ${{ secrets.APPLE_ID }}
+          OPT_APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          OPT_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for name in TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PASSWORD \
+                      APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY \
+                      APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            opt="OPT_${name}"
+            value="${!opt}"
+            if [ -n "$value" ]; then
+              delim="EOF_${RANDOM}${RANDOM}${RANDOM}"
+              { echo "${name}<<${delim}"; echo "$value"; echo "${delim}"; } >> "$GITHUB_ENV"
+              echo "${name}: set"
+            else
+              echo "${name}: not set (skipped)"
+            fi
+          done
+
       - name: Build and release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          # Apple Code Signing + Notarization (macOS only)
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           SENTRY_ENVIRONMENT: production

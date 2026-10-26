@@ -16,7 +16,43 @@ TypeK 是開源專案 [SayIt](https://github.com/chenjackle45/SayIt) 的 fork，
 
 ## 安裝
 
-TypeK 尚未發布正式安裝檔，目前請依下方「開發」一節自行建置。
+### 下載
+
+| 平台 | 下載連結 |
+|------|---------|
+| macOS（Apple Silicon：M1／M2／M3／M4…） | [TypeK-mac-arm64.dmg](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-arm64.dmg) |
+| macOS（Intel） | [TypeK-mac-x64.dmg](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-x64.dmg) |
+| Windows | [TypeK-windows-x64.exe](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-windows-x64.exe) |
+
+不確定是哪一種 Mac：點左上角  →「關於這台 Mac」，「晶片」寫 Apple M 開頭就選 Apple Silicon，寫 Intel 就選 Intel。
+
+### macOS 安裝步驟
+
+TypeK 目前**沒有經過 Apple 簽章與公證**，第一次打開會被 macOS 擋下，這是正常的：
+
+1. 打開下載的 `.dmg`，把 **TypeK** 拖進「應用程式」資料夾
+2. 到「應用程式」資料夾雙擊 TypeK，macOS 會顯示「無法驗證開發者」或「Apple 無法確認 TypeK 不含惡意軟體」，按「完成」或「取消」
+3. 打開「系統設定 → 隱私權與安全性」，往下捲到「安全性」，看到「已阻擋 TypeK」，按「**強制打開**」，再輸入密碼確認
+4. 之後就能正常打開，不會再問
+
+如果出現「TypeK 已損毀，無法打開」，在「終端機」執行下面這行再打開一次：
+
+```bash
+xattr -dr com.apple.quarantine /Applications/TypeK.app
+```
+
+### macOS 權限
+
+TypeK 第一次使用時會請求兩項權限，都要允許：
+
+- **麥克風**：錄下你說的話
+- **輔助使用**（系統設定 → 隱私權與安全性 → 輔助使用）：偵測快捷鍵、把文字貼到游標位置、讀取輸入框前後文字
+
+因為沒有簽章，**更新到新版本後，輔助使用權限可能會失效**。如果快捷鍵沒反應，到「輔助使用」清單把 TypeK 移除（−），再重新加入（＋）並打開。
+
+### Windows 安裝步驟
+
+執行 `.exe` 時若出現「Windows 已保護您的電腦」，按「其他資訊」→「仍要執行」。
 
 ### 前置需求
 
@@ -25,7 +61,7 @@ TypeK 尚未發布正式安裝檔，目前請依下方「開發」一節自行�
 
 ### 快速開始
 
-1. 建置並安裝
+1. 依上方步驟下載並安裝
 2. 開啟 TypeK → 設定頁面 → 貼上 Groq API Key 與 Gemini API Key
 3. 在任何應用程式中按住 `Fn` 鍵說話，放開後文字自動貼上
 

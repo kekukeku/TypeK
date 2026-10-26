@@ -251,9 +251,13 @@ tag push 後自動觸發 `release.yml`：
 
 ### 5.1 Developer ID
 
-- Team：Tai-Cheng Chen (G9J8D2T6DV)
+> **TypeK 目前未簽章**（沒有 Apple Developer Program 帳號）：`tauri.conf.json` 的 `bundle.macOS.signingIdentity` 為 `"-"`（ad-hoc 簽章），不做公證；`release.yml` 只在 Apple secrets 有設定時才傳入簽章／公證用的環境變數。使用者第一次打開需到「系統設定 → 隱私權與安全性」按「強制打開」。
+
+改為正式簽章時：
+
+- Team／Signing Identity：你的 `Developer ID Application: <名字> (<Team ID>)`，填進 `signingIdentity` 與 GitHub Secrets `APPLE_SIGNING_IDENTITY`
 - Apple ID：（你的 Apple ID，存在 GitHub Secrets `APPLE_ID`）
-- Signing Identity：`Developer ID Application: Tai-Cheng Chen (G9J8D2T6DV)`
+- 其餘 secrets 見下方「GitHub Secrets」一節
 
 ### 5.2 簽署流程（tauri-action 自動處理）
 
