@@ -29,7 +29,7 @@ The macOS build supports Apple Silicon (M1/M2/M3/M4…) only; Intel Macs are no 
 
 ### Installing on macOS
 
-TypeK is currently **not signed or notarized by Apple**, so macOS blocks it the first time you open it. This is expected:
+TypeK is signed with its own self-signed certificate ("TypeK Code Signing"), but it has **no Apple Developer ID and is not notarized**, so macOS blocks it the first time you open it. This is expected, and you only need to do it once:
 
 1. Open the downloaded `.dmg` and drag **TypeK** into the Applications folder
 2. Double-click TypeK in Applications. macOS says the developer can't be verified, or that Apple could not verify TypeK is free of malware. Click "Done" or "Cancel"
@@ -49,13 +49,19 @@ The first time you use TypeK it asks for two permissions. Allow both:
 - **Microphone**: to record what you say
 - **Accessibility** (System Settings → Privacy & Security → Accessibility): to detect the hotkey, paste text at the cursor, and read the text around the cursor
 
-Because the app is unsigned, **the Accessibility permission may stop working after you update**. If the hotkey does nothing, remove TypeK from the Accessibility list (−), then add it back (+) and switch it on.
+From 1.3.3 every release is signed with the same certificate, so **both permissions are kept when you update inside the app**. If you're updating from 1.3.1 or earlier, you need to remove TypeK from the Accessibility list (−) one last time, then add it back (+) and switch it on.
+
+If the hotkey still does nothing (System Settings shows it switched on but it doesn't work), quit TypeK and run this line in Terminal. It clears TypeK's old Accessibility permission and opens the settings page; add TypeK back, switch it on, and reopen the app. It only resets TypeK, not other apps.
+
+```bash
+tccutil reset Accessibility com.kekukeku.typek && open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+```
 
 ### Updating
 
 From 1.3.0 you can update inside the app: use "Check for Updates" in the sidebar, or wait for the automatic notification. If you're on 1.2.2 or earlier, download the new version and install it over the old one once (you don't need to delete the app first).
 
-On macOS, TypeK must be in the Applications folder to update automatically. If the hotkey stops working after an update, go to System Settings → Privacy & Security → Accessibility, remove TypeK, then add it again and switch it on.
+On macOS, TypeK must be in the Applications folder to update automatically. Permissions are kept after updating; if the hotkey stops working, see the troubleshooting step under "macOS permissions" above.
 
 ### Installing on Windows
 

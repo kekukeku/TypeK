@@ -29,7 +29,7 @@ Bản macOS chỉ hỗ trợ Apple Silicon (M1/M2/M3/M4…); từ 1.3.3 không c
 
 ### Các bước cài đặt trên macOS
 
-Hiện tại TypeK **chưa được Apple ký và công chứng**, lần đầu mở sẽ bị macOS chặn, đây là hiện tượng bình thường:
+TypeK được ký bằng chứng chỉ tự ký「TypeK Code Signing」, nhưng **không có Apple Developer ID và chưa được công chứng**, nên lần đầu mở sẽ bị macOS chặn. Đây là hiện tượng bình thường và chỉ cần xử lý một lần:
 
 1. Mở tệp `.dmg` đã tải, kéo **TypeK** vào thư mục「Ứng dụng (Applications)」
 2. Vào thư mục「Ứng dụng (Applications)」nhấp đúp vào TypeK, macOS sẽ hiển thị「Không thể xác minh nhà phát triển」hoặc「Apple không thể xác nhận TypeK không chứa phần mềm độc hại」, hãy nhấn「Xong (Done)」hoặc「Hủy (Cancel)」
@@ -49,13 +49,19 @@ Lần đầu sử dụng, TypeK sẽ yêu cầu hai quyền, cả hai đều ph�
 - **Micrô (Microphone)**: ghi lại lời bạn nói
 - **Trợ năng (Accessibility)** (Cài đặt Hệ thống → Quyền riêng tư & Bảo mật → Trợ năng): phát hiện phím tắt, dán văn bản vào vị trí con trỏ, đọc văn bản trước và sau ô nhập
 
-Vì chưa được ký, **sau khi cập nhật lên phiên bản mới, quyền Trợ năng có thể mất hiệu lực**. Nếu phím tắt không phản hồi, hãy vào danh sách「Trợ năng (Accessibility)」gỡ TypeK (−), rồi thêm lại (＋) và bật lên.
+Từ 1.3.3, mọi phiên bản đều được ký bằng cùng một chứng chỉ nên **cập nhật trong ứng dụng vẫn giữ nguyên hai quyền này, không cần cấp lại**. Nếu cập nhật từ 1.3.1 hoặc cũ hơn, bạn cần gỡ TypeK khỏi danh sách「Trợ năng (Accessibility)」(−) lần cuối, rồi thêm lại (＋) và bật lên.
+
+Nếu phím tắt vẫn không phản hồi (Cài đặt Hệ thống hiển thị đã bật nhưng không có tác dụng), hãy thoát TypeK rồi chạy dòng dưới đây trong「Terminal」. Lệnh này xóa quyền Trợ năng cũ của TypeK và mở trang cài đặt; hãy thêm lại TypeK, bật lên và mở lại ứng dụng. Lệnh chỉ đặt lại TypeK, không ảnh hưởng ứng dụng khác.
+
+```bash
+tccutil reset Accessibility com.kekukeku.typek && open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+```
 
 ### Cập nhật
 
 Từ 1.3.0, bạn có thể cập nhật ngay trong ứng dụng: dùng "Kiểm tra cập nhật" ở thanh bên hoặc chờ thông báo tự động. Nếu đang dùng 1.2.2 hoặc cũ hơn, hãy tải bản mới và cài đè một lần (không cần xóa ứng dụng trước).
 
-Trên macOS, TypeK phải nằm trong thư mục Ứng dụng thì mới tự động cập nhật. Nếu phím tắt không phản hồi sau khi cập nhật, hãy vào Cài đặt Hệ thống → Quyền riêng tư & Bảo mật → Trợ năng, xóa TypeK rồi thêm lại và bật lên.
+Trên macOS, TypeK phải nằm trong thư mục Ứng dụng thì mới tự động cập nhật. Quyền được giữ nguyên sau khi cập nhật; nếu phím tắt không phản hồi, xem cách khắc phục trong mục「Quyền trên macOS」ở trên.
 
 ### Các bước cài đặt trên Windows
 
