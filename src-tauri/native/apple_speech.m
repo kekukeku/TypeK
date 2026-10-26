@@ -80,10 +80,9 @@ char *typek_apple_speech_transcribe(const char *wav_path,
         return NULL;
     }
 
-    BOOL uses_on_device = NO;
-    if (@available(macOS 10.15, *)) {
-        uses_on_device = recognizer.supportsOnDeviceRecognition;
-    }
+    // 部署目標是 10.15，這兩個屬性一定存在；不用 @available，
+    // 否則會產生 ___isPlatformVersionAtLeast 參照，Rust 連結時找不到。
+    BOOL uses_on_device = recognizer.supportsOnDeviceRecognition;
 
     if (!uses_on_device && audio_ms > 55000) {
         // Apple 線上辨識單次約 1 分鐘上限；超過就要求先下載聽寫語言包。
@@ -94,11 +93,10 @@ char *typek_apple_speech_transcribe(const char *wav_path,
     SFSpeechURLRecognitionRequest *request =
         [[SFSpeechURLRecognitionRequest alloc] initWithURL:file_url];
     request.shouldReportPartialResults = NO;
-    if (@available(macOS 10.15, *)) {
-        request.requiresOnDeviceRecognition = uses_on_device;
-    }
-    if (@available(macOS 13.0, *)) {
-        request.addsPunctuation = YES;
+    request.requiresOnDeviceRecognition = uses_on_device;
+    // addsPunctuation 是 macOS 13+；用 respondsToSelector + KVC 判斷，理由同上
+    if ([request respondsToSelector:@selector(setAddsPunctuation:)]) {
+        [request setValue:@YES forKey:@"addsPunctuation"];
     }
 
     if (contextual_terms != NULL) {
