@@ -520,6 +520,12 @@ describe("hallucinationDetector.ts", () => {
       expect(r.isDrift).toBe(true);
     });
 
+    it("[P0] 「台」改成「臺」不算飄移 → overlap 為 1", () => {
+      const r = detectSemanticDrift("我明天要去台北開會討論平台", "我明天要去臺北開會討論平臺");
+      expect(r.isDrift).toBe(false);
+      expect(r.overlapRatio).toBe(1);
+    });
+
     it("[P0] 越南文 NFC 與 NFD 同內容 → overlap 為 1、不判定 drift", () => {
       const nfc = "Tôi muốn uống cà phê";
       const nfd = nfc.normalize("NFD");

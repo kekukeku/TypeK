@@ -17,7 +17,10 @@ import { enhanceText } from "../lib/enhancer";
 import { buildWhisperPrompt } from "../lib/whisperPrompt";
 import { getProviderIdForModel } from "../lib/llmProvider";
 import { analyzeCorrections } from "../lib/vocabularyAnalyzer";
-import { applyTranscriptTextTransforms as applySharedTranscriptTextTransforms } from "../lib/transcriptTextTransforms";
+import {
+  applyTranscriptTextTransforms as applySharedTranscriptTextTransforms,
+  type TranscriptTextTransformOptions,
+} from "../lib/transcriptTextTransforms";
 import i18n from "../i18n";
 import { useVocabularyStore } from "./useVocabularyStore";
 import { useHistoryStore } from "./useHistoryStore";
@@ -95,11 +98,15 @@ function t(key: string, params?: Record<string, unknown>): string {
  * 解析有效轉譯語言（auto 回退到介面語言）後，委派給共用的 applyTranscriptTextTransforms。
  * 目前只做：繁中（zh-TW）時把 Whisper 的簡體輸出轉成繁體（#39）。
  */
-function applyTranscriptTextTransforms(rawText: string): string {
+function applyTranscriptTextTransforms(
+  rawText: string,
+  options: TranscriptTextTransformOptions = {},
+): string {
   if (!rawText) return rawText;
   return applySharedTranscriptTextTransforms(
     rawText,
     getEffectiveTranscriptLocale(),
+    options,
   );
 }
 
@@ -1173,11 +1180,12 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
       });
       if (isAborted.value) return;
 
-      // #39：轉譯語言為繁中時，把 Whisper 的簡體輸出轉成繁體（落地前一次到位）。
-      // 只有 Groq Whisper 會輸出簡體；Apple／BytePlus 自行處理正體。
-      if (sttProvider === "groq") {
-        result.rawText = applyTranscriptTextTransforms(result.rawText);
-      }
+      // #39：轉譯語言為繁中時，把 Whisper 的簡體輸出轉成繁體（只有 Groq 需要），
+      // 並把「台」寫作「臺」（三家都做；字典裡的詞照原寫法）。
+      result.rawText = applyTranscriptTextTransforms(result.rawText, {
+        convertScript: sttProvider === "groq",
+        preservedTerms: whisperTermList,
+      });
 
       writeInfoLog(`轉錄原文: "${result.rawText}"`);
 
@@ -1288,7 +1296,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
           );
 
           // 所有等待結束後才取 key：refresh 之後同步讀出 key 與 model（中間沒有 await），
-          // 確保兩者來自同一份設定，跨視窗切換 provider 不會讓 key 送錯平台
+          // 確保兩者來自同一份設定，跨視窗切換 provider 不會讓 key 送錯平臺
           await settingsStore.refreshLlmApiKey();
           if (isStaleFlow()) return;
           const llmApiKey = settingsStore.getLlmApiKey();
@@ -1544,10 +1552,11 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
       );
       if (isAborted.value) return;
 
-      // #39：同主路徑；只有 Groq Whisper 的簡體輸出需要轉繁。
-      if (sttProvider === "groq") {
-        result.rawText = applyTranscriptTextTransforms(result.rawText);
-      }
+      // #39：同主路徑；只有 Groq 需要簡轉繁，「台」→「臺」三家都做。
+      result.rawText = applyTranscriptTextTransforms(result.rawText, {
+        convertScript: sttProvider === "groq",
+        preservedTerms: whisperTermList,
+      });
 
       writeInfoLog(`重送轉錄原文: "${result.rawText}"`);
 

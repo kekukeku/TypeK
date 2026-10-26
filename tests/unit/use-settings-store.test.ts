@@ -70,7 +70,7 @@ describe("useSettingsStore", () => {
       expect(store.hasApiKey).toBe(true);
     });
 
-    it("[P0] 無儲存值時應使用平台預設值", async () => {
+    it("[P0] 無儲存值時應使用平臺預設值", async () => {
       const { useSettingsStore } = await import(
         "../../src/stores/useSettingsStore"
       );

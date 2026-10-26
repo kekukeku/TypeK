@@ -1,5 +1,5 @@
 /**
- * 自訂鍵錄製失敗的一鍵回報（gh-30）：把版本、平台、觸發鍵設定與 Rust 端的錄製診斷日誌
+ * 自訂鍵錄製失敗的一鍵回報（gh-30）：把版本、平臺、觸發鍵設定與 Rust 端的錄製診斷日誌
  * 組成回報者看得到的純文字，並產生 GitHub「新 issue」預填連結。
  *
  * 純函式、不依賴 Tauri；取快照與開連結由呼叫端（SettingsView）做。
@@ -26,7 +26,7 @@ export interface HotkeyDiagnosticsInput {
 export const ISSUE_URL_BUDGET_CHARS = 8000;
 const ISSUES_NEW_URL = "https://github.com/kekukeku/TypeK/issues/new";
 
-/** 從 userAgent 取平台摘要，不放整串 UA */
+/** 從 userAgent 取平臺摘要，不放整串 UA */
 export function summarizePlatform(userAgent: string): string {
   if (userAgent.includes("Windows")) return "Windows";
   if (userAgent.includes("Mac")) return "macOS";

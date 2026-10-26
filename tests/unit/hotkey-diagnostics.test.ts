@@ -22,7 +22,7 @@ const base: HotkeyDiagnosticsInput = {
 };
 
 describe("useHotkeyDiagnostics（gh-30 一鍵回報）", () => {
-  it("[P0] 診斷文字含版本、平台、觸發鍵設定、失敗種類與全部日誌行", () => {
+  it("[P0] 診斷文字含版本、平臺、觸發鍵設定、失敗種類與全部日誌行", () => {
     const text = buildHotkeyDiagnosticsText(base);
     expect(text).toContain("TypeK v0.13.1 · Windows · UI zh-TW");
     expect(text).toContain("mode=toggle · key=右 Alt");
@@ -31,7 +31,7 @@ describe("useHotkeyDiagnostics（gh-30 一鍵回報）", () => {
     expect(text).not.toContain("Edge/130"); // 不放整串 UA
   });
 
-  it("[P0] rejected 帶固定原因；標題依平台", () => {
+  it("[P0] rejected 帶固定原因；標題依平臺", () => {
     const text = buildHotkeyDiagnosticsText({
       ...base,
       failureKind: "rejected",

@@ -99,7 +99,7 @@
       "llmUpdated": "文字整理模型已更新",
       "default": "預設",
       "costPerHour": "每小時 ${cost}",
-      "paidOnlyHint": "此模型沒有免費層，需在該平台開通付費",
+      "paidOnlyHint": "此模型沒有免費層，需在該平臺開通付費",
       "limitedFreeHint": "免費額度極少或依專案而異，免費專案常會回「請求過於頻繁」"
     },
     "modelBadge": {
@@ -220,11 +220,11 @@
       "providerHint": {
         "groq": "免費額度 · 需金鑰",
         "apple": "免金鑰 · 只限 Mac",
-        "byteplus": "付費 · 可輸出台灣繁體"
+        "byteplus": "付費 · 可輸出臺灣繁體"
       },
       "byteplusApiKey": {
         "title": "BytePlus Seed Speech API Key",
-        "instruction": "請到 BytePlus Seed Speech 主控台建立 API Key（不是 ModelArk 金鑰）",
+        "instruction": "請到 BytePlus Seed Speech 主控臺建立 API Key（不是 ModelArk 金鑰）",
         "goToConsole": "前往 BytePlus Console",
         "privacyNote": "錄音會上傳到 BytePlus 新加坡伺服器轉錄。",
         "saved": "API Key 已儲存",
@@ -244,7 +244,7 @@
         "request": "授權語音辨識",
         "openSettings": "打開系統設定",
         "deniedWarning": "TypeK 沒有語音辨識權限。請到系統設定開啟，或改用 Groq／BytePlus。",
-        "restrictedWarning": "這台 Mac 限制了語音辨識功能。請檢查系統設定，或改用 Groq／BytePlus。",
+        "restrictedWarning": "這臺 Mac 限制了語音辨識功能。請檢查系統設定，或改用 Groq／BytePlus。",
         "authorizedHint": "已授權，可以使用 macOS 內建語音辨識。",
         "description": "免金鑰、免費。已下載聽寫語言包的語言在本機辨識；沒有語言包時改由 Apple 線上辨識（錄音會上傳到 Apple，單次最多 55 秒）。語言包在 系統設定 → 鍵盤 → 聽寫 下載。",
         "authRequested": "已更新語音辨識權限狀態",
@@ -346,7 +346,7 @@
     "importTooManyEntries": "詞條數超過 {limit} 筆上限，請將檔案拆成多個再匯入",
     "importInvalidFile": "無法辨識的檔案格式",
     "importFailed": "匯入失敗：{error}",
-    "transferHint": "可將字典匯出成單一檔案，在另一台裝置匯入。匯入也支援純文字 .txt（一行一個詞）與 .csv（只取每行第一個逗號前的內容，不支援引號內的逗號；詞本身含逗號請用 .txt），方便從 Typeless 等工具遷移。"
+    "transferHint": "可將字典匯出成單一檔案，在另一臺裝置匯入。匯入也支援純文字 .txt（一行一個詞）與 .csv（只取每行第一個逗號前的內容，不支援引號內的逗號；詞本身含逗號請用 .txt），方便從 Typeless 等工具遷移。"
   },
   "accessibility": {
     "title": "需要輔助使用權限",
@@ -408,7 +408,7 @@
       "appleNeedsLanguagePack": "這段錄音超過 55 秒，需要先下載聽寫語言包：系統設定 → 鍵盤 → 聽寫",
       "appleTimeout": "macOS 語音辨識逾時，請重試或改用 Groq",
       "appleRecognitionFailed": "macOS 語音辨識失敗，請重試",
-      "providerUnsupported": "這台電腦不支援 macOS 內建語音辨識"
+      "providerUnsupported": "這臺電腦不支援 macOS 內建語音辨識"
     },
     "enhancement": {
       "timeout": "AI 整理逾時，已貼原始文字",

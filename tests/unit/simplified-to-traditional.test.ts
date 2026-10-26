@@ -8,7 +8,7 @@ describe("convertSimplifiedToTraditional（#39 簡→繁）", () => {
     );
   });
 
-  it("[P0] 常見一對多字應轉成台灣正體", () => {
+  it("[P0] 常見一對多字應轉成臺灣正體", () => {
     // 発/發、机→機、后→後、里→裡（依詞轉正）
     expect(convertSimplifiedToTraditional("计算机里面发现问题")).toBe(
       "計算機裡面發現問題",

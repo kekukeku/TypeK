@@ -55,10 +55,11 @@ describe("prompts — 輸出語言插槽（#83）", () => {
       });
     }
 
-    it("zh-CN 精簡指示不含繁體「語」「設定」「台灣」", () => {
+    it("zh-CN 精簡指示不含繁體「語」「設定」「臺灣／台灣」", () => {
       const prompt = getMinimalPromptForLocale("zh-CN");
       expect(prompt).not.toContain("語");
       expect(prompt).not.toContain("設定");
+      expect(prompt).not.toContain("臺灣");
       expect(prompt).not.toContain("台灣");
     });
 
@@ -115,7 +116,7 @@ describe("prompts — 輸出語言插槽（#83）", () => {
         const prompt = getMinimalPromptForLocale(locale);
         expect(prompt.endsWith(explicit)).toBe(true);
         expect(prompt).toContain(notInstruction);
-        expect(prompt).not.toContain("台灣");
+        expect(prompt).not.toContain("臺灣");
         expect(prompt).not.toContain("，");
       });
 
@@ -123,7 +124,7 @@ describe("prompts — 輸出語言插槽（#83）", () => {
         const prompt = getAutoLanguagePrompt(locale);
         expect(prompt).toContain(auto);
         expect(prompt).not.toContain(explicit);
-        expect(prompt).not.toContain("台灣");
+        expect(prompt).not.toContain("臺灣");
         expect(prompt).not.toContain("，");
       });
     }

@@ -786,13 +786,12 @@ export const useHistoryStore = defineStore("history", () => {
       };
     }
 
-    // #39：只有 Groq Whisper 的簡體輸出需要轉繁；Apple／BytePlus 自行處理正體。
-    if (sttProvider === "groq") {
-      result.rawText = applyTranscriptTextTransforms(
-        result.rawText,
-        getEffectiveTranscriptLocale(settingsStore),
-      );
-    }
+    // #39：只有 Groq 需要簡轉繁；「台」→「臺」三家都做（字典裡的詞照原寫法）。
+    result.rawText = applyTranscriptTextTransforms(
+      result.rawText,
+      getEffectiveTranscriptLocale(settingsStore),
+      { convertScript: sttProvider === "groq", preservedTerms: whisperTermList },
+    );
 
     // HTTP 成功即計費（不論轉錄內容）→ 記錄 whisper 用量
     recordWhisperUsage(record.id, record.recordingDurationMs, usageModel);

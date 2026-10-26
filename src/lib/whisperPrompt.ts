@@ -7,7 +7,7 @@ export const WHISPER_PROMPT_TERM_CHAR_BUDGET = 80;
 
 const BASE_PROMPTS: Record<string, string> = {
   "zh-TW":
-    "以下是台灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。",
+    "以下是臺灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。",
   "zh-CN":
     "以下是简体中文的语音逐字稿，口语中英夹杂，英文专有名词保持原文拼写。",
 };

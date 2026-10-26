@@ -477,7 +477,7 @@ describe("useVoiceFlowStore", () => {
       interfaceLocale: "zh-TW",
       vocabularyTermList: null,
       whisperPrompt:
-        "以下是台灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。",
+        "以下是臺灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。",
       modelId: "whisper-large-v3",
       language: "zh",
     });
@@ -1470,7 +1470,7 @@ describe("useVoiceFlowStore", () => {
         interfaceLocale: "zh-TW",
         vocabularyTermList: ["TypeScript", "Tauri"],
         whisperPrompt:
-          "以下是台灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。剛才提到Tauri、TypeScript。",
+          "以下是臺灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。剛才提到Tauri、TypeScript。",
         modelId: "whisper-large-v3",
         language: "zh",
       });
@@ -1504,7 +1504,7 @@ describe("useVoiceFlowStore", () => {
         interfaceLocale: "zh-TW",
         vocabularyTermList: null,
         whisperPrompt:
-          "以下是台灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。",
+          "以下是臺灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。",
         modelId: "whisper-large-v3",
         language: "zh",
       });
@@ -1570,7 +1570,7 @@ describe("useVoiceFlowStore", () => {
         interfaceLocale: "zh-TW",
         vocabularyTermList: ["Pinia", "Vitest"],
         whisperPrompt:
-          "以下是台灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。剛才提到Vitest、Pinia。",
+          "以下是臺灣繁體中文的語音逐字稿，口語中英夾雜，英文專有名詞維持原文拼寫。剛才提到Vitest、Pinia。",
         modelId: "whisper-large-v3",
         language: "zh",
       });

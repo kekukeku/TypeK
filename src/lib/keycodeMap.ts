@@ -5,13 +5,13 @@ import {
 import i18n from "../i18n";
 
 /**
- * DOM event.code → 平台原生 keycode 映射模組
+ * DOM event.code → 平臺原生 keycode 映射模組
  *
  * macOS keycode: CGEvent keycode (u16)
  * Windows VK code: Virtual-Key code (u16)
  *
  * 注意：兩者數值體系完全不同（如 F5: macOS=96, Windows=0x74）。
- * keycode 為平台相依值，不可跨平台使用。
+ * keycode 為平臺相依值，不可跨平臺使用。
  */
 
 // ─── macOS CGEvent keycodes ────────────────────────────────────

@@ -6,7 +6,10 @@
  *  Layer 2: 無人聲偵測（靜音 / 低 RMS + 高 NSP 聯合判斷）
  */
 
-import { convertSimplifiedToTraditional } from "./simplifiedToTraditional";
+import {
+  convertSimplifiedToTraditional,
+  normalizeTaiwanTai,
+} from "./simplifiedToTraditional";
 
 // ── 常數 ──
 
@@ -113,7 +116,8 @@ export interface SemanticDriftResult {
  * （例：簡體舊紀錄重新整理成繁體、模型沒照提示詞輸出繁體）。
  */
 function normalizeForOverlap(text: string): string {
-  return convertSimplifiedToTraditional(text)
+  // 「台」「臺」視為同字，避免整理把台改成臺被當成飄移
+  return normalizeTaiwanTai(convertSimplifiedToTraditional(text))
     .normalize("NFC")
     .toLowerCase()
     .replace(/[^\p{L}\p{M}\p{N}]/gu, "");

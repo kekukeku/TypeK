@@ -63,7 +63,7 @@ interface BaseModelConfig {
  * 免費專案能不能用（gh-71）：
  * - full：免費額度足夠日常使用
  * - limited：官方有免費層，但額度極小或依專案而異，免費專案常直接 429
- * - none：沒有免費層，必須在該平台開通付費
+ * - none：沒有免費層，必須在該平臺開通付費
  */
 export type FreeTierLevel = "full" | "limited" | "none";
 

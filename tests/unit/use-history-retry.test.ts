@@ -233,7 +233,10 @@ describe("useHistoryStore retry", () => {
       const res = await store.retranscribeRecord(record);
 
       expect(res.ok).toBe(true);
-      expect(h.mockTransform).toHaveBeenCalledWith("简体转录结果", "zh-TW");
+      expect(h.mockTransform).toHaveBeenCalledWith("简体转录结果", "zh-TW", {
+        convertScript: true,
+        preservedTerms: [],
+      });
       expect(store.transcriptionList[0].rawText).toBe("簡體轉錄結果");
       // 證明寫入 DB 的 raw_text（SQL $1）也是轉換後文字，而非本地才轉
       const updateCall = h.mockDbExecute.mock.calls.find((c) =>
@@ -255,6 +258,7 @@ describe("useHistoryStore retry", () => {
       expect(h.mockTransform).toHaveBeenCalledWith(
         GOOD_TRANSCRIBE_RESULT.rawText,
         "zh-TW",
+        { convertScript: true, preservedTerms: [] },
       );
     });
 
@@ -284,6 +288,7 @@ describe("useHistoryStore retry", () => {
       expect(h.mockTransform).toHaveBeenCalledWith(
         "Tôi muốn uống cà phê",
         "vi",
+        { convertScript: true, preservedTerms: ["TypeK"] },
       );
       expect(store.transcriptionList[0].rawText).toBe("Tôi muốn uống cà phê");
     });
@@ -313,7 +318,11 @@ describe("useHistoryStore retry", () => {
       });
       expect(args).not.toHaveProperty("whisperPrompt");
       expect(args).not.toHaveProperty("modelId");
-      expect(h.mockTransform).not.toHaveBeenCalled();
+      expect(h.mockTransform).toHaveBeenCalledWith(
+        GOOD_TRANSCRIBE_RESULT.rawText,
+        "zh-TW",
+        { convertScript: false, preservedTerms: ["TypeK"] },
+      );
     });
 
     it("[P1] BytePlus → provider byteplus、帶 BytePlus 金鑰、不簡轉繁", async () => {
@@ -337,7 +346,11 @@ describe("useHistoryStore retry", () => {
       });
       expect(args).not.toHaveProperty("whisperPrompt");
       expect(args).not.toHaveProperty("modelId");
-      expect(h.mockTransform).not.toHaveBeenCalled();
+      expect(h.mockTransform).toHaveBeenCalledWith(
+        GOOD_TRANSCRIBE_RESULT.rawText,
+        "en",
+        { convertScript: false, preservedTerms: [] },
+      );
     });
 
     it("[P1] 後端回 BytePlus 金鑰錯誤 → errorMessage 帶已翻譯的專屬訊息", async () => {

@@ -84,7 +84,7 @@ export interface VocabularyLearnedPayload {
 export interface RecordingCapturedPayload {
   keycode: number;
   modifiers: import("./settings").ModifierFlag[];
-  /** gh-30：≥2 顆時為純修飾鍵和弦（平台鍵碼）；否則為空陣列 */
+  /** gh-30：≥2 顆時為純修飾鍵和弦（平臺鍵碼）；否則為空陣列 */
   chordKeycodes: number[];
 }
 

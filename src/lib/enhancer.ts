@@ -241,7 +241,9 @@ export async function enhanceText(
   }
   return {
     text: options?.transcriptLocale
-      ? applyTranscriptTextTransforms(enhancedContent, options.transcriptLocale)
+      ? applyTranscriptTextTransforms(enhancedContent, options.transcriptLocale, {
+          preservedTerms: options.vocabularyTermList,
+        })
       : enhancedContent,
     usage,
   };

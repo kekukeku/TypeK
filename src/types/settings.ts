@@ -21,7 +21,7 @@ export interface ComboTriggerKey {
   combo: { modifiers: ModifierFlag[]; keycode: number };
 }
 
-/** gh-30：純修飾鍵組合（≥2 顆實體修飾鍵，平台鍵碼、左右分開）。只保證新版讀舊設定；舊版不認得這個形狀 */
+/** gh-30：純修飾鍵組合（≥2 顆實體修飾鍵，平臺鍵碼、左右分開）。只保證新版讀舊設定；舊版不認得這個形狀 */
 export interface ChordTriggerKey {
   chord: { keycodes: number[] };
 }

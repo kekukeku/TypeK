@@ -9,7 +9,7 @@ import {
   type TriggerKey,
 } from "../../src/types/settings";
 
-// gh-30：純修飾鍵和弦（右 Alt＋右 Ctrl）— 顯示名依平台鍵碼表、左右分開
+// gh-30：純修飾鍵和弦（右 Alt＋右 Ctrl）— 顯示名依平臺鍵碼表、左右分開
 
 const originalUserAgent = navigator.userAgent;
 function setUserAgent(ua: string) {

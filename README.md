@@ -20,7 +20,7 @@ TypeK 是開源專案 [SayIt](https://github.com/chenjackle45/SayIt) 的 fork，
 
 ### 下載
 
-| 平台 | 下載連結 |
+| 平臺 | 下載連結 |
 |------|---------|
 | macOS（Apple Silicon：M1／M2／M3／M4…） | [TypeK-mac-arm64.dmg](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-arm64.dmg) |
 | macOS（Intel） | [TypeK-mac-x64.dmg](https://github.com/kekukeku/TypeK/releases/latest/download/TypeK-mac-x64.dmg) |
