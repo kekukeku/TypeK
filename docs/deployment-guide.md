@@ -272,9 +272,14 @@ tag push 後自動觸發 `release.yml`：
 
 ### 5.1 現況
 
-> **TypeK 不做 Apple 簽章與公證**（沒有付費 Apple Developer Program 帳號）：`tauri.conf.json` 的 `bundle.macOS.signingIdentity` 固定為 `"-"`（ad-hoc），`APPLE_*` secrets 保持空白。使用者第一次打開需到「系統設定 → 隱私權與安全性」按「強制打開」。
+> **TypeK 不做 Apple Developer ID 簽章與公證**（沒有付費 Apple Developer Program 帳號），`APPLE_*` secrets 保持空白。使用者第一次打開仍需到「系統設定 → 隱私權與安全性」按「強制打開」。
 >
-> 因此更新後「輔助使用」權限可能失效：到「系統設定 → 隱私權與安全性 → 輔助使用」把 TypeK 移除後重新加入並打開。這是沒有 Apple 簽章的限制，不是本版可修的 bug。
+> **1.3.2 起，macOS 正式版用自簽憑證「TypeK Code Signing」簽章**（`release.yml` 的 Import／Verify 兩步）：designated requirement 是 `identifier "com.kekukeku.typek" and certificate leaf = H"4524a36ee9abdfb6d9e150137ee105956e7cfede"`，綁憑證不綁每版 cdhash，所以更新後輔助使用（macOS 27 叫 Device Control and Data Access）與麥克風權限會保留（2026-10-26 Kevin 本機以 1.3.0→1.3.1 實驗證實）。
+>
+> - Secrets：`TYPEK_CODESIGN_P12`（p12 的 base64，單行）、`TYPEK_CODESIGN_P12_PASSWORD`。不要放進 `APPLE_CERTIFICATE`（tauri-bundler 2.10 只認 Apple 前綴憑證）
+> - 憑證效期 10 年（到 2036-10）。p12 與密碼另存密碼管理器；**遺失或換憑證＝所有使用者要再「− 再 +」一次**，且要同步改 `release.yml` 的 `EXPECTED_LEAF`
+> - 本機 `pnpm tauri build` 仍是 ad-hoc（`tauri.conf.json` 的 `signingIdentity "-"`），權限不與正式版共用
+> - 從 ad-hoc 版（1.3.1 以前）更新到第一個自簽版時，使用者仍要「− 再 +」一次；之後的更新不用
 
 ### 5.2 簽署流程
 

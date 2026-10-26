@@ -50,18 +50,20 @@ paths:
 - 正式版 Sentry release 一律由 `.github/workflows/release.yml` 產生，格式固定為 `typek@<version>`
 - 前端與 Rust 不可各自手動指定不同的 Sentry release 名稱
 - 正式版 telemetry 與 sourcemap upload 只能走 `release.yml`，不得繞過 workflow 手動上傳
-- 發版前必須確認 updater 的 2 個 secrets（`TAURI_SIGNING_PRIVATE_KEY`、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`）已設；Sentry secrets 為選配
+- 發版前必須確認 4 個必要 secrets 已設：updater 的 `TAURI_SIGNING_PRIVATE_KEY`、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`，與 macOS 自簽憑證的 `TYPEK_CODESIGN_P12`、`TYPEK_CODESIGN_P12_PASSWORD`；Sentry secrets 為選配
 - **Release 資產必須有通過驗證的 `latest.json`**：`publish-release` 在 `gh release edit --draft=false` 前檢查版本、三個平台、URL 指向同 tag、Windows 為 `-setup.exe`；驗證失敗就留 draft
 - `git tag`、`git push` 由使用者授權後才執行（全域 git 規約）
 
 ## GitHub Secrets
 
-必要（2 個）：
+必要（4 個）：
 
 | Secret | 用途 |
 |--------|------|
 | `TAURI_SIGNING_PRIVATE_KEY` | Updater 簽署私鑰（minisign 私鑰檔全文） |
 | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | 私鑰密碼 |
+| `TYPEK_CODESIGN_P12` | macOS 自簽「TypeK Code Signing」憑證 p12（base64）；讓更新後保留權限，見 `docs/deployment-guide.md` §5.1 |
+| `TYPEK_CODESIGN_P12_PASSWORD` | p12 密碼 |
 
 選配（Sentry；沒有也能發版）：
 

@@ -476,7 +476,7 @@
     },
     "upgradeNotice": {
       "title": "What's New in TypeK",
-      "item1": "Traditional Chinese now always uses 臺 instead of 台 — in the interface and in dictation output; company or brand names in your dictionary keep their original spelling. Other languages are unchanged",
+      "item1": "No more re-granting permissions after updates — from 1.3.2 on, every TypeK build is signed with the same certificate, so macOS keeps Accessibility (Device Control and Data Access) and microphone access when you update in the app. Coming from an older version, if the hotkey doesn't respond, remove TypeK and add it back one last time",
       "dismiss": "Got it"
     }
   },

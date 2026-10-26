@@ -4,6 +4,13 @@ TypeK 版本更新紀錄。
 
 > TypeK 是 SayIt 的 fork。0.14.1 以前（含）的條目是 SayIt 時期的紀錄，保留原文。
 
+## [1.3.2] - 2026-10-26
+
+### Improved
+
+- 更新後不用再重新授權：macOS 版改用自簽憑證「TypeK Code Signing」簽章（仍不是 Apple Developer ID、不公證），每一版的簽章身分相同，App 內更新後 macOS 會保留輔助使用（macOS 27 叫 Device Control and Data Access）與麥克風權限。原本 ad-hoc 簽章每版身分不同，系統設定顯示開著、實際卻沒授權，快捷鍵因此失靈。從 1.3.1 以前的版本更新到 1.3.2 時，需要最後一次把 TypeK 移除後重新加入
+- 發版流程：macOS 打包後檢查簽章身分，不是這張憑證就不公開
+
 ## [1.3.1] - 2026-10-26
 
 ### Improved

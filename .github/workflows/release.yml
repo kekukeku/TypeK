@@ -118,7 +118,7 @@ jobs:
 
       # updater 的兩個 secret 是發版必要（下一步會檢查）；Apple 簽章維持不做，
       # 對應 secret 空白時完全不傳（不傳空字串），避免打包工具拿空值去匯入憑證或送公證。
-      # TypeK 維持 ad-hoc（signingIdentity "-"）。見 docs/deployment-guide.md §5.4
+      # macOS 正式版改用下一步匯入的自簽憑證（tauri.conf.json 的 signingIdentity "-" 只用在本機）。見 docs/deployment-guide.md §5.1、§5.4
       - name: Export optional signing secrets
         shell: bash
         env:
@@ -157,6 +157,48 @@ jobs:
           fi
           echo "Updater signing key is configured"
 
+      # macOS 用同一張自簽「TypeK Code Signing」憑證簽每一版：designated requirement 綁憑證，
+      # 不綁每版的 cdhash，使用者更新後輔助使用／麥克風權限可以保留（2026-10-26 Kevin 本機實驗證實）。
+      # 不是 Apple Developer ID：不公證，第一次安裝仍要「強制打開」。p12 不走 APPLE_CERTIFICATE
+      # （tauri-bundler 2.10 只認 Apple 前綴的憑證），改匯入臨時鑰匙圈，再用 APPLE_SIGNING_IDENTITY 指定。
+      - name: Import TypeK code signing certificate (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          TYPEK_CODESIGN_P12: ${{ secrets.TYPEK_CODESIGN_P12 }}
+          TYPEK_CODESIGN_P12_PASSWORD: ${{ secrets.TYPEK_CODESIGN_P12_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TYPEK_CODESIGN_P12" ] || [ -z "$TYPEK_CODESIGN_P12_PASSWORD" ]; then
+            echo "::error::TYPEK_CODESIGN_P12 / TYPEK_CODESIGN_P12_PASSWORD missing. Without them macOS permissions reset on every update; see docs/deployment-guide.md §5.1."
+            exit 1
+          fi
+          if [ -n "${APPLE_CERTIFICATE:-}" ] || [ -n "${APPLE_ID:-}" ] || [ -n "${APPLE_API_KEY:-}" ]; then
+            echo "::error::APPLE_* signing/notarization secrets must stay empty (self-signed certificate cannot be notarized)."
+            exit 1
+          fi
+
+          KEYCHAIN="$RUNNER_TEMP/typek-signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 24)"
+          P12_PATH="$RUNNER_TEMP/typek-signing.p12"
+          printf '%s' "$TYPEK_CODESIGN_P12" | base64 --decode > "$P12_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$P12_PATH" -k "$KEYCHAIN" -f pkcs12 -P "$TYPEK_CODESIGN_P12_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          # 保留 runner 原本的鑰匙圈，再加上這個臨時鑰匙圈（codesign 只搜尋清單）
+          EXISTING=$(security list-keychains -d user | sed 's/"//g' | xargs)
+          security list-keychains -d user -s "$KEYCHAIN" $EXISTING
+          rm -f "$P12_PATH"
+
+          security find-identity -p codesigning "$KEYCHAIN" | grep -q '"TypeK Code Signing"' \
+            || { echo "::error::Identity 'TypeK Code Signing' not found after import"; exit 1; }
+          echo "TYPEK_SIGNING_KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+          echo "APPLE_SIGNING_IDENTITY=TypeK Code Signing" >> "$GITHUB_ENV"
+          echo "Imported TypeK Code Signing into temporary keychain"
+
       - name: Build and release
         uses: tauri-apps/tauri-action@v0
         env:
@@ -178,6 +220,33 @@ jobs:
           updaterJsonPreferNsis: true
           retryAttempts: 3
           args: ${{ matrix.args }}
+
+      # 簽錯身分（例如退回 ad-hoc）就讓 job 失敗：publish-release 不會執行，release 留草稿。
+      # 期望的憑證葉雜湊＝「TypeK Code Signing」憑證的 SHA-1；換憑證時要一起改。
+      - name: Verify macOS signature (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          EXPECTED_LEAF: 4524a36ee9abdfb6d9e150137ee105956e7cfede
+        run: |
+          set -euo pipefail
+          APP=$(find src-tauri/target -maxdepth 6 -type d -path "*/bundle/macos/TypeK.app" | head -1)
+          [ -n "$APP" ] || { echo "::error::TypeK.app not found"; exit 1; }
+          REQ=$(codesign -d -r - "$APP" 2>&1 | grep 'designated =>' || true)
+          echo "$REQ"
+          codesign --verify --strict --verbose=2 "$APP"
+          if ! printf '%s' "$REQ" | grep -q "identifier \"com.kekukeku.typek\" and certificate leaf = H\"$EXPECTED_LEAF\""; then
+            echo "::error::$APP is not signed with the TypeK Code Signing certificate"
+            exit 1
+          fi
+
+      - name: Remove temporary keychain (macOS)
+        if: always() && runner.os == 'macOS'
+        shell: bash
+        run: |
+          if [ -n "${TYPEK_SIGNING_KEYCHAIN:-}" ]; then
+            security delete-keychain "$TYPEK_SIGNING_KEYCHAIN" || true
+          fi
 
       - name: Upload frontend sourcemaps to Sentry
         if: matrix.upload_sourcemaps == 'true'

@@ -476,7 +476,7 @@
     },
     "upgradeNotice": {
       "title": "Tóm tắt cập nhật TypeK",
-      "item1": "Tiếng Trung phồn thể giờ luôn viết chữ \"Đài\" (như trong Đài Loan, Đài Bắc) theo dạng chính thức: áp dụng cho giao diện và kết quả đọc chính tả; tên doanh nghiệp hoặc thương hiệu trong từ điển giữ nguyên cách viết. Các ngôn ngữ khác không thay đổi",
+      "item1": "Không cần cấp lại quyền sau khi cập nhật: từ 1.3.2, mọi phiên bản TypeK đều được ký bằng cùng một chứng chỉ, nên khi cập nhật trong ứng dụng, macOS giữ nguyên quyền Trợ năng (Device Control and Data Access) và micrô. Khi cập nhật từ phiên bản cũ lên phiên bản này, nếu phím tắt không phản hồi, hãy xóa TypeK rồi thêm lại lần cuối",
       "dismiss": "Đã hiểu"
     }
   },
