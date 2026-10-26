@@ -483,7 +483,8 @@
     },
     "upgradeNotice": {
       "title": "Tóm tắt cập nhật TypeK",
-      "item1": "Không cần cấp lại quyền sau khi cập nhật: từ 1.3.2, mọi phiên bản TypeK đều được ký bằng cùng một chứng chỉ, nên khi cập nhật trong ứng dụng, macOS giữ nguyên quyền Trợ năng (Device Control and Data Access) và micrô. Khi cập nhật từ phiên bản cũ lên phiên bản này, nếu phím tắt không phản hồi, hãy xóa TypeK rồi thêm lại lần cuối",
+      "item1": "Không cần cấp lại quyền sau khi cập nhật: từ 1.3.3, mọi phiên bản TypeK đều được ký bằng cùng một chứng chỉ, nên khi cập nhật trong ứng dụng, macOS giữ nguyên quyền Trợ năng (Device Control and Data Access) và micrô. Khi cập nhật từ phiên bản cũ lên phiên bản này, nếu phím tắt không phản hồi, hãy xóa TypeK rồi thêm lại lần cuối",
+      "item2": "Văn bản phiên âm không còn nằm lại trong bảng nhớ tạm: sau khi dán, TypeK khôi phục nội dung bạn đã sao chép trước đó (văn bản, hình ảnh, tệp). Đồng thời sửa lỗi chỉnh sửa thất bại do Groq ngừng mô hình mặc định, và HUD sẽ báo khi chỉnh sửa thất bại",
       "dismiss": "Đã hiểu"
     }
   },

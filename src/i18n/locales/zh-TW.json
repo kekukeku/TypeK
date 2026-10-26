@@ -483,7 +483,8 @@
     },
     "upgradeNotice": {
       "title": "TypeK 更新摘要",
-      "item1": "更新後不用再重新授權：1.3.2 起 TypeK 每一版都用同一張憑證簽章，之後在 App 內更新，macOS 會保留「輔助使用」（Device Control and Data Access）與麥克風權限。從舊版更新到這一版時，如果快捷鍵沒反應，請最後一次把 TypeK 移除後重新加入",
+      "item1": "更新後不用再重新授權：1.3.3 起 TypeK 每一版都用同一張憑證簽章，之後在 App 內更新，macOS 會保留「輔助使用」（Device Control and Data Access）與麥克風權限。從舊版更新到這一版時，如果快捷鍵沒反應，請最後一次把 TypeK 移除後重新加入",
+      "item2": "轉錄文字不再留在剪貼簿：貼上後會自動還原你原本複製的內容（文字、圖片、檔案）；另外修好 Groq 預設模型下架造成的整理失敗，整理失敗時 HUD 也會提示",
       "dismiss": "了解"
     }
   },
