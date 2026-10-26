@@ -21,7 +21,6 @@ export type TranscriptionCompletedPayload = Pick<
 export type SettingsKey =
   | "hotkey"
   | "apiKey"
-  | "aiPrompt"
   | "enhancementThreshold"
   | "llmModel"
   | "llmProvider"
@@ -32,7 +31,6 @@ export type SettingsKey =
   | "locale"
   | "transcriptionLocale"
   | "soundEffectsEnabled"
-  | "promptMode"
   | "audioInputDevice"
   | "copyTranscriptionToClipboard"
   | "hideDockIcon"

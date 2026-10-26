@@ -22,10 +22,7 @@ vi.mock("../../src/i18n", () => ({
 }));
 vi.mock("../../src/i18n/prompts", () => ({
   getMinimalPromptForLocale: () => "m",
-  getPromptForModeAndLocale: () => "m",
-  isKnownDefaultPrompt: () => true,
-  MINIMAL_PROMPTS: { "zh-TW": "m" },
-  ACTIVE_PROMPTS: { "zh-TW": "a" },
+  getAutoLanguagePrompt: () => "m",
 }));
 vi.mock("../../src/i18n/languageConfig", () => ({
   FALLBACK_LOCALE: "zh-TW",

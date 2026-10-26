@@ -25,17 +25,13 @@ type VisualMode =
   | "error"
   | "cancelled"
   | "collapsing"
-  | "learned"
-  | "mode-switch";
+  | "learned";
 
 const props = defineProps<{
   status: HudStatus;
   recordingElapsedSeconds: number;
   message: string;
   canRetry: boolean;
-  promptModeLabel: string;
-  modeSwitchLabel: string;
-  isEditMode: boolean;
 }>();
 
 defineEmits<{
@@ -77,7 +73,6 @@ const DEFAULT_NOTCH_SHAPE: NotchShapeParams = {
 
 const NOTCH_SHAPE_OVERRIDES: Partial<Record<VisualMode, NotchShapeParams>> = {
   collapsing: { width: 200, height: 32, topRadius: 10, bottomRadius: 16 },
-  "mode-switch": { width: 350, height: 36, topRadius: 12, bottomRadius: 18 },
 };
 
 function buildNotchPath(p: NotchShapeParams): string {
@@ -238,36 +233,6 @@ function handleVocabularyLearned(payload: VocabularyLearnedPayload) {
   showLearnedNotification(payload.termList);
 }
 
-let modeSwitchTimer: ReturnType<typeof setTimeout> | null = null;
-
-function clearModeSwitchTimer() {
-  if (modeSwitchTimer) {
-    clearTimeout(modeSwitchTimer);
-    modeSwitchTimer = null;
-  }
-}
-
-watch(
-  () => props.modeSwitchLabel,
-  (label) => {
-    if (!label) {
-      // Label cleared → trigger collapsing animation
-      if (visualMode.value === "mode-switch") {
-        visualMode.value = "collapsing";
-        collapsingTimer = setTimeout(() => {
-          visualMode.value = "hidden";
-          processNextLearnedNotification();
-        }, COLLAPSE_ANIMATION_DURATION_MS);
-      }
-      return;
-    }
-    // Label set → show mode-switch visual
-    clearModeSwitchTimer();
-    clearCollapsingTimer();
-    visualMode.value = "mode-switch";
-  },
-);
-
 watch(
   () => props.status,
   (nextStatus) => {
@@ -278,7 +243,6 @@ watch(
     if (nextStatus === "idle") {
       stopWaveformAnimation();
       if (visualMode.value === "learned") return;
-      if (visualMode.value === "mode-switch") return;
       if (visualMode.value === "hidden") {
         processNextLearnedNotification();
         return;
@@ -299,8 +263,7 @@ watch(
 
     if (
       nextStatus === "transcribing" ||
-      nextStatus === "enhancing" ||
-      nextStatus === "editing"
+      nextStatus === "enhancing"
     ) {
       stopWaveformAnimation();
       if (
@@ -351,7 +314,6 @@ onUnmounted(() => {
   clearMorphingTimer();
   clearCollapsingTimer();
   clearLearnedTimer();
-  clearModeSwitchTimer();
   stopWaveformAnimation();
   unlistenVocabularyLearned?.();
 });
@@ -430,12 +392,7 @@ onUnmounted(() => {
           <span v-else-if="visualMode === 'learned'" class="learned-label">
             {{ $t('voiceFlow.vocabularyLearnedLabel') }}
           </span>
-          <span v-else-if="visualMode === 'mode-switch'" class="mode-switch-label">
-            {{ props.modeSwitchLabel }}
-          </span>
           <template v-else-if="visualMode === 'recording'">
-            <span v-if="props.isEditMode" class="hud-badge edit-mode-badge">{{ t('voiceFlow.editMode') }}</span>
-            <span v-else-if="props.promptModeLabel" class="hud-badge prompt-mode-badge">{{ props.promptModeLabel }}</span>
             <span class="elapsed-timer badge-jelly">
               {{ formattedElapsedTime }}
             </span>
@@ -796,34 +753,6 @@ onUnmounted(() => {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
-/* ---- Mode Switch ---- */
-.mode-switch-label {
-  color: var(--notch-mode);
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-  animation: modeSwitchFadeIn 0.3s ease-out;
-}
-
-@keyframes modeSwitchFadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ---- HUD Badge (shared base) ---- */
-.hud-badge {
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 4px;
-  white-space: nowrap;
-  margin-right: 6px;
-}
-.prompt-mode-badge { background: var(--notch-fg-soft); color: var(--notch-fg); opacity: 0.7; }
-.edit-mode-badge   { background: var(--notch-edit-bg);  color: var(--notch-edit-fg); }
-/* 深色模式：prompt-mode badge 背景略調暗，避免在黑底上過亮（維護者 review 順手項）。
-   只針對此 badge 覆蓋背景，不動共用的 --notch-fg-soft（錄音環邊框也用它）。 */
-html.dark .notch-hud .prompt-mode-badge { background: color-mix(in srgb, var(--notch-fg) 20%, transparent); }
 
 /* ---- Error: scatter + shake ---- */
 .waveform-scatter {

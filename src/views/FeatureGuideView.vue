@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import {
   Mic,
-  PenLine,
   Keyboard,
   ToggleLeft,
-  Zap,
-  Sparkles,
   BookOpen,
   History,
 } from "lucide-vue-next";
@@ -17,11 +14,8 @@ const { t } = useI18n();
 
 const featureList = [
   { key: "voiceInput", icon: markRaw(Mic), hasSteps: true },
-  { key: "editSelection", icon: markRaw(PenLine), hasSteps: true },
   { key: "hotkey", icon: markRaw(Keyboard), hasSteps: false },
   { key: "triggerMode", icon: markRaw(ToggleLeft), hasSteps: false },
-  { key: "quickModeSwitch", icon: markRaw(Zap), hasSteps: false },
-  { key: "promptMode", icon: markRaw(Sparkles), hasSteps: false },
   { key: "dictionary", icon: markRaw(BookOpen), hasSteps: false },
   { key: "history", icon: markRaw(History), hasSteps: false },
 ];

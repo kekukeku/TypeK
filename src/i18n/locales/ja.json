@@ -31,8 +31,6 @@
       "modeUpdated": "トリガーモードが更新されました",
       "keySet": "トリガーキーを {key} に設定しました",
       "customKeyDisplay": "カスタムキー ({keycode})",
-      "doubleTapHint": "長押しモードで、トリガーキーを素早く2回押すと音声モードを切り替えます",
-      "longPressHint": "トグルモードで、トリガーキーを1秒以上長押しすると音声モードを切り替えます",
       "comboKey": "コンボキー",
       "keys": {
         "fn": "Fn",
@@ -112,21 +110,6 @@
       "premium": "高品質",
       "paidOnly": "有料",
       "limitedFree": "無料枠が少ない"
-    },
-    "prompt": {
-      "title": "AI 整理 Prompt",
-      "description": "整理モードを選択するか、プロンプトをカスタマイズします。",
-      "modeTitle": "整理モード",
-      "modeMinimal": "シンプル",
-      "modeMinimalDescription": "誤字修正、フィラー除去、句読点補完、原文構造を維持",
-      "modeActive": "アクティブ",
-      "modeActiveDescription": "意味を理解し段落とリストで再構成（Typeless 風）",
-      "modeCustom": "カスタム",
-      "modeCustomDescription": "カスタムプロンプトを使用",
-      "saved": "Prompt を保存しました",
-      "confirmReset": "リセットしてよろしいですか？",
-      "reset": "シンプルモードにリセット",
-      "resetDone": "シンプルモードにリセットしました"
     },
     "threshold": {
       "title": "短文しきい値",
@@ -344,23 +327,16 @@
     "pasteSuccessUnenhanced": "貼り付け完了（未整理）",
     "enhancing": "整理中...",
     "pasteFailed": "貼り付け失敗",
-    "editMode": "編集",
-    "editing": "編集中...",
-    "editSuccess": "編集完了 ✓",
-    "editFailed": "編集失敗",
     "recordingTooShort": "録音時間が短すぎます",
     "vocabularyLearnedLabel": "辞書に追加",
     "vocabularyLearned": "{terms}",
     "vocabularyLearnedTruncated": "{terms} 他 {count} 語",
     "retryFailed": "認識失敗、もう一度録音してください",
-    "cancelled": "キャンセル",
-    "modeSwitched": "{mode}モードに切り替えました",
-    "commandMode": "コマンド"
+    "cancelled": "キャンセル"
   },
   "errors": {
     "databaseInitFailed": "データベースの初期化に失敗しました。履歴が一時的に使用できません。アプリを再起動してください。",
     "apiKeyEmpty": "API Key は空にできません",
-    "promptEmpty": "Prompt は空にできません",
     "apiKeyNotSet": "API Key が未設定です",
     "openaiApiKeyNotSet": "OpenAI API Key が未設定です",
     "anthropicApiKeyNotSet": "Anthropic API Key が未設定です",
@@ -456,11 +432,6 @@
       "description": "タイピングが面倒？話すだけで OK。ホットキーを押しながら話して、離すと AI が自動で整理してカーソル位置に貼り付けます。メッセージ、メモ、メールなど何でも使えます。",
       "steps": "操作：ホットキーを押す → 話す → 離す → テキストが自動貼り付け"
     },
-    "editSelection": {
-      "title": "選択テキスト編集",
-      "description": "翻訳したい文章を見つけたら、選択してホットキーを押し、「日本語に翻訳して」と言うだけ。「もっと丁寧に」「一文にまとめて」なども OK。AI が編集して元の場所に戻します。",
-      "steps": "操作：テキストを選択 → ホットキー → どう変えたいか話す → 編集済みテキストが元に戻る"
-    },
     "hotkey": {
       "title": "ホットキー設定",
       "description": "誤操作が心配？⌘+J のようなコンボキーに設定すれば、2 つのキーを同時に押した時だけ起動します。単一キーでもOK。設定からいつでも変更できます。"
@@ -468,14 +439,6 @@
     "triggerMode": {
       "title": "トリガーモード",
       "description": "2 つのスタイル：「押しっぱなし」はトランシーバーのように、押している間だけ録音。「タップで開始」は長い話に向いていて、1 回押すと開始、もう 1 回押すと停止します。"
-    },
-    "quickModeSwitch": {
-      "title": "クイックモード切替",
-      "description": "AI の整理具合を変えたい？ホットキーをダブルタップするだけで、簡潔モードと積極モードを切り替えられます。画面に確認が表示されるので、設定を開く必要はありません。"
-    },
-    "promptMode": {
-      "title": "AI 処理モード",
-      "description": "「簡潔」は誤字修正と句読点追加だけ。元の言葉をほぼそのまま残します。「積極」はさらにレイアウトも整えて読みやすく。もっと自分好みに？「カスタム」で AI への指示を自由に書けます。"
     },
     "dictionary": {
       "title": "カスタム辞書",

@@ -31,8 +31,6 @@
       "modeUpdated": "Trigger mode updated",
       "keySet": "Trigger key set to {key}",
       "customKeyDisplay": "Custom Key ({keycode})",
-      "doubleTapHint": "In Hold mode, double-tap the trigger key to switch voice mode",
-      "longPressHint": "In Toggle mode, hold the trigger key for over 1 second to switch voice mode",
       "comboKey": "Combo Key",
       "keys": {
         "fn": "Fn",
@@ -112,21 +110,6 @@
       "premium": "Premium",
       "paidOnly": "Paid",
       "limitedFree": "Tiny free tier"
-    },
-    "prompt": {
-      "title": "AI Enhancement Prompt",
-      "description": "Choose an enhancement mode or customize your prompt.",
-      "modeTitle": "Enhancement Mode",
-      "modeMinimal": "Minimal",
-      "modeMinimalDescription": "Fix typos, remove fillers, add punctuation, keep original structure",
-      "modeActive": "Active",
-      "modeActiveDescription": "Reorganize into paragraphs and bullet points for easy scanning (similar to Typeless)",
-      "modeCustom": "Custom",
-      "modeCustomDescription": "Use a custom prompt",
-      "saved": "Prompt saved",
-      "confirmReset": "Confirm reset?",
-      "reset": "Reset to Minimal",
-      "resetDone": "Reset to Minimal mode"
     },
     "threshold": {
       "title": "Short Text Threshold",
@@ -344,23 +327,16 @@
     "pasteSuccessUnenhanced": "Pasted (unenhanced)",
     "enhancing": "Enhancing...",
     "pasteFailed": "Paste failed",
-    "editMode": "Edit",
-    "editing": "Editing...",
-    "editSuccess": "Edited ✓",
-    "editFailed": "Edit failed",
     "recordingTooShort": "Recording too short",
     "vocabularyLearnedLabel": "Added to dictionary",
     "vocabularyLearned": "{terms}",
     "vocabularyLearnedTruncated": "{terms} +{count} more",
     "retryFailed": "Recognition failed, please record again",
-    "cancelled": "Cancelled",
-    "modeSwitched": "Switched to {mode} mode",
-    "commandMode": "Command"
+    "cancelled": "Cancelled"
   },
   "errors": {
     "databaseInitFailed": "Database initialization failed. History is temporarily unavailable. Please restart the app.",
     "apiKeyEmpty": "API Key cannot be empty",
-    "promptEmpty": "Prompt cannot be empty",
     "apiKeyNotSet": "API Key not set",
     "openaiApiKeyNotSet": "OpenAI API Key not set",
     "anthropicApiKeyNotSet": "Anthropic API Key not set",
@@ -456,11 +432,6 @@
       "description": "Don't want to type? Just talk. Hold the hotkey, say what you want, let go — AI cleans it up and pastes it right where your cursor is. Great for messages, notes, and emails.",
       "steps": "How to: hold hotkey → speak → release → text is pasted automatically"
     },
-    "editSelection": {
-      "title": "Edit Selected Text",
-      "description": "See a paragraph you want to translate? Select it, press the hotkey, and say \"translate to Chinese.\" You can also say things like \"make it more formal\" or \"shorten to one sentence\" — AI will edit it and put it right back.",
-      "steps": "How to: select text → press hotkey → say what you want → edited text replaces the original"
-    },
     "hotkey": {
       "title": "Hotkey Setup",
       "description": "Worried about triggering it by accident? Set a combo key like ⌘+J so it only activates when you press both keys. Or keep it simple with a single key. Change it anytime in Settings."
@@ -468,14 +439,6 @@
     "triggerMode": {
       "title": "Trigger Mode",
       "description": "Two styles: \"Hold to talk\" works like a walkie-talkie — hold the key to record, let go to stop. \"Tap to start\" is better for longer speech — press once to start, press again to stop."
-    },
-    "quickModeSwitch": {
-      "title": "Quick Mode Switch",
-      "description": "Want AI to do more or less with your text? Double-tap the hotkey to switch between Minimal and Active modes on the fly. You'll see a confirmation pop up on screen. No need to dig into Settings."
-    },
-    "promptMode": {
-      "title": "AI Processing Mode",
-      "description": "\"Minimal\" just fixes typos and adds punctuation — keeps your words mostly as-is. \"Active\" also tidies up the layout so it reads better. Want full control? Use \"Custom\" to write your own instructions for AI."
     },
     "dictionary": {
       "title": "Custom Dictionary",

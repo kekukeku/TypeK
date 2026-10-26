@@ -82,8 +82,8 @@ const {
     mockLoadSettings: vi.fn().mockResolvedValue(undefined),
     mockSettingsState: {
       apiKey: "test-api-key-123",
-      aiPrompt: "自訂 prompt 內容",
       triggerMode: "hold" as string,
+      isInputContextEnabled: true,
       isEnhancementThresholdEnabled: true,
       enhancementThresholdCharCount: 10,
       selectedLlmModelId: "llama-3.3-70b-versatile",
@@ -179,7 +179,10 @@ vi.mock("../../src/stores/useSettingsStore", () => ({
     loadSettings: mockLoadSettings,
     getApiKey: () => mockSettingsState.apiKey,
     getLlmApiKey: () => mockSettingsState.apiKey,
-    getAiPrompt: () => mockSettingsState.aiPrompt,
+    getAiPrompt: () => "mock-minimal-prompt",
+    get isInputContextEnabled() {
+      return mockSettingsState.isInputContextEnabled;
+    },
     refreshApiKey: vi.fn().mockResolvedValue(undefined),
     refreshLlmApiKey: vi.fn().mockResolvedValue(undefined),
     hasLlmApiKey: true,
@@ -329,8 +332,8 @@ describe("useVoiceFlowStore", () => {
       .mockResolvedValue({ text: "AI 整理後的書面語文字", usage: null });
     mockLoadSettings.mockClear().mockResolvedValue(undefined);
     mockSettingsState.apiKey = "test-api-key-123";
-    mockSettingsState.aiPrompt = "自訂 prompt 內容";
     mockSettingsState.triggerMode = "hold";
+    mockSettingsState.isInputContextEnabled = true;
     mockSettingsState.isEnhancementThresholdEnabled = true;
     mockSettingsState.enhancementThresholdCharCount = 10;
     mockSettingsState.selectedLlmModelId = "llama-3.3-70b-versatile";
@@ -471,34 +474,19 @@ describe("useVoiceFlowStore", () => {
     });
   });
 
-  describe("選取偵測三態（#24/#25 編輯模式判定）", () => {
-    function withSelectionState(
-      state: { kind: string; text: string | null },
-      clipboardText: string | null = null,
-    ) {
+  describe("選取文字不再觸發編輯模式（#24/#25）", () => {
+    function failOnSelectionProbe() {
       const base = createMockInvokeHandler();
       mockInvoke.mockImplementation(async (cmd: string, args?: unknown) => {
-        if (cmd === "read_selection_state") return state;
-        if (cmd === "read_selected_text") return clipboardText;
+        if (cmd === "read_selection_state" || cmd === "read_selected_text") {
+          throw new Error(`unexpected ${cmd}`);
+        }
         return base(cmd, args);
       });
     }
 
-    it("[P0] AX 回報 selection 應直接進編輯模式、不呼叫剪貼簿擷取", async () => {
-      withSelectionState({ kind: "selection", text: "選取的文字" });
-      const store = useVoiceFlowStore();
-      await store.initialize();
-
-      triggerHotkeyEvent("hotkey:pressed");
-      await vi.waitFor(() => {
-        expect(store.isEditMode).toBe(true);
-      });
-
-      expect(mockInvoke).not.toHaveBeenCalledWith("read_selected_text");
-    });
-
-    it("[P0] AX 回報 noSelection 應走一般聽寫、全程不模擬 Cmd+C", async () => {
-      withSelectionState({ kind: "noSelection", text: null });
+    it("[P0] 選取文字再說話＝一般聽寫，不呼叫選取探測／不模擬 Cmd+C", async () => {
+      failOnSelectionProbe();
       const store = useVoiceFlowStore();
       await store.initialize();
 
@@ -508,6 +496,8 @@ describe("useVoiceFlowStore", () => {
           deviceName: "",
         });
       });
+      // 輸入上下文仍要在錄音開始時讀（精簡指示的 <context> 依賴它）
+      expect(mockInvoke).toHaveBeenCalledWith("read_input_context");
 
       triggerHotkeyEvent("hotkey:released");
       await vi.waitFor(() => {
@@ -517,255 +507,55 @@ describe("useVoiceFlowStore", () => {
         });
       });
 
-      expect(store.isEditMode).toBe(false);
+      expect(mockInvoke).not.toHaveBeenCalledWith("read_selection_state");
       expect(mockInvoke).not.toHaveBeenCalledWith("read_selected_text");
+      expect(store.status).toBe("success");
     });
+  });
 
-    it("[P0] AX 回報 unavailable 應在停止錄音後走剪貼簿後備並進編輯模式", async () => {
-      withSelectionState({ kind: "unavailable", text: null }, "後備選取的文字");
+  describe("連按兩下快捷鍵：靜默取消", () => {
+    it("[P0] 兩次極短按＋mode-toggle → 不貼上、不報錄音太短、不切模式", async () => {
+      let now = 0;
+      vi.mocked(performance.now).mockImplementation(() => now);
       const store = useVoiceFlowStore();
       await store.initialize();
 
+      now = 100;
       triggerHotkeyEvent("hotkey:pressed");
       await vi.waitFor(() => {
         expect(mockInvoke).toHaveBeenCalledWith("start_recording", {
           deviceName: "",
         });
       });
-      // 錄音開始階段不可有任何按鍵模擬（#25：按鍵還壓著）
-      expect(mockInvoke).not.toHaveBeenCalledWith("read_selected_text");
 
+      now = 200;
       triggerHotkeyEvent("hotkey:released");
-      // 後備有 250ms 等按鍵放開的延遲；轉錄先完成時模式判定必須等它
-      await vi.waitFor(
-        () => {
-          expect(mockEnhanceText).toHaveBeenCalledWith(
-            "後備選取的文字",
-            expect.anything(),
-            expect.anything(),
-          );
-        },
-        { timeout: 3000 },
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      triggerHotkeyEvent("hotkey:mode-toggle");
+
+      await vi.waitFor(() => {
+        expect(store.status).toBe("idle");
+      });
+      expect(mockInvoke).toHaveBeenCalledWith("stop_recording");
+      expect(mockInvoke).not.toHaveBeenCalledWith(
+        "paste_text",
+        expect.anything(),
       );
-      expect(mockInvoke).toHaveBeenCalledWith("read_selected_text");
-    });
-  });
-
-  // #79/#80：Windows 改用 UIA 讀選取，任何情況都不得退回模擬 Ctrl+C（read_selected_text）
-  describe("Windows 選取偵測：不模擬複製、有界等待、拒收晚到", () => {
-    const WINDOWS_UA =
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0";
-
-    beforeEach(() => {
-      Object.defineProperty(navigator, "userAgent", {
-        value: WINDOWS_UA,
-        configurable: true,
-      });
-      // 期限判定靠 Date.now 與 setTimeout：用假時鐘讓時序固定，CI 排程延遲不會讓正確的程式變紅。
-      // 本組不用 vi.waitFor（它的期限是真實時間，機器一卡就可能在假時鐘走到位之前放棄），
-      // 一律明確推進假時鐘後直接斷言。
-      vi.useFakeTimers();
+      expect(store.message).not.toBe("voiceFlow.recordingTooShort");
     });
 
-    afterEach(() => {
-      vi.useRealTimers();
-      // 移除實例上的覆寫，回到 jsdom 原型上的預設值
-      delete (navigator as unknown as { userAgent?: string }).userAgent;
-    });
-
-    function withSelectionProbe(
-      probe: () => Promise<unknown>,
-      transcribe?: () => Promise<unknown>,
-    ) {
-      const base = createMockInvokeHandler();
-      mockInvoke.mockImplementation(async (cmd: string, args?: unknown) => {
-        if (cmd === "read_selection_state") return probe();
-        if (cmd === "read_selected_text") return "不該被讀到的剪貼簿";
-        if (cmd === "transcribe_audio" && transcribe) return transcribe();
-        return base(cmd, args);
-      });
-    }
-
-    // 放開後走完整段流程所需的假時間：短按的雙擊判定 400ms、判定期限 500ms、
-    // 慢轉錄 1000ms 都在這之內
-    const FLOW_SETTLE_MS = 2000;
-
-    // 按下後同步就會發出探測並呼叫 start_recording，不推進假時鐘：
-    // 探測發出到放開之間固定為 0ms，各案例的延遲才都從同一起點算
-    function pressUntilRecording() {
-      triggerHotkeyEvent("hotkey:pressed");
-      expect(mockInvoke).toHaveBeenCalledWith("start_recording", { deviceName: "" });
-    }
-
-    function recordOnce() {
-      pressUntilRecording();
-      triggerHotkeyEvent("hotkey:released");
-    }
-
-    it("[AC3] 探測回報 selection → 進編輯模式、不呼叫剪貼簿擷取", async () => {
-      withSelectionProbe(async () => ({ kind: "selection", text: "選取的文字" }));
+    it("[P0] Toggle 長按（沒有錄音）只送 mode-toggle → no-op", async () => {
       const store = useVoiceFlowStore();
       await store.initialize();
 
-      recordOnce();
-      await vi.advanceTimersByTimeAsync(FLOW_SETTLE_MS);
-      expect(mockEnhanceText).toHaveBeenCalledWith(
-        "選取的文字",
-        expect.anything(),
-        expect.anything(),
-      );
-      // #83：編輯模式可能要求「翻成簡體」，不可帶 transcriptLocale 強轉繁體
-      expect(mockEnhanceText.mock.calls[0][2]).not.toHaveProperty(
-        "transcriptLocale",
-      );
-      expect(mockInvoke).not.toHaveBeenCalledWith("read_selected_text");
-    });
+      triggerHotkeyEvent("hotkey:mode-toggle");
+      await Promise.resolve();
 
-    it("[AC3] 探測在期限內、但比轉錄晚回報 selection → 判定前等它，仍進編輯模式", async () => {
-      // 轉錄比探測快：探測在轉錄完成、判定點開始等待後才落地（仍在 500ms 期限內），
-      // 判定點若不等就會漏掉使用者的選取
-      let resolveProbe: (value: unknown) => void = () => {};
-      withSelectionProbe(
-        () =>
-          new Promise((resolve) => {
-            resolveProbe = resolve;
-          }),
-        async () => {
-          setTimeout(() => resolveProbe({ kind: "selection", text: "稍慢的選取" }), 1);
-          return DEFAULT_TRANSCRIBE_RESULT;
-        },
-      );
-      const store = useVoiceFlowStore();
-      await store.initialize();
-
-      recordOnce();
-      await vi.advanceTimersByTimeAsync(FLOW_SETTLE_MS);
-      expect(mockEnhanceText).toHaveBeenCalledWith(
-        "稍慢的選取",
-        expect.anything(),
+      expect(store.status).toBe("idle");
+      expect(mockInvoke).not.toHaveBeenCalledWith(
+        "start_recording",
         expect.anything(),
       );
-      expect(mockInvoke).not.toHaveBeenCalledWith("read_selected_text");
-    });
-
-    const delayedSelection = (text: string, ms: number) => () =>
-      new Promise((resolve) => setTimeout(() => resolve({ kind: "selection", text }), ms));
-
-    it("[AC3] 轉錄慢、探測超過期限才回報 selection（尚未判定）→ 不寫入、一般聽寫", async () => {
-      // 探測 700ms 才回來（超過 500ms 期限），但轉錄從呼叫起 1000ms 才完成、還沒輪到判定
-      withSelectionProbe(
-        delayedSelection("超時的選取", 700),
-        () =>
-          new Promise((resolve) =>
-            setTimeout(() => resolve(DEFAULT_TRANSCRIBE_RESULT), 1000),
-          ),
-      );
-      const store = useVoiceFlowStore();
-      await store.initialize();
-
-      recordOnce();
-      await vi.advanceTimersByTimeAsync(FLOW_SETTLE_MS);
-      expect(mockInvoke).toHaveBeenCalledWith("paste_text", {
-        text: "測試轉錄",
-        restoreClipboard: false,
-      });
-      expect(store.isEditMode).toBe(false);
-      expect(mockEnhanceText).not.toHaveBeenCalledWith(
-        "超時的選取",
-        expect.anything(),
-        expect.anything(),
-      );
-      expect(mockInvoke).not.toHaveBeenCalledWith("read_selected_text");
-    });
-
-    it("[AC3] 錄音中探測超過期限才回報 selection → 放開後不進編輯模式", async () => {
-      withSelectionProbe(delayedSelection("錄音中超時的選取", 700));
-      const store = useVoiceFlowStore();
-      await store.initialize();
-
-      pressUntilRecording();
-      // 按著講 900ms：探測在 700ms 落地時已超過期限
-      await vi.advanceTimersByTimeAsync(900);
-      expect(store.isEditMode).toBe(false);
-      triggerHotkeyEvent("hotkey:released");
-
-      await vi.advanceTimersByTimeAsync(FLOW_SETTLE_MS);
-      expect(mockInvoke).toHaveBeenCalledWith("paste_text", {
-        text: "測試轉錄",
-        restoreClipboard: false,
-      });
-      expect(store.isEditMode).toBe(false);
-      expect(mockInvoke).not.toHaveBeenCalledWith("read_selected_text");
-    });
-
-    it("[AC2] 探測回報 noSelection → 一般聽寫、全程不呼叫剪貼簿擷取", async () => {
-      withSelectionProbe(async () => ({ kind: "noSelection", text: null }));
-      const store = useVoiceFlowStore();
-      await store.initialize();
-
-      recordOnce();
-      await vi.advanceTimersByTimeAsync(FLOW_SETTLE_MS);
-      expect(mockInvoke).toHaveBeenCalledWith("paste_text", {
-        text: "測試轉錄",
-        restoreClipboard: false,
-      });
-      expect(store.isEditMode).toBe(false);
-      expect(mockInvoke).not.toHaveBeenCalledWith("read_selected_text");
-    });
-
-    it("[AC2] 探測失敗 → 一般聽寫、不呼叫剪貼簿擷取", async () => {
-      withSelectionProbe(async () => {
-        throw new Error("uia failed");
-      });
-      const store = useVoiceFlowStore();
-      await store.initialize();
-
-      recordOnce();
-      await vi.advanceTimersByTimeAsync(FLOW_SETTLE_MS);
-      expect(mockInvoke).toHaveBeenCalledWith("paste_text", {
-        text: "測試轉錄",
-        restoreClipboard: false,
-      });
-      expect(store.isEditMode).toBe(false);
-      expect(mockInvoke).not.toHaveBeenCalledWith("read_selected_text");
-    });
-
-    it("[AC2][AC3] 探測逾時後才回報 selection → 期限內一般聽寫，晚到結果不改模式、不排剪貼簿後備", async () => {
-      let resolveProbe: (value: unknown) => void = () => {};
-      withSelectionProbe(
-        () =>
-          new Promise((resolve) => {
-            resolveProbe = resolve;
-          }),
-      );
-      const store = useVoiceFlowStore();
-      await store.initialize();
-
-      const probeIssuedAt = Date.now(); // 按下到探測發出不推進假時鐘，兩者同刻
-      recordOnce();
-      // 停止時主探測還沒回覆：macOS 會排 250ms 剪貼簿後備，Windows 不可以
-      await vi.advanceTimersByTimeAsync(FLOW_SETTLE_MS);
-      expect(mockInvoke).toHaveBeenCalledWith("paste_text", {
-        text: "測試轉錄",
-        restoreClipboard: false,
-      });
-      expect(store.isEditMode).toBe(false);
-
-      // 模式判定後才落地的選取：不得改寫已判定的模式。把牆鐘撥回探測發出時
-      // （例：系統校時），期限條件看起來仍未逾時，只能靠「已判定」這道鎖擋下
-      vi.setSystemTime(probeIssuedAt);
-      resolveProbe({ kind: "selection", text: "晚到的選取" });
-      await vi.advanceTimersByTimeAsync(50);
-      expect(store.isEditMode).toBe(false);
-      expect(mockEnhanceText).not.toHaveBeenCalledWith(
-        "晚到的選取",
-        expect.anything(),
-        expect.anything(),
-      );
-
-      // 等過原本 250ms 後備會觸發的時間點，確認從未模擬複製
-      await vi.advanceTimersByTimeAsync(300);
-      expect(mockInvoke).not.toHaveBeenCalledWith("read_selected_text");
     });
   });
 
@@ -1225,7 +1015,7 @@ describe("useVoiceFlowStore", () => {
         longText,
         "test-api-key-123",
         expect.objectContaining({
-          systemPrompt: "自訂 prompt 內容",
+          systemPrompt: "mock-minimal-prompt",
         }),
       );
       expect(store.status).toBe("success");
@@ -1503,7 +1293,7 @@ describe("useVoiceFlowStore", () => {
         longText,
         "test-api-key-123",
         expect.objectContaining({
-          systemPrompt: "自訂 prompt 內容",
+          systemPrompt: "mock-minimal-prompt",
         }),
       );
     });

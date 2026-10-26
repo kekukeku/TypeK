@@ -31,8 +31,6 @@
       "modeUpdated": "觸發模式已更新",
       "keySet": "觸發鍵已設為 {key}",
       "customKeyDisplay": "自訂鍵 ({keycode})",
-      "doubleTapHint": "長按模式下，快速按兩下觸發鍵可切換語音模式",
-      "longPressHint": "切換模式下，長按觸發鍵超過一秒可切換語音模式",
       "comboKey": "組合鍵",
       "keys": {
         "fn": "Fn",
@@ -112,21 +110,6 @@
       "premium": "高品質",
       "paidOnly": "需付費",
       "limitedFree": "免費額度少"
-    },
-    "prompt": {
-      "title": "AI 整理 Prompt",
-      "description": "選擇整理模式或自訂 Prompt。",
-      "modeTitle": "整理模式",
-      "modeMinimal": "精簡",
-      "modeMinimalDescription": "修錯字、去贅詞、補標點，保持原句結構",
-      "modeActive": "積極",
-      "modeActiveDescription": "理解語意後重新排版，以段落和列點呈現（類似 Typeless）",
-      "modeCustom": "自訂",
-      "modeCustomDescription": "使用自訂 Prompt",
-      "saved": "Prompt 已儲存",
-      "confirmReset": "確認重置？",
-      "reset": "重置為精簡模式",
-      "resetDone": "已重置為精簡模式"
     },
     "threshold": {
       "title": "短文字門檻",
@@ -344,23 +327,16 @@
     "pasteSuccessUnenhanced": "已貼上（未整理）",
     "enhancing": "整理中...",
     "pasteFailed": "貼上失敗",
-    "editMode": "編輯",
-    "editing": "編輯中...",
-    "editSuccess": "已編輯 ✓",
-    "editFailed": "編輯失敗",
     "recordingTooShort": "錄音時間太短",
     "vocabularyLearnedLabel": "新增字典",
     "vocabularyLearned": "{terms}",
     "vocabularyLearnedTruncated": "{terms} 等 {count} 個",
     "retryFailed": "辨識失敗，請重新錄音",
-    "cancelled": "已取消",
-    "modeSwitched": "已切換至{mode}模式",
-    "commandMode": "指令"
+    "cancelled": "已取消"
   },
   "errors": {
     "databaseInitFailed": "資料庫初始化失敗，歷史記錄暫時無法使用。請重新啟動應用程式。",
     "apiKeyEmpty": "API Key 不可為空白",
-    "promptEmpty": "Prompt 不可為空白",
     "apiKeyNotSet": "API Key 未設定",
     "openaiApiKeyNotSet": "OpenAI API Key 未設定",
     "anthropicApiKeyNotSet": "Anthropic API Key 未設定",
@@ -456,11 +432,6 @@
       "description": "想打字？不用打，直接說。按住快捷鍵說話，放開後 AI 會自動整理好文字，直接貼到你游標的位置。打訊息、寫筆記、回 email 都可以用。",
       "steps": "操作：按住快捷鍵 → 說話 → 鬆開 → 文字自動貼上"
     },
-    "editSelection": {
-      "title": "編輯選取文字",
-      "description": "看到一段英文想翻譯？選起來，按快捷鍵，說「翻成中文」，就好了。也可以說「幫我改正式一點」「縮短成一句話」之類的，AI 會直接改好放回去。",
-      "steps": "操作：選取文字 → 按快捷鍵 → 說你想怎麼改 → 改好自動貼回"
-    },
     "hotkey": {
       "title": "快捷鍵設定",
       "description": "怕按錯鍵不小心觸發？可以設成組合鍵，像 ⌘+J 這樣要兩個鍵一起按才會啟動。也可以用單顆鍵，看你習慣。到設定裡就能改。"
@@ -468,14 +439,6 @@
     "triggerMode": {
       "title": "觸發模式",
       "description": "兩種用法：「按住說話」就像對講機，按著才錄，放開就停。「按一下開始」適合講比較長的話，按一次開始錄，再按一次才停。"
-    },
-    "quickModeSwitch": {
-      "title": "快速切換 AI 模式",
-      "description": "覺得 AI 整理太少或太多？不用進設定，連按兩下快捷鍵就能在「精簡」和「積極」之間切換，螢幕上方會告訴你現在是哪個模式。"
-    },
-    "promptMode": {
-      "title": "AI 整理模式",
-      "description": "「精簡」只幫你修錯字加標點，原話不太動。「積極」會順便整理排版，讓文字更好讀。覺得都不夠？用「自訂」寫你自己的指令給 AI。"
     },
     "dictionary": {
       "title": "自訂字典",

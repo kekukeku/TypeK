@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from "vue";
+import { onMounted, onUnmounted } from "vue";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import NotchHud from "./components/NotchHud.vue";
 import { getCurrentWindow, Window } from "@tauri-apps/api/window";
@@ -13,28 +13,12 @@ import {
   VOCABULARY_CHANGED,
   waitForDatabaseReady,
 } from "./composables/useTauriEvents";
-import { useI18n } from "vue-i18n";
 
-const { t } = useI18n();
 const voiceFlowStore = useVoiceFlowStore();
 const settingsStore = useSettingsStore();
 const vocabularyStore = useVocabularyStore();
 let unlistenSettingsUpdated: UnlistenFn | null = null;
 let unlistenVocabularyChanged: UnlistenFn | null = null;
-
-const promptModeLabel = computed(() => {
-  const mode = settingsStore.promptMode;
-  switch (mode) {
-    case "minimal":
-      return t("settings.prompt.modeMinimal");
-    case "active":
-      return t("settings.prompt.modeActive");
-    case "custom":
-      return t("settings.prompt.modeCustom");
-    default:
-      return "";
-  }
-});
 
 onMounted(async () => {
   console.log("[App] Mounted, initializing voice flow...");
@@ -116,9 +100,6 @@ onUnmounted(() => {
       :message="voiceFlowStore.message"
       :recording-elapsed-seconds="voiceFlowStore.recordingElapsedSeconds"
       :can-retry="voiceFlowStore.canRetry"
-      :prompt-mode-label="promptModeLabel"
-      :mode-switch-label="voiceFlowStore.modeSwitchLabel"
-      :is-edit-mode="voiceFlowStore.isEditMode"
       @retry="handleRetry"
     />
   </div>

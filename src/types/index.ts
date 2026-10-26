@@ -3,7 +3,6 @@ export type HudStatus =
   | "recording"
   | "transcribing"
   | "enhancing"
-  | "editing"
   | "success"
   | "error"
   | "cancelled";

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { invoke } from "@tauri-apps/api/core";
 import {
@@ -52,7 +52,7 @@ import {
   type TranscriptionLocale,
 } from "../i18n/languageConfig";
 
-import { PROMPT_MODE_VALUES, type PromptMode, THEME_MODE_VALUES, type ThemeMode } from "../types/settings";
+import { THEME_MODE_VALUES, type ThemeMode } from "../types/settings";
 import {
   Card,
   CardContent,
@@ -73,7 +73,6 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -362,25 +361,6 @@ const apiKeyFeedback = useFeedbackMessage();
 const isConfirmingDeleteApiKey = ref(false);
 let deleteConfirmTimeoutId: ReturnType<typeof setTimeout> | undefined;
 
-const promptInput = ref("");
-const isSubmittingPrompt = ref(false);
-const promptFeedback = useFeedbackMessage();
-const selectedPromptMode = ref<PromptMode>("minimal");
-const isPresetDirty = ref(false);
-
-const isConfirmingResetPrompt = ref(false);
-
-// Preset 模式下切語言時即時更新 textarea
-watch(
-  [() => settingsStore.selectedLocale, () => settingsStore.selectedTranscriptionLocale],
-  () => {
-    if (selectedPromptMode.value !== "custom" && !isPresetDirty.value) {
-      promptInput.value = settingsStore.getAiPrompt();
-    }
-  },
-);
-let resetPromptConfirmTimeoutId: ReturnType<typeof setTimeout> | undefined;
-
 const apiKeyStatusLabel = computed(() =>
   settingsStore.hasApiKey ? t("settings.apiKey.set") : t("settings.apiKey.notSet"),
 );
@@ -432,79 +412,6 @@ async function handleDeleteApiKey() {
     apiKeyFeedback.show("error", extractErrorMessage(err));
   } finally {
     isSubmittingApiKey.value = false;
-  }
-}
-
-async function handleSavePrompt() {
-  const wasModeSwitch = selectedPromptMode.value !== "custom" && isPresetDirty.value;
-  const previousMode = selectedPromptMode.value;
-  try {
-    isSubmittingPrompt.value = true;
-    // preset 模式下編輯 → 切到 custom
-    if (wasModeSwitch) {
-      await settingsStore.savePromptMode("custom");
-      selectedPromptMode.value = "custom";
-      isPresetDirty.value = false;
-    }
-    await settingsStore.saveAiPrompt(promptInput.value);
-    promptFeedback.show("success", t("settings.prompt.saved"));
-  } catch (err) {
-    if (wasModeSwitch) {
-      await settingsStore.savePromptMode(previousMode).catch(() => {});
-      selectedPromptMode.value = previousMode;
-    }
-    promptFeedback.show("error", extractErrorMessage(err));
-  } finally {
-    isSubmittingPrompt.value = false;
-  }
-}
-
-async function handlePromptModeChange(mode: unknown) {
-  if (typeof mode !== "string" || !(PROMPT_MODE_VALUES as readonly string[]).includes(mode)) return;
-  const newMode = mode as PromptMode;
-  const previousMode = selectedPromptMode.value;
-  selectedPromptMode.value = newMode;
-  try {
-    await settingsStore.savePromptMode(newMode);
-    promptInput.value = settingsStore.getAiPrompt();
-    isPresetDirty.value = false;
-  } catch (err) {
-    selectedPromptMode.value = previousMode;
-    promptFeedback.show("error", extractErrorMessage(err));
-  }
-}
-
-function handlePromptInput() {
-  if (selectedPromptMode.value !== "custom" && !isPresetDirty.value) {
-    isPresetDirty.value = true;
-  }
-}
-
-function requestResetPrompt() {
-  if (!isConfirmingResetPrompt.value) {
-    isConfirmingResetPrompt.value = true;
-    resetPromptConfirmTimeoutId = setTimeout(() => {
-      isConfirmingResetPrompt.value = false;
-    }, 3000);
-    return;
-  }
-  clearTimeout(resetPromptConfirmTimeoutId);
-  isConfirmingResetPrompt.value = false;
-  handleResetPrompt();
-}
-
-async function handleResetPrompt() {
-  try {
-    isSubmittingPrompt.value = true;
-    await settingsStore.resetAiPrompt();
-    selectedPromptMode.value = "minimal";
-    promptInput.value = settingsStore.getAiPrompt();
-    isPresetDirty.value = false;
-    promptFeedback.show("success", t("settings.prompt.resetDone"));
-  } catch (err) {
-    promptFeedback.show("error", extractErrorMessage(err));
-  } finally {
-    isSubmittingPrompt.value = false;
   }
 }
 
@@ -972,9 +879,6 @@ onMounted(async () => {
   void loadAudioInputDeviceList().then(() => {
     void startPreview(settingsStore.selectedAudioInputDeviceName);
   });
-  selectedPromptMode.value = settingsStore.promptMode;
-  promptInput.value = settingsStore.getAiPrompt();
-  isPresetDirty.value = false;
 
   if (settingsStore.hasApiKey) {
     apiKeyInput.value = settingsStore.getApiKey();
@@ -1000,7 +904,6 @@ onBeforeUnmount(() => {
   hotkeyFeedback.clearTimer();
   reportFeedback.clearTimer();
   apiKeyFeedback.clearTimer();
-  promptFeedback.clearTimer();
   enhancementThresholdFeedback.clearTimer();
   whisperModelFeedback.clearTimer();
   llmModelFeedback.clearTimer();
@@ -1019,7 +922,6 @@ onBeforeUnmount(() => {
   recordingCleanupFeedback.clearTimer();
   providerFeedback.clearTimer();
   clearTimeout(deleteConfirmTimeoutId);
-  clearTimeout(resetPromptConfirmTimeoutId);
   clearTimeout(hideDockIconPendingTimeoutId);
 });
 </script>
@@ -1197,14 +1099,6 @@ onBeforeUnmount(() => {
             settingsStore.triggerMode === "hold"
               ? $t("settings.hotkey.holdDescription")
               : $t("settings.hotkey.toggleDescription")
-          }}
-        </p>
-
-        <p class="text-xs text-muted-foreground">
-          {{
-            settingsStore.triggerMode === "hold"
-              ? $t("settings.hotkey.doubleTapHint")
-              : $t("settings.hotkey.longPressHint")
           }}
         </p>
 
@@ -1599,109 +1493,6 @@ onBeforeUnmount(() => {
             :class="llmModelFeedback.type.value === 'success' ? 'text-success' : 'text-destructive'"
           >
             {{ llmModelFeedback.message.value }}
-          </p>
-        </transition>
-      </CardContent>
-    </Card>
-
-    <!-- AI 整理 Prompt -->
-    <Card>
-      <CardHeader class="border-b border-border">
-        <CardTitle class="text-base">{{ $t("settings.prompt.title") }}</CardTitle>
-      </CardHeader>
-      <CardContent class="space-y-4">
-        <p class="text-sm text-muted-foreground">
-          {{ $t("settings.prompt.description") }}
-        </p>
-
-        <!-- 模式選擇器 -->
-        <div class="space-y-2">
-          <Label>{{ $t("settings.prompt.modeTitle") }}</Label>
-          <RadioGroup
-            :model-value="selectedPromptMode"
-            class="grid grid-cols-3 gap-2"
-            @update:model-value="handlePromptModeChange"
-          >
-            <Label
-              for="mode-minimal"
-              class="flex cursor-pointer items-start gap-2.5 rounded-[var(--radius)] p-3 transition-all"
-              :class="selectedPromptMode === 'minimal'
-                ? 'border-2 border-primary bg-gradient-to-br from-card to-accent font-bold text-primary shadow-jelly'
-                : 'border border-border bg-card hover:border-primary/50 hover:scale-[1.02]'"
-            >
-              <RadioGroupItem id="mode-minimal" value="minimal" class="!size-0 !border-0 !shadow-none overflow-hidden" />
-              <div>
-                <span class="text-sm font-medium">{{ $t("settings.prompt.modeMinimal") }}</span>
-                <p class="text-xs leading-relaxed text-muted-foreground">{{ $t("settings.prompt.modeMinimalDescription") }}</p>
-              </div>
-            </Label>
-            <Label
-              for="mode-active"
-              class="flex cursor-pointer items-start gap-2.5 rounded-[var(--radius)] p-3 transition-all"
-              :class="selectedPromptMode === 'active'
-                ? 'border-2 border-primary bg-gradient-to-br from-card to-accent font-bold text-primary shadow-jelly'
-                : 'border border-border bg-card hover:border-primary/50 hover:scale-[1.02]'"
-            >
-              <RadioGroupItem id="mode-active" value="active" class="!size-0 !border-0 !shadow-none overflow-hidden" />
-              <div>
-                <span class="text-sm font-medium">{{ $t("settings.prompt.modeActive") }}</span>
-                <p class="text-xs leading-relaxed text-muted-foreground">{{ $t("settings.prompt.modeActiveDescription") }}</p>
-              </div>
-            </Label>
-            <Label
-              for="mode-custom"
-              class="flex cursor-pointer items-start gap-2.5 rounded-[var(--radius)] p-3 transition-all"
-              :class="selectedPromptMode === 'custom'
-                ? 'border-2 border-primary bg-gradient-to-br from-card to-accent font-bold text-primary shadow-jelly'
-                : 'border border-border bg-card hover:border-primary/50 hover:scale-[1.02]'"
-            >
-              <RadioGroupItem id="mode-custom" value="custom" class="!size-0 !border-0 !shadow-none overflow-hidden" />
-              <div>
-                <span class="text-sm font-medium">{{ $t("settings.prompt.modeCustom") }}</span>
-                <p class="text-xs leading-relaxed text-muted-foreground">{{ $t("settings.prompt.modeCustomDescription") }}</p>
-              </div>
-            </Label>
-          </RadioGroup>
-        </div>
-
-        <Textarea
-          v-model="promptInput"
-          class="font-mono min-h-[120px]"
-          @input="handlePromptInput"
-        />
-
-        <div class="flex justify-end gap-2">
-          <Button
-            :disabled="isSubmittingPrompt || (selectedPromptMode !== 'custom' && !isPresetDirty)"
-            @click="handleSavePrompt"
-          >
-            {{ $t("common.save") }}
-          </Button>
-          <Button
-            variant="outline"
-            :class="
-              isConfirmingResetPrompt
-                ? 'border-destructive text-destructive hover:bg-destructive/10'
-                : ''
-            "
-            :disabled="isSubmittingPrompt"
-            @click="requestResetPrompt"
-          >
-            {{ isConfirmingResetPrompt ? $t('settings.prompt.confirmReset') : $t('settings.prompt.reset') }}
-          </Button>
-        </div>
-
-        <transition name="feedback-fade">
-          <p
-            v-if="promptFeedback.message.value !== ''"
-            class="text-sm"
-            :class="
-              promptFeedback.type.value === 'success'
-                ? 'text-success'
-                : 'text-destructive'
-            "
-          >
-            {{ promptFeedback.message.value }}
           </p>
         </transition>
       </CardContent>

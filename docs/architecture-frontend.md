@@ -97,7 +97,7 @@ lib/     ──→ External APIs (Groq / OpenAI / Anthropic / Gemini)
 
 | Store              | LOC  | 內部狀態（精選）                                                                                            |
 | ------------------ | ---: | ----------------------------------------------------------------------------------------------------------- |
-| useVoiceFlowStore  | 1871 | hud state、recording session、transcription、enhancement、quality monitor、edit mode、smart dict、模式切換 |
+| useVoiceFlowStore  | 1855 | hud state、recording session、transcription、enhancement、quality monitor、smart dict、貼上後修正監控 |
 | useSettingsStore   | 1395 | apiKey（store plugin）、provider/model、hotkey config、audio device、auto-update、autostart、所有偏好設定 |
 | useHistoryStore    |  580 | transcriptions list、search、cursor pagination、retranscribe                                                |
 | useVocabularyStore |  200 | vocabulary list、CRUD、AI 學習提交                                                                          |

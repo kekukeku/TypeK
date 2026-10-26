@@ -51,8 +51,8 @@
 | `created_at`                  | TEXT                | DEFAULT (datetime('now'))                  | ISO timestamp                                     |
 | `audio_file_path`             | TEXT                | NULL                                       | 本機 .wav 路徑（v4+，可重新轉錄用）               |
 | `status`                      | TEXT                | NOT NULL DEFAULT 'success'                 | success / error / partial（v4+）                  |
-| `is_edit_mode`                | INTEGER             | NOT NULL DEFAULT 0                         | Edit Mode 旗標（v8+）                             |
-| `edit_source_text`            | TEXT                | NULL                                       | Edit Mode 的來源文字（v8+）                       |
+| `is_edit_mode`                | INTEGER             | NOT NULL DEFAULT 0                         | 舊 Edit Mode 旗標（v8+）；2026-10 起新資料固定 0，舊資料保留供歷史頁停用重跑 |
+| `edit_source_text`            | TEXT                | NULL                                       | 舊 Edit Mode 的來源文字（v8+）；新資料固定 NULL   |
 
 **Indexes**：
 - `idx_transcriptions_timestamp` ON `timestamp DESC`
@@ -145,7 +145,7 @@ CREATE TABLE schema_version (
 
 ```
 HudStatus = 'idle' | 'recording' | 'transcribing' | 'enhancing'
-          | 'editing' | 'success' | 'error' | 'cancelled'
+          | 'success' | 'error' | 'cancelled'
 
 State：
   hudState: { status, message }
@@ -154,7 +154,6 @@ State：
   triggerMode: 'hold' | 'toggle'
   qualityMonitor: { isActive, transcriptionId }
   correctionMonitor: { isActive }
-  editMode: { isActive, sourceText, fieldRef? }
   smartDictionary: { learnedTerms[] }
 ```
 
@@ -174,8 +173,6 @@ State：
   audioMuteSystemDuringRecord: boolean
   recordingAutoCleanupEnabled: boolean
   recordingAutoCleanupDays: number
-  customPromptList: PromptConfig[]
-  promptModeId: string
   ... (約 30+ 個設定項)
 ```
 

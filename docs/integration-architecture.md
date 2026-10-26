@@ -145,8 +145,8 @@ TypeK 採典型 **Tauri 雙向 IPC 模式**，沒有外部 message broker，所�
 
 | Command                  | 用途                                                            |
 | ------------------------ | --------------------------------------------------------------- |
-| `read_focused_text_field`| 取游標所在輸入框內容（給 Edit Mode）                            |
-| `read_selected_text`     | 取選取文字（給 Edit Mode）— 已知問題：Fn 按住期間可能輸入 "c"  |
+| `read_focused_text_field`| 取游標所在輸入框內容（給貼上後的修正監控）                      |
+| `read_selected_text`     | 取選取文字（編輯模式已移除，前端不再呼叫；Rust 指令保留）       |
 
 ### 3.7 鍵盤監測
 

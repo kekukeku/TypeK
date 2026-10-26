@@ -261,57 +261,6 @@ describe("useSettingsStore", () => {
   });
 
   // ==========================================================================
-  // saveAiPrompt / resetAiPrompt
-  // ==========================================================================
-
-  describe("saveAiPrompt", () => {
-    it("[P0] 應儲存自訂 prompt", async () => {
-      const { useSettingsStore } = await import(
-        "../../src/stores/useSettingsStore"
-      );
-      const store = useSettingsStore();
-
-      // 先切到 custom 模式，getAiPrompt() 才回傳 aiPrompt ref 值
-      await store.savePromptMode("custom");
-      await store.saveAiPrompt("自訂 prompt 內容");
-
-      expect(mockStoreSet).toHaveBeenCalledWith("aiPrompt", "自訂 prompt 內容");
-      expect(store.getAiPrompt()).toBe("自訂 prompt 內容");
-    });
-
-    it("[P0] 空白 prompt 應拋出錯誤", async () => {
-      const { useSettingsStore } = await import(
-        "../../src/stores/useSettingsStore"
-      );
-      const store = useSettingsStore();
-
-      await expect(store.saveAiPrompt("  ")).rejects.toThrow(
-        "Prompt 不可為空白",
-      );
-    });
-  });
-
-  describe("resetAiPrompt", () => {
-    it("[P0] 應重置為預設 prompt", async () => {
-      const { useSettingsStore } = await import(
-        "../../src/stores/useSettingsStore"
-      );
-      const store = useSettingsStore();
-
-      await store.saveAiPrompt("自訂內容");
-      await store.resetAiPrompt();
-
-      // 應恢復為當前語言的預設 prompt（非空）
-      expect(store.getAiPrompt()).not.toBe("自訂內容");
-      expect(store.getAiPrompt().length).toBeGreaterThan(0);
-      expect(mockStoreSet).toHaveBeenCalledWith(
-        "aiPrompt",
-        expect.stringContaining("繁體中文"),
-      );
-    });
-  });
-
-  // ==========================================================================
   // saveEnhancementThreshold
   // ==========================================================================
 
@@ -616,7 +565,9 @@ describe("useSettingsStore", () => {
       expect(store.customTriggerKey).toEqual({ custom: { keycode: 321 } });
       expect(store.customTriggerKeyDomCode).toBe("F13");
       expect(store.getApiKey()).toBe("gsk_sync");
-      expect(store.getAiPrompt()).toBe("同步後 prompt");
+      // 舊 promptMode／aiPrompt 留在磁碟但不讀：行為等於精簡
+      expect(store.getAiPrompt()).not.toBe("同步後 prompt");
+      expect(store.getAiPrompt().length).toBeGreaterThan(0);
       expect(store.isEnhancementThresholdEnabled).toBe(true);
       expect(store.enhancementThresholdCharCount).toBe(42);
       expect(store.selectedLlmModelId).toBe("openai/gpt-oss-120b");

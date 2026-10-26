@@ -48,12 +48,12 @@ export interface EnhanceOptions {
   maxTokens?: number;
   /**
    * 有效辨識語言（auto 已解析為介面語言）。有值時整理結果套用與原文相同的轉換
-   * （zh-TW／yue → 簡轉繁，#83）。編輯模式、連線測試不傳。
+   * （zh-TW／yue → 簡轉繁，#83）。連線測試不傳。
    */
   transcriptLocale?: string;
   /**
    * 使用者正在輸入的 App、視窗與游標前後文字，只供 LLM 判斷同音字與專有名詞。
-   * 只有即時聽寫流程傳；編輯模式、重送、連線測試不傳。
+   * 只有即時聽寫流程傳；重送、連線測試不傳。
    */
   inputContext?: InputContextDto | null;
 }

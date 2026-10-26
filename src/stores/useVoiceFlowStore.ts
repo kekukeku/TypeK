@@ -13,11 +13,9 @@ import {
 } from "../lib/errorUtils";
 import { captureError } from "../lib/sentry";
 import { logInfoLine, logErrorLine } from "../lib/logger";
-import { enhanceText, buildSystemPrompt } from "../lib/enhancer";
+import { enhanceText } from "../lib/enhancer";
 import { buildWhisperPrompt } from "../lib/whisperPrompt";
 import { getProviderIdForModel } from "../lib/llmProvider";
-import { getEditModePromptForLocale } from "../i18n/prompts";
-import type { SupportedLocale } from "../i18n/languageConfig";
 import { analyzeCorrections } from "../lib/vocabularyAnalyzer";
 import { applyTranscriptTextTransforms as applySharedTranscriptTextTransforms } from "../lib/transcriptTextTransforms";
 import i18n from "../i18n";
@@ -71,7 +69,6 @@ const MAX_ENHANCEMENT_RETRY_COUNT = 3;
 const ERROR_WITH_RETRY_DISPLAY_DURATION_MS = 6000;
 const START_SOUND_DURATION_MS = 400;
 const CANCELLED_DISPLAY_DURATION_MS = 1000;
-const EDIT_MODE_MAX_TOKENS = 4096;
 
 /**
  * 判斷轉錄結果是否為空（無內容可貼上）。
@@ -112,11 +109,6 @@ function getEffectiveTranscriptLocale(): string {
 
 const MONITOR_POLL_INTERVAL_MS = 250;
 
-// 呼叫當下才讀：測試以 stub userAgent 切換平台。WebView2 的 UA 含「Windows NT」
-function isWindowsPlatform(): boolean {
-  return navigator.userAgent.includes("Windows");
-}
-
 export const useVoiceFlowStore = defineStore("voice-flow", () => {
   const status = ref<HudStatus>("idle");
   const message = ref("");
@@ -140,34 +132,14 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
   const lastFailedRmsEnergyLevel = ref<number>(0);
   const isAborted = ref<boolean>(false);
   let abortController: AbortController | null = null;
-  const editSourceText = ref<string | null>(null);
-  const isEditMode = computed<boolean>(() => editSourceText.value !== null);
-  // AX 不可見 App（read_selection_state 回 unavailable）的剪貼簿後備旗標：
-  // 錄音停止、按鍵放開後才執行 read_selected_text
-  let pendingClipboardSelectionCheck = false;
-  let pendingSelectionCapture: Promise<void> | null = null;
-  // 錄音世代編號：AX 判定（最長 600ms）與剪貼簿後備（250ms 計時器）都是
-  // 非同步回呼，可能在「下一輪錄音已開始」後才落地——寫入前必須比對世代，
-  // 過期回呼直接失效（含 ESC 取消 / 雙擊切換後立刻重錄的情境）
+  // 錄音世代編號：非同步回呼可能在「下一輪錄音已開始」後才落地——
+  // 寫入前必須比對世代，過期回呼直接失效（含 ESC 取消 / 雙擊靜默取消後立刻重錄）
   let recordingEpoch = 0;
-  // 本世代的 AX 判定是否已有結論：停止錄音時若 AX 還沒回覆，
-  // 保守走剪貼簿後備（等同舊行為），避免慢速 AX 讓編輯模式靜默消失
-  let selectionProbeSettledEpoch = -1;
-  // 等按鍵完全放開的緩衝：toggle 模式的「停止」由第二次按下觸發，
-  // 該瞬間按鍵仍壓著，立刻模擬 Cmd+C 會重演 #25 的字元污染
-  const CLIPBOARD_FALLBACK_KEY_RELEASE_DELAY_MS = 250;
-  // Windows 選取探測（UIA，#79/#80）：自發出起的總期限，逾時就不進編輯模式。
-  // 後端本身 250ms（含首次初始化），多留 IPC 餘裕
-  const WINDOWS_SELECTION_PROBE_BUDGET_MS = 500;
-  let windowsSelectionProbe: Promise<void> | null = null;
-  let windowsSelectionProbeIssuedAt = 0;
   // 輸入上下文（App、視窗、游標前後文字）：錄音開始時趁焦點還在目標 App 讀，
   // AI 整理前取用；每輪錄音開始或取消時清掉，不會跨錄音沿用
   let inputContextProbe: Promise<InputContextDto | null> | null = null;
   // 錄音期間通常早已讀完；這裡只是 AX 卡住時的上限，逾時就不帶上下文
   const INPUT_CONTEXT_WAIT_MS = 300;
-  // 本世代的編輯模式已判定：之後才落地的探測結果不得再改寫（拒收晚到）
-  let windowsSelectionDecidedEpoch = -1;
   const isRetryAttempt = ref<boolean>(false);
   const canRetry = computed<boolean>(
     () =>
@@ -180,9 +152,6 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
   let recordingStartTimestamp = 0;
   let doubleTapResolve: ((isDoubleTap: boolean) => void) | null = null;
   let doubleTapDelayTimer: ReturnType<typeof setTimeout> | null = null;
-  const modeSwitchLabel = ref<string>("");
-  let modeSwitchLabelTimer: ReturnType<typeof setTimeout> | null = null;
-  const MODE_SWITCH_LABEL_DURATION_MS = 3000;
 
   let lastMonitorKey = "";
   let isRepositioning = false;
@@ -361,8 +330,6 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     wasEnhanced: boolean;
     audioFilePath: string | null;
     status: "success" | "failed";
-    isEditMode?: boolean;
-    editSourceText?: string | null;
   }): TranscriptionRecord {
     const settingsStore = useSettingsStore();
     return {
@@ -383,8 +350,9 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
       createdAt: "",
       audioFilePath: params.audioFilePath,
       status: params.status,
-      isEditMode: params.isEditMode ?? false,
-      editSourceText: params.editSourceText ?? null,
+      // 編輯模式已移除：新紀錄一律一般聽寫；舊資料的欄位保留給歷史頁守衛
+      isEditMode: false,
+      editSourceText: null,
     };
   }
 
@@ -921,13 +889,6 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     }
   }
 
-  function clearModeSwitchLabelTimer() {
-    if (modeSwitchLabelTimer) {
-      clearTimeout(modeSwitchLabelTimer);
-      modeSwitchLabelTimer = null;
-    }
-  }
-
   /**
    * Wait for double-tap resolution: returns true if mode-toggle event arrives
    * within 400ms, false if timer expires (not a double-tap).
@@ -946,62 +907,22 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
 
   function handleDoubleTapModeToggle() {
     if (doubleTapResolve) {
-      // Hold mode double-tap: resolve the waiting promise
+      // Hold 模式連按兩下：只讓等待中的流程知道「這是連按」
       clearDoubleTapTimer();
       const resolve = doubleTapResolve;
       doubleTapResolve = null;
       resolve(true);
-    } else {
-      // Toggle mode long-press: directly apply mode switch
-      applyDoubleTapModeSwitch();
     }
+    // Toggle 長按：模式切換已移除，no-op（Rust 仍會吞掉這次 toggle）
   }
 
-  function applyDoubleTapModeSwitch() {
+  /** 連按兩下確認：靜默取消這輪錄音，不切模式、HUD 不顯示模式名。 */
+  function cancelDoubleTapRecording() {
     isRecording.value = false;
-    // 世代 +1：這輪錄音被雙擊靜默取消，途中的選取偵測回呼全部失效
+    // 世代 +1：這輪錄音被雙擊靜默取消，途中的非同步回呼全部失效
     recordingEpoch += 1;
-    pendingClipboardSelectionCheck = false;
-    pendingSelectionCapture = null;
     inputContextProbe = null;
-
-    // Toggle prompt mode: minimal ↔ active
-    const settingsStore = useSettingsStore();
-    const currentMode = settingsStore.promptMode;
-    const nextMode = currentMode === "minimal" ? "active" : "minimal";
-    settingsStore.promptMode = nextMode;
-    void settingsStore.savePromptMode(nextMode).catch((err) => {
-      writeErrorLog(
-        `useVoiceFlowStore: savePromptMode failed: ${extractErrorMessage(err)}`,
-      );
-    });
-
-    // Flash mode label on HUD — follow the same pattern as transitionTo("success"):
-    // show for N seconds, then transitionTo("idle") which triggers collapse animation.
-    const modeLabel =
-      nextMode === "minimal"
-        ? t("settings.prompt.modeMinimal")
-        : t("settings.prompt.modeActive");
-    modeSwitchLabel.value = modeLabel;
-    clearModeSwitchLabelTimer();
-
-    // Show HUD with mode-switch visual
-    showHud().catch((err) => {
-      writeErrorLog(
-        `useVoiceFlowStore: showHud failed: ${extractErrorMessage(err)}`,
-      );
-    });
-
-    // After display duration, clear label and transition to idle (triggers collapse + hide)
-    modeSwitchLabelTimer = setTimeout(() => {
-      modeSwitchLabel.value = "";
-      modeSwitchLabelTimer = null;
-      transitionTo("idle");
-    }, MODE_SWITCH_LABEL_DURATION_MS);
-
-    writeInfoLog(
-      `useVoiceFlowStore: double-tap mode toggle → ${nextMode}`,
-    );
+    transitionTo("idle");
   }
 
   function handleEscapeAbort() {
@@ -1017,7 +938,6 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     writeInfoLog(`useVoiceFlowStore: ESC abort from ${currentStatus}`);
     isAborted.value = true;
     abortController?.abort();
-    editSourceText.value = null;
 
     // 無條件重置 isRecording，避免永久鎖死
     isRecording.value = false;
@@ -1034,8 +954,6 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
       doubleTapResolve = null;
       resolve(false);
     }
-    clearModeSwitchLabelTimer();
-    modeSwitchLabel.value = "";
 
     // 完整清理所有進行中的資源
     clearDelayedMuteTimer();
@@ -1043,10 +961,8 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     stopCorrectionSnapshotPolling();
     cleanupCorrectionMonitorListener();
     void restoreSystemAudio();
-    // 世代 +1：讓仍在途的 AX 判定 / 剪貼簿後備回呼全部過期失效
+    // 世代 +1：讓仍在途的非同步回呼全部過期失效
     recordingEpoch += 1;
-    pendingClipboardSelectionCheck = false;
-    pendingSelectionCapture = null;
     inputContextProbe = null;
 
     // 重置 toggle 模式狀態
@@ -1091,44 +1007,10 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     // 捕獲當前前景視窗（Windows: HUD show 前記住目標，貼上前恢復焦點）
     void invoke("capture_target_window").catch(() => {});
 
-    // 偵測選取文字（非阻塞）：AX 被動查詢，零按鍵模擬（#24/#25）。
-    // AX 不可見的 App 標記剪貼簿後備，延後到錄音停止、按鍵放開後執行
-    editSourceText.value = null;
-    pendingClipboardSelectionCheck = false;
-    pendingSelectionCapture = null;
+    // 新一代錄音：讓上一輪仍在途的非同步回呼過期失效
     recordingEpoch += 1;
-    const probeEpoch = recordingEpoch;
-    const probeIssuedAt = Date.now();
-    windowsSelectionProbeIssuedAt = probeIssuedAt;
-    windowsSelectionProbe = invoke<{ kind: string; text: string | null }>(
-      "read_selection_state",
-    )
-      .then((state) => {
-        // 過期回呼（下一輪錄音已開始）直接失效，防止跨錄音狀態污染
-        if (probeEpoch !== recordingEpoch || !state) return;
-        // Windows：超過總期限、或編輯模式已判定後才落地的結果，一律不寫入（拒收晚到）
-        if (
-          isWindowsPlatform() &&
-          (windowsSelectionDecidedEpoch === probeEpoch ||
-            Date.now() - probeIssuedAt > WINDOWS_SELECTION_PROBE_BUDGET_MS)
-        )
-          return;
-        selectionProbeSettledEpoch = probeEpoch;
-        if (state.kind === "selection" && state.text && state.text.trim().length > 0) {
-          editSourceText.value = state.text;
-          writeInfoLog(
-            `useVoiceFlowStore: edit mode activated (ax), selectedText length=${state.text.length}`,
-          );
-        } else if (state.kind === "noSelection") {
-          // AX 的明確否定是權威答案：若慢速後備已誤寫（整行複製），以此為準清掉
-          editSourceText.value = null;
-        } else if (state.kind === "unavailable") {
-          pendingClipboardSelectionCheck = true;
-        }
-      })
-      .catch(() => {});
 
-    // 輸入上下文（非阻塞）：與選取偵測同時機，焦點還在目標 App
+    // 輸入上下文（非阻塞）：錄音開始時趁焦點還在目標 App 讀
     inputContextProbe = useSettingsStore().isInputContextEnabled
       ? invoke<InputContextDto>("read_input_context").catch(() => null)
       : null;
@@ -1169,12 +1051,12 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
       const isDoubleTap = await waitForDoubleTapResolution();
       if (isAborted.value) return;
       if (isDoubleTap) {
-        // Double-tap confirmed: silently cancel, apply mode switch
+        // Double-tap confirmed: silently cancel, no mode change / HUD flash
         stopElapsedTimer();
         clearDelayedMuteTimer();
         void restoreSystemAudio();
         void invoke("stop_recording").catch(() => {});
-        applyDoubleTapModeSwitch();
+        cancelDoubleTapRecording();
         return;
       }
       // Not a double-tap — fall through to normal stop flow
@@ -1184,40 +1066,6 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     await restoreSystemAudio();
     playSoundIfEnabled("play_stop_sound");
     stopElapsedTimer();
-
-    // AX 不可見 App 的剪貼簿後備：延遲等按鍵完全放開後才模擬 Cmd+C。
-    // 包成 Promise：轉錄若比後備先完成，編輯模式判定前要能 await 它。
-    // AX 到停止時還沒回覆（慢速 App）也保守走後備——等同舊行為，
-    // 避免編輯模式在這種時序下靜默消失。
-    // Windows 不走後備（#79/#80）：後備就是模擬 Ctrl+C，改由判定前有界等待 UIA 探測
-    if (
-      !isWindowsPlatform() &&
-      (pendingClipboardSelectionCheck ||
-        selectionProbeSettledEpoch !== recordingEpoch)
-    ) {
-      pendingClipboardSelectionCheck = false;
-      const fallbackEpoch = recordingEpoch;
-      pendingSelectionCapture = new Promise<void>((resolve) => {
-        setTimeout(() => {
-          if (fallbackEpoch !== recordingEpoch) {
-            resolve();
-            return;
-          }
-          invoke<string | null>("read_selected_text")
-            .then((selectedText) => {
-              if (fallbackEpoch !== recordingEpoch) return;
-              if (selectedText && selectedText.trim().length > 0 && !editSourceText.value) {
-                editSourceText.value = selectedText;
-                writeInfoLog(
-                  `useVoiceFlowStore: edit mode activated (clipboard fallback), selectedText length=${selectedText.length}`,
-                );
-              }
-            })
-            .catch(() => {})
-            .finally(resolve);
-        }, CLIPBOARD_FALLBACK_KEY_RELEASE_DELAY_MS);
-      });
-    }
 
     // 生成 transcriptionId 貫穿整個流程
     const transcriptionId = crypto.randomUUID();
@@ -1390,44 +1238,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
         return;
       }
 
-      // 剪貼簿後備可能還在等按鍵放開（轉錄比後備快時）：判定模式前先等它完成
-      if (pendingSelectionCapture) {
-        await pendingSelectionCapture;
-        pendingSelectionCapture = null;
-      }
-
-      // Windows：探測還沒落地就等到總期限用完為止（自發出起算，通常早已用完＝不等）；
-      // 逾時即不進編輯模式，並鎖定本世代，之後落地的結果不得再改寫
-      if (isWindowsPlatform()) {
-        const decisionEpoch = recordingEpoch;
-        if (selectionProbeSettledEpoch !== decisionEpoch && windowsSelectionProbe) {
-          const remainingMs = Math.max(
-            0,
-            WINDOWS_SELECTION_PROBE_BUDGET_MS -
-              (Date.now() - windowsSelectionProbeIssuedAt),
-          );
-          await Promise.race([
-            windowsSelectionProbe,
-            new Promise<void>((resolve) => setTimeout(resolve, remainingMs)),
-          ]);
-          if (isAborted.value || decisionEpoch !== recordingEpoch) return;
-        }
-        windowsSelectionDecidedEpoch = decisionEpoch;
-      }
-
-      // 編輯模式：語音是指令，選取文字是待處理內容
-      if (isEditMode.value && editSourceText.value) {
-        await handleEditModeFlow({
-          voiceInstruction: result.rawText,
-          selectedText: editSourceText.value,
-          transcriptionId,
-          recordingDurationMs,
-          transcriptionDurationMs: result.transcriptionDurationMs,
-          audioFilePath,
-        });
-        return;
-      }
-
+      // 選取文字再說話＝一般聽寫：不偵測選取、不模擬 Cmd+C，貼上會取代選取內容
       if (
         !settingsStore.isEnhancementThresholdEnabled ||
         result.rawText.length >= settingsStore.enhancementThresholdCharCount
@@ -1461,7 +1272,7 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
           const llmApiKey = settingsStore.getLlmApiKey();
           const llmModelId = settingsStore.selectedLlmModelId;
           writeInfoLog(
-            `useVoiceFlowStore: enhancement provider=${getProviderIdForModel(llmModelId)}, model=${llmModelId}, promptMode=${settingsStore.promptMode}, transcriptLocale=${getEffectiveTranscriptLocale()}, hasContext=${Boolean(inputContext)}`,
+            `useVoiceFlowStore: enhancement provider=${getProviderIdForModel(llmModelId)}, model=${llmModelId}, transcriptLocale=${getEffectiveTranscriptLocale()}, hasContext=${Boolean(inputContext)}`,
           );
           if (!llmApiKey) {
             isLlmApiKeyMissing = true;
@@ -1648,85 +1459,6 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
         `useVoiceFlowStore: stop recording failed: ${technicalMessage}`,
         error,
       );
-    }
-  }
-
-  async function handleEditModeFlow(params: {
-    voiceInstruction: string;
-    selectedText: string;
-    transcriptionId: string;
-    recordingDurationMs: number;
-    transcriptionDurationMs: number;
-    audioFilePath: string | null;
-  }) {
-    transitionTo("editing", t("voiceFlow.editing"));
-    const editStartTime = performance.now();
-
-    try {
-      const settingsStore = useSettingsStore();
-      await settingsStore.refreshLlmApiKey();
-      const llmApiKey = settingsStore.getLlmApiKey();
-      if (!llmApiKey) {
-        throw new Error(t("errors.apiKeyMissing"));
-      }
-
-      const locale = i18n.global.locale.value as SupportedLocale;
-      const basePrompt = getEditModePromptForLocale(locale);
-      const systemPrompt = buildSystemPrompt(
-        `${basePrompt}\n\n<instruction>\n${params.voiceInstruction}\n</instruction>`,
-      );
-
-      const editResult = await enhanceText(params.selectedText, llmApiKey, {
-        systemPrompt,
-        modelId: settingsStore.selectedLlmModelId,
-        signal: abortController?.signal,
-        maxTokens: EDIT_MODE_MAX_TOKENS,
-      });
-      if (isAborted.value) return;
-
-      const editDurationMs = performance.now() - editStartTime;
-
-      const record = buildTranscriptionRecord({
-        id: params.transcriptionId,
-        rawText: params.voiceInstruction,
-        processedText: editResult.text,
-        recordingDurationMs: params.recordingDurationMs,
-        transcriptionDurationMs: params.transcriptionDurationMs,
-        enhancementDurationMs: editDurationMs,
-        wasEnhanced: true,
-        audioFilePath: params.audioFilePath,
-        status: "success",
-        isEditMode: true,
-        editSourceText: params.selectedText,
-      });
-
-      writeInfoLog(`Edit mode result: "${editResult.text}"`);
-
-      await completePasteFlow({
-        text: editResult.text,
-        successMessage: t("voiceFlow.editSuccess"),
-        record,
-        chatUsage: editResult.usage,
-      });
-
-      writeInfoLog(
-        `useVoiceFlowStore: edit mode completed, instruction="${params.voiceInstruction}", editDurationMs=${Math.round(editDurationMs)}`,
-      );
-    } catch (editError) {
-      if (isAborted.value) return;
-      writeErrorLog(
-        `useVoiceFlowStore: edit mode failed: ${extractErrorMessage(editError)}`,
-      );
-      captureError(editError, { source: "voice-flow", step: "edit-mode" });
-
-      // 編輯失敗不貼上任何東西（避免語音指令覆蓋選取文字）
-      failRecordingFlow(
-        t("voiceFlow.editFailed"),
-        `useVoiceFlowStore: edit mode LLM call failed`,
-        editError,
-      );
-    } finally {
-      editSourceText.value = null;
     }
   }
 
@@ -2099,7 +1831,6 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     clearDelayedMuteTimer();
     clearLearnedHideTimer();
     clearDoubleTapTimer();
-    clearModeSwitchLabelTimer();
     stopMonitorPolling();
     stopElapsedTimer();
     stopCorrectionSnapshotPolling();
@@ -2117,8 +1848,6 @@ export const useVoiceFlowStore = defineStore("voice-flow", () => {
     recordingElapsedSeconds,
     lastWasModified,
     canRetry,
-    modeSwitchLabel,
-    isEditMode,
     initialize,
     cleanup,
     handleRetryTranscription,

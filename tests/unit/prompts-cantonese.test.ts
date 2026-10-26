@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  ACTIVE_PROMPTS,
-  MINIMAL_PROMPTS,
-  getMinimalPromptForLocale,
-  getPromptForModeAndLocale,
-  isKnownDefaultPrompt,
-} from "../../src/i18n/prompts";
+import { getMinimalPromptForLocale } from "../../src/i18n/prompts";
 
 // gh-74：廣東話內建 prompt（不 mock，驗真實文案）
 describe("prompts — 廣東話（yue）", () => {
@@ -17,20 +11,5 @@ describe("prompts — 廣東話（yue）", () => {
     expect(yuePrompt).not.toBe(getMinimalPromptForLocale("zh-TW"));
     expect(yuePrompt.endsWith(`繁體中文。${cantoneseSentence}。`)).toBe(true);
     expect(yuePrompt).toContain("逐段處理，每段獨立校對");
-  });
-
-  it("[P0] 積極版：繁中版只換第 4 行語言句，其餘逐字相同", () => {
-    const zhTW = getPromptForModeAndLocale("active", "zh-TW");
-    const expected = zhTW.replace(
-      "直接輸出處理後的文字，使用繁體中文\n",
-      `直接輸出處理後的文字，使用繁體中文。${cantoneseSentence}\n`,
-    );
-    expect(expected).not.toBe(zhTW);
-    expect(getPromptForModeAndLocale("active", "yue")).toBe(expected);
-  });
-
-  it("[P1] isKnownDefaultPrompt 認得 yue 的精簡與積極兩款", () => {
-    expect(isKnownDefaultPrompt(MINIMAL_PROMPTS.yue)).toBe(true);
-    expect(isKnownDefaultPrompt(ACTIVE_PROMPTS.yue)).toBe(true);
   });
 });

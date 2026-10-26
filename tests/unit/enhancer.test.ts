@@ -16,11 +16,6 @@ vi.mock("../../src/i18n", () => ({
 
 vi.mock("../../src/i18n/prompts", () => ({
   getMinimalPromptForLocale: () => "mock-default-prompt",
-  getPromptForModeAndLocale: (mode: string) =>
-    mode === "active" ? "mock-active-prompt" : "mock-default-prompt",
-  isKnownDefaultPrompt: (prompt: string) => prompt === "mock-default-prompt",
-  MINIMAL_PROMPTS: { "zh-TW": "mock-minimal-zh-tw", en: "mock-minimal-en" },
-  ACTIVE_PROMPTS: { "zh-TW": "mock-active-zh-tw", en: "mock-active-en" },
 }));
 
 vi.mock("../../src/i18n/languageConfig", () => ({
@@ -604,35 +599,6 @@ describe("enhancer.ts", () => {
       const result = getDefaultSystemPrompt();
 
       expect(result).toBe("mock-default-prompt");
-    });
-  });
-
-  describe("Prompt mode 相關函式", () => {
-    it("[P0] getPromptForModeAndLocale('minimal', 'zh-TW') 應回傳精簡版 prompt", async () => {
-      // 這裡用 mock，但驗證 mode 參數被正確傳遞
-      const { getPromptForModeAndLocale } = await import(
-        "../../src/i18n/prompts"
-      );
-      const result = getPromptForModeAndLocale("minimal", "zh-TW");
-      expect(result).toBe("mock-default-prompt");
-    });
-
-    it("[P0] getPromptForModeAndLocale('active', 'en') 應回傳積極版 prompt", async () => {
-      const { getPromptForModeAndLocale } = await import(
-        "../../src/i18n/prompts"
-      );
-      const result = getPromptForModeAndLocale("active", "en");
-      expect(result).toBe("mock-active-prompt");
-    });
-
-    it("[P0] isKnownDefaultPrompt 應識別預設 prompt", async () => {
-      const { isKnownDefaultPrompt } = await import("../../src/i18n/prompts");
-      expect(isKnownDefaultPrompt("mock-default-prompt")).toBe(true);
-    });
-
-    it("[P1] isKnownDefaultPrompt 對自訂 prompt 應回傳 false", async () => {
-      const { isKnownDefaultPrompt } = await import("../../src/i18n/prompts");
-      expect(isKnownDefaultPrompt("my custom prompt")).toBe(false);
     });
   });
 

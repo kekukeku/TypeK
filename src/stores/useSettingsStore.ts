@@ -9,8 +9,6 @@ import {
   type CustomTriggerKey,
   type ComboTriggerKey,
   type ChordTriggerKey,
-  type PromptMode,
-  PROMPT_MODE_VALUES,
   type ThemeMode,
   isCustomTriggerKey,
   isComboTriggerKey,
@@ -35,13 +33,10 @@ import {
 } from "../lib/errorUtils";
 import { captureError } from "../lib/sentry";
 import { openLogFolder, setFileLoggingEnabled } from "../lib/logger";
-import { getDefaultSystemPrompt } from "../lib/enhancer";
 import {
   type PromptLocale,
   getAutoLanguagePrompt,
   getMinimalPromptForLocale,
-  getPromptForModeAndLocale,
-  isKnownDefaultPrompt,
 } from "../i18n/prompts";
 import i18n from "../i18n";
 import {
@@ -78,7 +73,6 @@ export const DEFAULT_MUTE_ON_RECORDING = true;
 const DEFAULT_SMART_DICTIONARY_ENABLED = navigator.userAgent.includes("Mac"); // macOS only — Windows 尚未支援 text field 讀取
 const DEFAULT_INPUT_CONTEXT_ENABLED = navigator.userAgent.includes("Mac"); // macOS only — Windows 版 read_input_context 回空內容
 const DEFAULT_SOUND_EFFECTS_ENABLED = true;
-const DEFAULT_PROMPT_MODE: PromptMode = "minimal";
 const DEFAULT_RECORDING_AUTO_CLEANUP_ENABLED = false;
 const DEFAULT_RECORDING_AUTO_CLEANUP_DAYS = 7;
 const DEFAULT_DEBUG_LOG_ENABLED = false;
@@ -124,8 +118,6 @@ export const useSettingsStore = defineStore("settings", () => {
   );
   const apiKey = ref<string>("");
   const hasApiKey = computed(() => apiKey.value !== "");
-  const aiPrompt = ref<string>(getDefaultSystemPrompt());
-  const promptMode = ref<PromptMode>(DEFAULT_PROMPT_MODE);
   const showPromptUpgradeNotice = ref(false);
   const isAutoStartEnabled = ref(false);
   const isEnhancementThresholdEnabled = ref(
@@ -288,31 +280,7 @@ export const useSettingsStore = defineStore("settings", () => {
         : DEFAULT_THEME_MODE;
       applyTheme(themeMode.value);
 
-      // Load aiPrompt once (used by both migration and normal flow)
-      const savedPrompt = await store.get<string>("aiPrompt");
-      const trimmedSavedPrompt = savedPrompt?.trim() ?? "";
-
-      // Prompt mode migration
-      const savedPromptMode = await store.get<string>("promptMode");
-      if (
-        savedPromptMode &&
-        (PROMPT_MODE_VALUES as readonly string[]).includes(savedPromptMode)
-      ) {
-        promptMode.value = savedPromptMode as PromptMode;
-      } else if (!savedPromptMode) {
-        // 舊版升級遷移
-        if (!trimmedSavedPrompt || isKnownDefaultPrompt(trimmedSavedPrompt)) {
-          promptMode.value = "minimal";
-        } else {
-          promptMode.value = "custom";
-        }
-        await store.set("promptMode", promptMode.value);
-        await store.save();
-      }
-
-      aiPrompt.value =
-        trimmedSavedPrompt ||
-        getMinimalPromptForLocale(getEffectivePromptLocale());
+      // 舊版整理指示設定不再讀取；鍵留在磁碟上，回退舊版時仍找得到原文
 
       const savedThresholdEnabled = await store.get<boolean>(
         "enhancementThresholdEnabled",
@@ -653,40 +621,11 @@ export const useSettingsStore = defineStore("settings", () => {
   }
 
   function getAiPrompt(): string {
-    if (promptMode.value === "custom") return aiPrompt.value;
     // #83：辨識語言「自動」時不再退回介面語言的輸出要求（那會把整理變成翻譯）
     if (selectedTranscriptionLocale.value === "auto") {
-      return getAutoLanguagePrompt(promptMode.value, selectedLocale.value);
+      return getAutoLanguagePrompt(selectedLocale.value);
     }
-    return getPromptForModeAndLocale(
-      promptMode.value,
-      getEffectivePromptLocale(),
-    );
-  }
-
-  async function savePromptMode(mode: PromptMode) {
-    const previousMode = promptMode.value;
-    promptMode.value = mode;
-    try {
-      const store = await load(STORE_NAME);
-      await store.set("promptMode", mode);
-      await store.save();
-
-      const payload: SettingsUpdatedPayload = {
-        key: "promptMode",
-        value: mode,
-      };
-      await emitEvent(SETTINGS_UPDATED, payload);
-      console.log(`[useSettingsStore] Prompt mode saved: ${mode}`);
-    } catch (err) {
-      promptMode.value = previousMode;
-      console.error(
-        "[useSettingsStore] savePromptMode failed:",
-        extractErrorMessage(err),
-      );
-      captureError(err, { source: "settings", step: "save-prompt-mode" });
-      throw err;
-    }
+    return getMinimalPromptForLocale(getEffectivePromptLocale());
   }
 
   /** 只由 Dashboard (main-window.ts) 呼叫，比對版本號決定是否顯示升級提示 */
@@ -716,62 +655,6 @@ export const useSettingsStore = defineStore("settings", () => {
         "[useSettingsStore] consumeUpgradeNotice failed:",
         extractErrorMessage(err),
       );
-    }
-  }
-
-  async function saveAiPrompt(prompt: string) {
-    const trimmedPrompt = prompt.trim();
-    if (trimmedPrompt === "") {
-      throw new Error(i18n.global.t("errors.promptEmpty"));
-    }
-
-    try {
-      const store = await load(STORE_NAME);
-      await store.set("aiPrompt", trimmedPrompt);
-      await store.save();
-      aiPrompt.value = trimmedPrompt;
-
-      const payload: SettingsUpdatedPayload = {
-        key: "aiPrompt",
-        value: trimmedPrompt,
-      };
-      await emitEvent(SETTINGS_UPDATED, payload);
-
-      console.log("[useSettingsStore] AI Prompt saved");
-    } catch (err) {
-      console.error(
-        "[useSettingsStore] saveAiPrompt failed:",
-        extractErrorMessage(err),
-      );
-      throw err;
-    }
-  }
-
-  async function resetAiPrompt() {
-    try {
-      const store = await load(STORE_NAME);
-      const defaultPrompt = getMinimalPromptForLocale(
-        getEffectivePromptLocale(),
-      );
-      promptMode.value = "minimal";
-      aiPrompt.value = defaultPrompt;
-      await store.set("promptMode", "minimal");
-      await store.set("aiPrompt", defaultPrompt);
-      await store.save();
-
-      const payload: SettingsUpdatedPayload = {
-        key: "promptMode",
-        value: "minimal",
-      };
-      await emitEvent(SETTINGS_UPDATED, payload);
-
-      console.log("[useSettingsStore] AI Prompt reset to minimal");
-    } catch (err) {
-      console.error(
-        "[useSettingsStore] resetAiPrompt failed:",
-        extractErrorMessage(err),
-      );
-      throw err;
     }
   }
 
@@ -1440,7 +1323,6 @@ export const useSettingsStore = defineStore("settings", () => {
         "customTriggerKeyDomCode",
       );
       const savedApiKey = await store.get<string>("groqApiKey");
-      const savedPrompt = await store.get<string>("aiPrompt");
       const savedThresholdEnabled = await store.get<boolean>(
         "enhancementThresholdEnabled",
       );
@@ -1475,7 +1357,7 @@ export const useSettingsStore = defineStore("settings", () => {
       customTriggerKeyDomCode.value = isValidCustomOrCombo
         ? (savedCustomDomCode ?? "")
         : "";
-      // Locale + transcription locale must be synced first — aiPrompt fallback depends on them
+      // Locale + transcription locale must be synced first
       const savedLocale = await store.get<SupportedLocale>("selectedLocale");
       selectedLocale.value = savedLocale ?? FALLBACK_LOCALE;
       i18n.global.locale.value = selectedLocale.value;
@@ -1496,18 +1378,7 @@ export const useSettingsStore = defineStore("settings", () => {
         : DEFAULT_THEME_MODE;
       applyTheme(themeMode.value);
 
-      // Prompt mode (with runtime validation)
-      const savedPromptMode = await store.get<string>("promptMode");
-      promptMode.value =
-        savedPromptMode &&
-        (PROMPT_MODE_VALUES as readonly string[]).includes(savedPromptMode)
-          ? (savedPromptMode as PromptMode)
-          : DEFAULT_PROMPT_MODE;
-
       apiKey.value = savedApiKey?.trim() ?? "";
-      aiPrompt.value =
-        savedPrompt?.trim() ||
-        getMinimalPromptForLocale(getEffectivePromptLocale());
       isEnhancementThresholdEnabled.value =
         savedThresholdEnabled ?? DEFAULT_ENHANCEMENT_THRESHOLD_ENABLED;
       enhancementThresholdCharCount.value =
@@ -1605,8 +1476,6 @@ export const useSettingsStore = defineStore("settings", () => {
     hotkeyConfig,
     triggerMode,
     hasApiKey,
-    aiPrompt,
-    promptMode,
     showPromptUpgradeNotice,
     isAutoStartEnabled,
     isEnhancementThresholdEnabled,
@@ -1621,10 +1490,7 @@ export const useSettingsStore = defineStore("settings", () => {
     getApiKey,
     getLlmApiKey,
     getAiPrompt,
-    savePromptMode,
     consumeUpgradeNotice,
-    saveAiPrompt,
-    resetAiPrompt,
     refreshApiKey,
     loadSettings,
     saveHotkeyConfig,

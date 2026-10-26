@@ -307,10 +307,11 @@ describe("i18n 設定功能", () => {
       expect(aiPromptSetCallList).toHaveLength(0);
     });
 
-    it("[P0] 已自訂 prompt 時，切換轉錄語言不應改變 prompt", async () => {
+    it("[P0] 磁碟上的自訂 prompt 不再被讀取，切換轉錄語言仍用各語言精簡指示", async () => {
       const customPrompt = "我的自訂 prompt 內容";
       mockStoreData.set("selectedLocale", "zh-TW");
       mockStoreData.set("aiPrompt", customPrompt);
+      mockStoreData.set("promptMode", "custom");
 
       const { useSettingsStore } = await import(
         "../../src/stores/useSettingsStore"
@@ -318,11 +319,15 @@ describe("i18n 設定功能", () => {
       const store = useSettingsStore();
       await store.loadSettings();
 
-      expect(store.getAiPrompt()).toBe(customPrompt);
+      const { getMinimalPromptForLocale } = await import(
+        "../../src/i18n/prompts"
+      );
+      expect(store.getAiPrompt()).toBe(getMinimalPromptForLocale("zh-TW"));
+      expect(store.getAiPrompt()).not.toBe(customPrompt);
 
       await store.saveTranscriptionLocale("en");
 
-      expect(store.getAiPrompt()).toBe(customPrompt);
+      expect(store.getAiPrompt()).toBe(getMinimalPromptForLocale("en"));
     });
 
     it("[P0] 轉錄語言切到廣東話（gh-74）：Whisper 送 yue、內建 prompt 換成粵語版", async () => {
@@ -337,13 +342,11 @@ describe("i18n 設定功能", () => {
       await store.saveTranscriptionLocale("yue");
 
       expect(store.getWhisperLanguageCode()).toBe("yue");
-      const { getMinimalPromptForLocale, getPromptForModeAndLocale } =
-        await import("../../src/i18n/prompts");
+      const { getMinimalPromptForLocale } = await import(
+        "../../src/i18n/prompts"
+      );
       expect(store.getAiPrompt()).toBe(getMinimalPromptForLocale("yue"));
       expect(store.getAiPrompt()).not.toBe(getMinimalPromptForLocale("zh-TW"));
-
-      await store.savePromptMode("active");
-      expect(store.getAiPrompt()).toBe(getPromptForModeAndLocale("active", "yue"));
     });
 
     it("[P0] 轉錄語言為特定語言時，切換 UI 語言不應改變 prompt", async () => {
@@ -381,14 +384,14 @@ describe("i18n 設定功能", () => {
       const { getAutoLanguagePrompt } = await import(
         "../../src/i18n/prompts"
       );
-      const zhDefault = getAutoLanguagePrompt("minimal", "zh-TW");
+      const zhDefault = getAutoLanguagePrompt("zh-TW");
       expect(store.getAiPrompt()).toBe(zhDefault);
 
       // 轉錄語言為 auto，切換 UI 語言 → prompt 跟著切換
       mockStoreSet.mockClear();
       await store.saveLocale("en");
 
-      const enDefault = getAutoLanguagePrompt("minimal", "en");
+      const enDefault = getAutoLanguagePrompt("en");
       expect(store.getAiPrompt()).toBe(enDefault);
 
       // prompt 不應被自動寫入 store

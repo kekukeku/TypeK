@@ -123,8 +123,6 @@ body {
   --notch-error-fg: #ffe4e6;
   --notch-learned: #f9a8d4;
   --notch-mode: #e9d5ff;
-  --notch-edit-bg: rgba(251, 191, 36, 0.25);
-  --notch-edit-fg: #fbbf24;
 }
 
 .dark {

@@ -11,7 +11,7 @@
 
 #### `NotchHud.vue`（861 LOC）
 - **位置**：HUD 視窗主畫面
-- **職責**：根據 `useVoiceFlowStore.hudState.status` 切換 8 種 UI（idle / recording / transcribing / enhancing / editing / success / error / cancelled）；訂閱 `audio:waveform` 顯示波形動畫；訂閱 `vocabulary:learned` 顯示「字典學習到」提示
+- **職責**：根據 `useVoiceFlowStore.hudState.status` 切換 7 種 UI（idle / recording / transcribing / enhancing / success / error / cancelled）；訂閱 `audio:waveform` 顯示波形動畫；訂閱 `vocabulary:learned` 顯示「字典學習到」提示
 - **依賴**：useVoiceFlowStore、useAudioWaveform composable
 
 ### 1.2 Dashboard 結構性元件

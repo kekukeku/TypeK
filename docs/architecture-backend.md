@@ -101,7 +101,7 @@ TypeK backend 是一個 **Tauri v2 Rust runtime**，扮演四個角色：
 
 **對外契約**：
 - 7 個 Command：`check_accessibility_permission_command`、`open_accessibility_settings`、`reinitialize_hotkey_listener`、`reset_hotkey_state`、`start_hotkey_recording`、`cancel_hotkey_recording`、（透過 `lib.rs` 的 `update_hotkey_config`）
-- 8 個 Event：`hotkey:pressed`、`hotkey:released`、`hotkey:toggled`、`hotkey:error`、`hotkey:mode-toggle`、`escape:pressed`、`hotkey:recording-captured`、`hotkey:recording-rejected`
+- 8 個 Event：`hotkey:pressed`、`hotkey:released`、`hotkey:toggled`、`hotkey:error`、`hotkey:mode-toggle`、`escape:pressed`、`hotkey:recording-captured`、`hotkey:recording-rejected`。其中 `hotkey:mode-toggle` 前端只用來判斷「極短連按」並靜默取消，不再切換模式
 
 **關鍵型別**：`TriggerKey`、`TriggerMode`（"hold"/"toggle"）、`HotkeyEventPayload`
 
@@ -179,10 +179,10 @@ TypeK backend 是一個 **Tauri v2 Rust runtime**，扮演四個角色：
 
 ### 4.7 `text_field_reader.rs`（325 LOC · macOS only）
 
-**職責**：用 macOS Accessibility API 讀取游標所在輸入框內容（用於 Edit Mode）
+**職責**：用 macOS Accessibility API 讀取游標所在輸入框內容與所選文字（聽寫上下文；編輯模式已於 2026-10 移除）
 
 - `read_focused_text_field` — 讀取焦點輸入框完整內容
-- `read_selected_text` — 讀取選取文字（v0.9.1 改用 Cmd+C clipboard approach 後相容更多 App）
+- `read_selected_text` — 讀取選取文字（v0.9.1 改用 Cmd+C clipboard approach 後相容更多 App；前端已不再呼叫）
 
 **已知問題**：選取文字方案在 Fn 按住期間執行會因 hardware flag 穿透導致 "c" 字元輸入（GitHub #25）
 
