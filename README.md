@@ -122,7 +122,7 @@ npx vue-tsc --noEmit
 ./scripts/release.sh X.Y.Z
 # → 自動更新版本號、commit、tag、push
 # → GitHub Actions 建構 macOS + Windows 安裝檔
-# → 到 GitHub Releases 手動 Publish
+# → 打包成功後自動公開 GitHub Release
 ```
 
 ## License
