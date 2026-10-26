@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { open as openExternalUrl } from "@tauri-apps/plugin-shell";
 import {
   BookOpen,
   Download,
@@ -26,13 +27,27 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useFeedbackMessage } from "./composables/useFeedbackMessage";
-import { listenToEvent, VOCABULARY_CHANGED } from "./composables/useTauriEvents";
+import {
+  listenToEvent,
+  VOCABULARY_CHANGED,
+  VOICE_FLOW_STATE_CHANGED,
+} from "./composables/useTauriEvents";
 import { useSettingsStore } from "./stores/useSettingsStore";
 import { useVocabularyStore } from "./stores/useVocabularyStore";
 import { captureError } from "./lib/sentry";
 import { getDatabaseInitError } from "./lib/database";
+import {
+  canStartAutoCheck,
+  canStartInstall,
+  createAutoFailureGate,
+  getUpdateInstallLocation,
+  isVoiceFlowBusy,
+  UPDATE_DOWNLOAD_URL,
+  type UpdateUiState,
+} from "./lib/updateGuard";
 import type { UnlistenFn } from "@tauri-apps/api/event";
-import type { UpdateCheckResult } from "./lib/autoUpdater";
+import type { HudStatus } from "./types";
+import type { VoiceFlowStateChangedPayload } from "./types/events";
 import {
   Sidebar,
   SidebarContent,
@@ -68,12 +83,17 @@ const currentPageTitle = computed(() => {
 // 必須在 app.mount() 後讀取 — setDatabaseInitError 在 bootstrap catch 中已設定
 const databaseError = ref(getDatabaseInitError());
 const showAccessibilityGuide = ref(false);
+const isMacOS = navigator.userAgent.includes("Macintosh");
 
 // ── 更新相關狀態 ──
-type UpdateUiState = "idle" | "checking" | "downloading" | "ready-to-install" | "installing";
 const updateState = ref<UpdateUiState>("idle");
 const availableVersion = ref("");
 const updateFeedback = useFeedbackMessage();
+const reportAutoFailureOnce = createAutoFailureGate();
+// 自動檢查／下載失敗：每次執行只出現一次，但不自動消失，留到使用者關掉或下一次檢查成功
+const showAutoUpdateFailure = ref(false);
+const voiceFlowStatus = ref<HudStatus>("idle");
+const isInstallBlocked = computed(() => isVoiceFlowBusy(voiceFlowStatus.value));
 const AUTO_CHECK_INITIAL_DELAY_MS = 5_000;
 const AUTO_CHECK_INTERVAL_MS = 15 * 60_000; // 15 分鐘
 let autoCheckTimeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -82,6 +102,8 @@ let autoCheckIntervalId: ReturnType<typeof setInterval> | null = null;
 // AlertDialog 控制
 const showManualUpdateDialog = ref(false);
 const showAutoInstallDialog = ref(false);
+const showInstallLocationDialog = ref(false);
+let autoInstallPromptPending = false;
 
 // 升級提示（watch 而非 onMounted，因為 loadSettings 在 mount 之後才執行）
 const settingsStore = useSettingsStore();
@@ -94,41 +116,131 @@ watch(() => settingsStore.showPromptUpgradeNotice, (shouldShow) => {
   }
 });
 
-// ── 流程 1：自動偵測（靜默檢查 → 靜默下載 → 通知安裝） ──
-async function autoCheckAndDownload() {
-  if (updateState.value !== "idle") return;
-
+async function openDownloadPage() {
   try {
-    const { checkForAppUpdate, downloadUpdate } = await import("./lib/autoUpdater");
-    const result = await checkForAppUpdate();
+    await openExternalUrl(UPDATE_DOWNLOAD_URL);
+  } catch (err) {
+    console.error("[main-window] Failed to open update download page:", err);
+    captureError(err, { source: "updater", step: "open-download-page" });
+  }
+}
 
-    if (result.status !== "update-available" || !result.version) return;
+/** 下載前確認 App 是否位在可原地更新的位置；不 ok 時顯示修復說明。 */
+async function ensureUpdateInstallLocation(): Promise<boolean> {
+  try {
+    const location = await getUpdateInstallLocation();
+    if (location.ok && location.reason === "ok") return true;
+    console.warn(
+      `[main-window] Update blocked at ${location.bundlePath}: ${location.reason}`,
+    );
+    showInstallLocationDialog.value = true;
+    return false;
+  } catch (err) {
+    console.error("[main-window] Failed to check update install location:", err);
+    captureError(err, { source: "updater", step: "install-location" });
+    showInstallLocationDialog.value = true;
+    return false;
+  }
+}
 
-    availableVersion.value = result.version;
-    updateState.value = "downloading";
+async function discardStagedUpdate() {
+  const { discardPendingUpdate } = await import("./lib/autoUpdater");
+  await discardPendingUpdate();
+}
 
-    await downloadUpdate();
+function closeInstallLocationDialog() {
+  showInstallLocationDialog.value = false;
+}
 
-    updateState.value = "ready-to-install";
+async function openDownloadPageFromDialog() {
+  showInstallLocationDialog.value = false;
+  await openDownloadPage();
+}
 
-    // 確保 Dashboard 可見再彈 dialog
-    // gh-76：使用者開了「啟動時隱藏主視窗」就不主動跳出來，對話框留在視窗內、開啟時再看
-    if (!settingsStore.isStartHiddenEnabled) {
+/** 顯示自動下載完成的安裝對話框（必要時先把 Dashboard 叫到前景）。 */
+async function promptAutoInstall() {
+  // gh-76：使用者開了「啟動時隱藏主視窗」就不主動跳出來，對話框留在視窗內、開啟時再看
+  if (!settingsStore.isStartHiddenEnabled) {
+    try {
       const currentWindow = getCurrentWindow();
       await currentWindow.show();
       await currentWindow.setFocus();
+    } catch (err) {
+      console.error("[main-window] Failed to focus window for update:", err);
+      captureError(err, { source: "updater", step: "show-window" });
+    }
+  }
+  showAutoInstallDialog.value = true;
+}
+
+// 錄音／轉錄結束回到 idle 後，補跳自動流程的安裝對話框。
+watch(voiceFlowStatus, (status) => {
+  if (status !== "idle" || !autoInstallPromptPending) return;
+  if (updateState.value !== "ready-to-install") return;
+  autoInstallPromptPending = false;
+  void promptAutoInstall();
+});
+
+// ── 流程 1：自動偵測（靜默檢查 → 靜默下載 → 通知安裝） ──
+async function autoCheckAndDownload() {
+  if (!canStartAutoCheck(updateState.value)) return;
+
+  updateState.value = "checking";
+  try {
+    const { checkForAppUpdate, downloadUpdate, discardPendingUpdate } =
+      await import("./lib/autoUpdater");
+    const result = await checkForAppUpdate();
+
+    if (result.status === "error") {
+      updateState.value = "idle";
+      availableVersion.value = "";
+      if (reportAutoFailureOnce()) {
+        showAutoUpdateFailure.value = true;
+      }
+      return;
     }
 
-    showAutoInstallDialog.value = true;
+    showAutoUpdateFailure.value = false;
+
+    if (result.status !== "update-available" || !result.version) {
+      updateState.value = "idle";
+      return;
+    }
+
+    availableVersion.value = result.version;
+
+    if (!(await ensureUpdateInstallLocation())) {
+      await discardPendingUpdate();
+      availableVersion.value = "";
+      updateState.value = "idle";
+      return;
+    }
+
+    updateState.value = "downloading";
+    await downloadUpdate();
+    updateState.value = "ready-to-install";
+
+    if (isInstallBlocked.value) {
+      autoInstallPromptPending = true;
+      return;
+    }
+
+    await promptAutoInstall();
   } catch (err) {
     console.error("[main-window] Auto update check/download failed:", err);
     captureError(err, { source: "updater", step: "auto-check" });
     updateState.value = "idle";
+    availableVersion.value = "";
+    if (reportAutoFailureOnce()) {
+      showAutoUpdateFailure.value = true;
+    }
   }
 }
 
 // 使用者在自動流程的 AlertDialog 中點「安裝並重啟」
 async function handleAutoInstall() {
+  if (!canStartInstall(updateState.value, voiceFlowStatus.value)) return;
+
   showAutoInstallDialog.value = false;
   updateState.value = "installing";
   try {
@@ -136,6 +248,7 @@ async function handleAutoInstall() {
     await installAndRelaunch();
   } catch (err) {
     console.error("[main-window] Auto install failed:", err);
+    captureError(err, { source: "updater", step: "auto-install" });
     updateFeedback.show("error", t("mainApp.update.installFailed"));
     updateState.value = "idle";
     availableVersion.value = "";
@@ -145,29 +258,40 @@ async function handleAutoInstall() {
 // 使用者在自動流程的 AlertDialog 中點「稍後」
 function handleAutoInstallLater() {
   showAutoInstallDialog.value = false;
+  autoInstallPromptPending = false;
   // 保持 ready-to-install 狀態，sidebar 仍顯示「立即安裝」按鈕
 }
 
 // sidebar footer 的「立即安裝」按鈕（自動下載完成後顯示）
-async function handleSidebarInstall() {
+function handleSidebarInstall() {
   showAutoInstallDialog.value = true;
 }
 
 // ── 流程 2：手動檢查更新 ──
 async function handleManualCheck() {
-  if (updateState.value !== "idle" && updateState.value !== "ready-to-install") return;
-
-  // 如果已有待安裝的更新，直接彈 dialog
   if (updateState.value === "ready-to-install") {
     showAutoInstallDialog.value = true;
     return;
   }
+  if (updateState.value !== "idle") return;
 
   updateState.value = "checking";
   try {
     const { checkForAppUpdate } = await import("./lib/autoUpdater");
     const result = await checkForAppUpdate();
-    handleManualCheckResult(result);
+
+    if (result.status === "up-to-date") {
+      showAutoUpdateFailure.value = false;
+      updateFeedback.show("success", t("mainApp.update.upToDate"));
+      updateState.value = "idle";
+    } else if (result.status === "update-available") {
+      availableVersion.value = result.version ?? "";
+      updateState.value = "confirming";
+      showManualUpdateDialog.value = true;
+    } else {
+      updateFeedback.show("error", t("mainApp.update.checkFailed"));
+      updateState.value = "idle";
+    }
   } catch (err) {
     console.error("[main-window] Manual update check failed:", err);
     captureError(err, { source: "updater", step: "manual-check" });
@@ -176,33 +300,52 @@ async function handleManualCheck() {
   }
 }
 
-function handleManualCheckResult(result: UpdateCheckResult) {
-  if (result.status === "up-to-date") {
-    updateFeedback.show("success", t("mainApp.update.upToDate"));
-    updateState.value = "idle";
-  } else if (result.status === "update-available") {
-    availableVersion.value = result.version ?? "";
-    updateState.value = "idle";
-    showManualUpdateDialog.value = true;
-  } else {
-    updateFeedback.show("error", t("mainApp.update.checkFailed"));
-    updateState.value = "idle";
-  }
-}
-
 // 使用者在手動流程的 AlertDialog 中點「開始更新」
 async function handleManualUpdate() {
-  showManualUpdateDialog.value = false;
+  if (!canStartInstall(updateState.value, voiceFlowStatus.value)) return;
+  // 任何 await 之前先鎖住交易，避免連點兩次對同一個 Update 安裝兩次
   updateState.value = "downloading";
+
   try {
-    const { downloadInstallAndRelaunch } = await import("./lib/autoUpdater");
+    const { downloadInstallAndRelaunch, discardPendingUpdate } =
+      await import("./lib/autoUpdater");
+
+    if (!(await ensureUpdateInstallLocation())) {
+      showManualUpdateDialog.value = false;
+      availableVersion.value = "";
+      await discardPendingUpdate();
+      updateState.value = "idle";
+      return;
+    }
+
+    // 等待期間開始錄音的話，留在確認框，不下載不安裝
+    if (isVoiceFlowBusy(voiceFlowStatus.value)) {
+      updateState.value = "confirming";
+      return;
+    }
+
+    showManualUpdateDialog.value = false;
     await downloadInstallAndRelaunch();
   } catch (err) {
     console.error("[main-window] Manual update failed:", err);
+    captureError(err, { source: "updater", step: "manual-update" });
     updateFeedback.show("error", t("mainApp.update.updateFailed"));
     updateState.value = "idle";
     availableVersion.value = "";
   }
+}
+
+// 手動確認框取消：放棄暫存的 Update，回到 idle。
+async function handleManualUpdateCancel() {
+  showManualUpdateDialog.value = false;
+  availableVersion.value = "";
+  try {
+    await discardStagedUpdate();
+  } catch (err) {
+    console.error("[main-window] Failed to discard pending update:", err);
+  }
+  // 舊 Update 釋放後才回 idle，避免計時器在 close() 期間開始新一輪檢查
+  updateState.value = "idle";
 }
 
 // ── Sidebar footer 顯示邏輯 ──
@@ -217,6 +360,7 @@ const updateButtonLabel = computed(() => {
 
 const isUpdateBusy = computed(() =>
   updateState.value === "checking" ||
+  updateState.value === "confirming" ||
   updateState.value === "downloading" ||
   updateState.value === "installing"
 );
@@ -224,6 +368,7 @@ const isUpdateBusy = computed(() =>
 
 const vocabularyStore = useVocabularyStore();
 let unlistenVocabularyChanged: UnlistenFn | null = null;
+let unlistenVoiceFlowStateChanged: UnlistenFn | null = null;
 
 onMounted(async () => {
   // 監聽詞彙變更（HUD 視窗 AI 新增詞彙時同步 Dashboard）
@@ -232,8 +377,15 @@ onMounted(async () => {
     void vocabularyStore.fetchTermList();
   });
 
+  // 錄音／轉錄期間不可安裝更新
+  unlistenVoiceFlowStateChanged = await listenToEvent<VoiceFlowStateChangedPayload>(
+    VOICE_FLOW_STATE_CHANGED,
+    (event) => {
+      voiceFlowStatus.value = event.payload.status;
+    },
+  );
+
   // macOS 無障礙權限檢查
-  const isMacOS = navigator.userAgent.includes("Macintosh");
   if (isMacOS) {
     try {
       const hasAccessibilityPermission = await invoke<boolean>(
@@ -258,6 +410,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   unlistenVocabularyChanged?.();
+  unlistenVoiceFlowStateChanged?.();
   if (autoCheckTimeoutId) clearTimeout(autoCheckTimeoutId);
   if (autoCheckIntervalId) clearInterval(autoCheckIntervalId);
 });
@@ -330,13 +483,42 @@ onUnmounted(() => {
             {{ $t("mainApp.update.installNow") }}
           </Button>
         </div>
-        <p
-          v-if="updateFeedback.message.value"
-          class="mt-1 text-xs"
-          :class="updateFeedback.type.value === 'success' ? 'text-primary' : 'text-destructive'"
+        <div
+          v-if="showAutoUpdateFailure"
+          class="mt-1 flex flex-wrap items-center gap-1 text-xs"
         >
-          {{ updateFeedback.message.value }}
-        </p>
+          <span class="text-destructive">{{ $t("mainApp.update.updateFailed") }}</span>
+          <Button
+            variant="link"
+            class="h-auto p-0 text-xs text-primary"
+            @click="openDownloadPage"
+          >
+            {{ $t("mainApp.update.openDownloadPage") }}
+          </Button>
+          <Button
+            variant="link"
+            class="h-auto p-0 text-xs text-muted-foreground"
+            @click="showAutoUpdateFailure = false"
+          >
+            {{ $t("mainApp.update.dismissFailure") }}
+          </Button>
+        </div>
+        <div
+          v-if="updateFeedback.message.value"
+          class="mt-1 flex items-center gap-1 text-xs"
+        >
+          <span :class="updateFeedback.type.value === 'success' ? 'text-primary' : 'text-destructive'">
+            {{ updateFeedback.message.value }}
+          </span>
+          <Button
+            v-if="updateFeedback.type.value === 'error'"
+            variant="link"
+            class="h-auto p-0 text-xs text-primary"
+            @click="openDownloadPage"
+          >
+            {{ $t("mainApp.update.openDownloadPage") }}
+          </Button>
+        </div>
       </SidebarFooter>
     </Sidebar>
 
@@ -365,13 +547,35 @@ onUnmounted(() => {
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>{{ $t("mainApp.update.autoInstallTitle") }}</AlertDialogTitle>
-        <AlertDialogDescription>
-          {{ $t("mainApp.update.autoInstallDescription", { version: availableVersion }) }}
+        <AlertDialogDescription as="div">
+          <p>{{ $t("mainApp.update.autoInstallDescription", { version: availableVersion }) }}</p>
+          <p v-if="isMacOS" class="mt-2 text-xs text-muted-foreground">
+            {{ $t("mainApp.update.macPermissionHint") }}
+          </p>
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
+        <span v-if="isInstallBlocked" class="mr-auto text-xs text-muted-foreground">
+          {{ $t("mainApp.update.installBlockedByVoiceFlow") }}
+        </span>
         <AlertDialogCancel @click="handleAutoInstallLater">{{ $t("mainApp.update.later") }}</AlertDialogCancel>
-        <AlertDialogAction @click="handleAutoInstall">{{ $t("mainApp.update.installRestart") }}</AlertDialogAction>
+        <AlertDialogAction :disabled="isInstallBlocked" @click="handleAutoInstall">{{ $t("mainApp.update.installRestart") }}</AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+
+  <!-- 安裝位置不符 AlertDialog -->
+  <AlertDialog :open="showInstallLocationDialog">
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>{{ $t("mainApp.update.installLocationTitle") }}</AlertDialogTitle>
+        <AlertDialogDescription>
+          {{ $t("mainApp.update.installLocationDescription") }}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel @click="closeInstallLocationDialog">{{ $t("mainApp.update.cancel") }}</AlertDialogCancel>
+        <AlertDialogAction @click="openDownloadPageFromDialog">{{ $t("mainApp.update.openDownloadPage") }}</AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
@@ -400,13 +604,19 @@ onUnmounted(() => {
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>{{ $t("mainApp.update.newVersionTitle") }}</AlertDialogTitle>
-        <AlertDialogDescription>
-          {{ $t("mainApp.update.newVersionDescription", { version: availableVersion }) }}
+        <AlertDialogDescription as="div">
+          <p>{{ $t("mainApp.update.newVersionDescription", { version: availableVersion }) }}</p>
+          <p v-if="isMacOS" class="mt-2 text-xs text-muted-foreground">
+            {{ $t("mainApp.update.macPermissionHint") }}
+          </p>
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel @click="showManualUpdateDialog = false">{{ $t("mainApp.update.cancel") }}</AlertDialogCancel>
-        <AlertDialogAction @click="handleManualUpdate">{{ $t("mainApp.update.startUpdate") }}</AlertDialogAction>
+        <span v-if="isInstallBlocked" class="mr-auto text-xs text-muted-foreground">
+          {{ $t("mainApp.update.installBlockedByVoiceFlow") }}
+        </span>
+        <AlertDialogCancel @click="handleManualUpdateCancel">{{ $t("mainApp.update.cancel") }}</AlertDialogCancel>
+        <AlertDialogAction :disabled="isInstallBlocked" @click="handleManualUpdate">{{ $t("mainApp.update.startUpdate") }}</AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>

@@ -357,7 +357,8 @@
     "reinitializing": "권한이 감지되었습니다. 단축키를 활성화하는 중...",
     "reinitializeError": "단축키 재초기화에 실패했습니다. 앱을 다시 시작해주세요.",
     "openSettings": "시스템 설정 열기",
-    "later": "나중에 설정"
+    "later": "나중에 설정",
+    "updateHint": "TypeK를 방금 업데이트했다면 권한을 다시 허용해야 합니다. 이는 TypeK에 Apple 서명이 없기 때문입니다."
   },
   "voiceFlow": {
     "noSpeechDetected": "음성이 감지되지 않았습니다",
@@ -465,7 +466,13 @@
       "newVersionTitle": "새 버전 발견",
       "newVersionDescription": "TypeK v{version} 업데이트가 가능합니다. 업데이트 시작을 클릭하면 자동으로 다운로드 후 앱이 재시작됩니다.",
       "cancel": "취소",
-      "startUpdate": "업데이트 시작"
+      "startUpdate": "업데이트 시작",
+      "macPermissionHint": "업데이트 후 단축키가 작동하지 않으면 시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용에서 TypeK를 제거한 뒤 다시 추가하고 켜세요.",
+      "installLocationTitle": "자동 업데이트할 수 없음",
+      "installLocationDescription": "TypeK가 '응용 프로그램' 폴더에 없어 자동으로 업데이트할 수 없습니다. TypeK를 종료하고 '응용 프로그램' 폴더로 드래그한 다음 그곳에서 여세요.",
+      "openDownloadPage": "다운로드 페이지로",
+      "installBlockedByVoiceFlow": "녹음 또는 전사 중입니다. 완료 후 설치할 수 있습니다",
+      "dismissFailure": "닫기"
     },
     "upgradeNotice": {
       "title": "TypeK 업데이트 요약",

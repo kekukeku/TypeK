@@ -52,6 +52,12 @@ Lần đầu sử dụng, TypeK sẽ yêu cầu hai quyền, cả hai đều ph�
 
 Vì chưa được ký, **sau khi cập nhật lên phiên bản mới, quyền Trợ năng có thể mất hiệu lực**. Nếu phím tắt không phản hồi, hãy vào danh sách「Trợ năng (Accessibility)」gỡ TypeK (−), rồi thêm lại (＋) và bật lên.
 
+### Cập nhật
+
+Từ 1.3.0, bạn có thể cập nhật ngay trong ứng dụng: dùng "Kiểm tra cập nhật" ở thanh bên hoặc chờ thông báo tự động. Nếu đang dùng 1.2.2 hoặc cũ hơn, hãy tải bản mới và cài đè một lần (không cần xóa ứng dụng trước).
+
+Trên macOS, TypeK phải nằm trong thư mục Ứng dụng thì mới tự động cập nhật. Nếu phím tắt không phản hồi sau khi cập nhật, hãy vào Cài đặt Hệ thống → Quyền riêng tư & Bảo mật → Trợ năng, xóa TypeK rồi thêm lại và bật lên.
+
 ### Các bước cài đặt trên Windows
 
 Khi chạy tệp `.exe` nếu xuất hiện「Windows đã bảo vệ PC của bạn (Windows protected your PC)」, hãy nhấn「Thông tin khác (More info)」→「Vẫn chạy (Run anyway)」.
@@ -118,7 +124,7 @@ npx vue-tsc --noEmit
 
 ### Phát hành
 
-Tính năng tự động cập nhật hiện đang tắt: TypeK chưa có khóa ký updater riêng, các bước bật xem tại [docs/deployment-guide.md](docs/deployment-guide.md).
+Tính năng tự động cập nhật đã bật từ 1.3.0: ứng dụng kiểm tra GitHub Releases để cập nhật. Các bước về khóa ký và phát hành xem tại [docs/deployment-guide.md](docs/deployment-guide.md).
 
 ```bash
 ./scripts/release.sh X.Y.Z

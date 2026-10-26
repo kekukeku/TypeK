@@ -151,6 +151,10 @@ async function handleOpenAccessibilitySettings() {
         {{ $t("accessibility.description") }}
       </p>
 
+      <p class="text-sm leading-relaxed text-muted-foreground">
+        {{ $t("accessibility.updateHint") }}
+      </p>
+
       <div class="flex flex-col gap-3 pl-1">
         <div v-for="(stepKey, index) in stepKeyList" :key="stepKey" class="flex items-center gap-2.5">
           <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">

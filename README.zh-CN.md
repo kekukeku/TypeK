@@ -52,6 +52,12 @@ TypeK 第一次使用时会请求两项权限，都要允许：
 
 因为没有签名，**更新到新版本后，辅助功能权限可能会失效**。如果快捷键没反应，在“辅助功能”列表中把 TypeK 移除（−），再重新添加（＋）并打开。
 
+### 更新
+
+1.3.0 起可以直接在 App 内更新：侧边栏的“检查更新”，或等 App 自动通知。1.2.2 以前的使用者请下载新版覆盖安装一次（不用先删除 App）。
+
+macOS：TypeK 要放在“应用程序”文件夹才能自动更新。更新后如果快捷键没反应，请到“系统设置 → 隐私与安全性 → 辅助功能”把 TypeK 移除后重新加入并打开。
+
 ### Windows 安装步骤
 
 运行 `.exe` 时如果出现“Windows 已保护你的电脑”，点“更多信息”→“仍要运行”。
@@ -118,7 +124,7 @@ npx vue-tsc --noEmit
 
 ### 发布
 
-自动更新目前关闭：TypeK 还没有自己的 updater 签名密钥，启用步骤见 [docs/deployment-guide.md](docs/deployment-guide.md)。
+自动更新已启用（1.3.0 起）：App 会从 GitHub Releases 检查更新；密钥与发版步骤见 [docs/deployment-guide.md](docs/deployment-guide.md)。
 
 ```bash
 ./scripts/release.sh X.Y.Z

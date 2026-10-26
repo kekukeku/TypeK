@@ -53,6 +53,7 @@ describe("autoUpdater.ts", () => {
       version: "1.2.0",
       download: mockDownload,
       install: vi.fn(),
+      close: vi.fn().mockResolvedValue(undefined),
     });
 
     const { checkForAppUpdate } = await import("../../src/lib/autoUpdater");
@@ -82,6 +83,7 @@ describe("autoUpdater.ts", () => {
       version: "1.2.0",
       download: mockDownload,
       install: mockInstall,
+      close: vi.fn().mockResolvedValue(undefined),
     });
 
     const { checkForAppUpdate, downloadUpdate } = await import(
@@ -102,6 +104,7 @@ describe("autoUpdater.ts", () => {
       version: "1.2.0",
       download: mockDownload,
       install: mockInstall,
+      close: vi.fn().mockResolvedValue(undefined),
     });
 
     const { checkForAppUpdate, downloadUpdate, installAndRelaunch } =
@@ -121,6 +124,7 @@ describe("autoUpdater.ts", () => {
       version: "1.2.0",
       download: mockDownload,
       install: mockInstall,
+      close: vi.fn().mockResolvedValue(undefined),
     });
 
     const { checkForAppUpdate, downloadInstallAndRelaunch } = await import(
@@ -145,14 +149,16 @@ describe("autoUpdater.ts", () => {
     await expect(downloadUpdate()).rejects.toThrow("No pending update");
   });
 
-  it("[P0] 下載失敗時 downloadUpdate 應拋錯", async () => {
+  it("[P0] 下載失敗時 downloadUpdate 應拋錯並釋放 Update", async () => {
     const mockDownload = vi
       .fn()
       .mockRejectedValue(new Error("Download failed"));
+    const mockClose = vi.fn().mockResolvedValue(undefined);
     mockCheck.mockResolvedValue({
       version: "1.2.0",
       download: mockDownload,
       install: vi.fn(),
+      close: mockClose,
     });
 
     const { checkForAppUpdate, downloadUpdate } = await import(
@@ -161,6 +167,90 @@ describe("autoUpdater.ts", () => {
     await checkForAppUpdate();
 
     await expect(downloadUpdate()).rejects.toThrow("Download failed");
+    expect(mockClose).toHaveBeenCalledOnce();
     expect(mockInvoke).not.toHaveBeenCalled();
+  });
+
+  it("[P0] 以新 Update 取代暫存時應 close() 舊的 Update", async () => {
+    const oldClose = vi.fn().mockResolvedValue(undefined);
+    const newClose = vi.fn().mockResolvedValue(undefined);
+    mockCheck
+      .mockResolvedValueOnce({
+        version: "1.2.0",
+        download: vi.fn(),
+        install: vi.fn(),
+        close: oldClose,
+      })
+      .mockResolvedValueOnce({
+        version: "1.3.0",
+        download: vi.fn(),
+        install: vi.fn(),
+        close: newClose,
+      });
+
+    const { checkForAppUpdate } = await import("../../src/lib/autoUpdater");
+    await checkForAppUpdate();
+    await checkForAppUpdate();
+
+    expect(oldClose).toHaveBeenCalledOnce();
+    expect(newClose).not.toHaveBeenCalled();
+  });
+
+  it("[P0] check 失敗時應 close() 既有的 Update", async () => {
+    const mockClose = vi.fn().mockResolvedValue(undefined);
+    mockCheck
+      .mockResolvedValueOnce({
+        version: "1.2.0",
+        download: vi.fn(),
+        install: vi.fn(),
+        close: mockClose,
+      })
+      .mockRejectedValueOnce(new Error("Network error"));
+
+    const { checkForAppUpdate } = await import("../../src/lib/autoUpdater");
+    await checkForAppUpdate();
+    const result = await checkForAppUpdate();
+
+    expect(result.status).toBe("error");
+    expect(mockClose).toHaveBeenCalledOnce();
+  });
+
+  it("[P0] check 與 download 應帶逾時設定", async () => {
+    const mockDownload = vi.fn().mockResolvedValue(undefined);
+    mockCheck.mockResolvedValue({
+      version: "1.2.0",
+      download: mockDownload,
+      install: vi.fn(),
+      close: vi.fn().mockResolvedValue(undefined),
+    });
+
+    const { checkForAppUpdate, downloadUpdate } = await import(
+      "../../src/lib/autoUpdater"
+    );
+    await checkForAppUpdate();
+    await downloadUpdate();
+
+    expect(mockCheck).toHaveBeenCalledWith({ timeout: 30_000 });
+    expect(mockDownload).toHaveBeenCalledWith(undefined, {
+      timeout: 300_000,
+    });
+  });
+
+  it("[P0] discardPendingUpdate 應 close() 並清空暫存", async () => {
+    const mockClose = vi.fn().mockResolvedValue(undefined);
+    mockCheck.mockResolvedValue({
+      version: "1.2.0",
+      download: vi.fn(),
+      install: vi.fn(),
+      close: mockClose,
+    });
+
+    const { checkForAppUpdate, discardPendingUpdate, downloadUpdate } =
+      await import("../../src/lib/autoUpdater");
+    await checkForAppUpdate();
+    await discardPendingUpdate();
+
+    expect(mockClose).toHaveBeenCalledOnce();
+    await expect(downloadUpdate()).rejects.toThrow("No pending update");
   });
 });

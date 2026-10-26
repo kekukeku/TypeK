@@ -41,6 +41,17 @@ describe("AccessibilityGuide", () => {
     );
   });
 
+  it("[P1] 應顯示更新後需重新授權的說明", () => {
+    const wrapper = mount(AccessibilityGuide, {
+      props: { visible: true },
+      global: { plugins: [i18n] },
+    });
+
+    expect(wrapper.text()).toContain(
+      "剛更新 TypeK 的話，需要重新授權；這是 TypeK 沒有 Apple 簽章的限制。",
+    );
+  });
+
   it("[P0] 點擊「開啟系統設定」應呼叫 invoke", async () => {
     mockInvoke.mockClear();
     const wrapper = mount(AccessibilityGuide, {

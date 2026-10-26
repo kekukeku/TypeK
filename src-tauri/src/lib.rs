@@ -8,7 +8,8 @@ extern crate objc;
 
 mod plugins;
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use tauri::{
     command,
     menu::{Menu, MenuItem},
@@ -165,6 +166,111 @@ fn set_dock_icon_hidden<R: Runtime>(app: AppHandle<R>, hidden: bool) -> Result<(
 #[command]
 fn get_os_theme() -> Option<String> {
     current_os_theme_is_dark().map(|dark| if dark { "dark" } else { "light" }.to_string())
+}
+
+#[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct UpdateInstallLocation {
+    ok: bool,
+    reason: String,
+    bundle_path: String,
+}
+
+/// 嘗試在目錄建立再刪除一個暫存檔，判斷更新時能否在該目錄 rename。
+fn is_directory_writable(directory: &Path) -> bool {
+    static PROBE_COUNTER: AtomicU32 = AtomicU32::new(0);
+    let probe = directory.join(format!(
+        ".typek-update-write-probe-{}-{}",
+        std::process::id(),
+        PROBE_COUNTER.fetch_add(1, Ordering::Relaxed)
+    ));
+    match std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&probe)
+    {
+        Ok(_) => {
+            let _ = std::fs::remove_file(&probe);
+            true
+        }
+        Err(_) => false,
+    }
+}
+
+/// 依 bundle 路徑分類更新安裝位置；所有平台都會編譯，方便單元測試。
+fn classify_bundle_path(path: &Path, home: &Path) -> &'static str {
+    let normalized = path.to_string_lossy().replace('\\', "/");
+    if normalized.contains("/AppTranslocation/") {
+        return "translocated";
+    }
+    if normalized.starts_with("/Volumes/") {
+        return "read_only_volume";
+    }
+
+    let home_normalized = home.to_string_lossy().replace('\\', "/");
+    let home_normalized = home_normalized.trim_end_matches('/');
+    let user_applications = format!("{home_normalized}/Applications");
+    let in_system_applications =
+        normalized == "/Applications" || normalized.starts_with("/Applications/");
+    let in_user_applications =
+        normalized == user_applications || normalized.starts_with(&format!("{user_applications}/"));
+
+    if !in_system_applications && !in_user_applications {
+        return "unsupported_location";
+    }
+
+    if !path.parent().map(is_directory_writable).unwrap_or(false) {
+        return "not_writable";
+    }
+
+    "ok"
+}
+
+fn current_bundle_path() -> Option<PathBuf> {
+    std::env::current_exe()
+        .ok()?
+        .ancestors()
+        .find(|path| path.extension().and_then(|extension| extension.to_str()) == Some("app"))
+        .map(Path::to_path_buf)
+}
+
+fn home_directory() -> Option<PathBuf> {
+    std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(PathBuf::from)
+}
+
+fn compute_update_install_location() -> UpdateInstallLocation {
+    let Some(bundle_path) = current_bundle_path() else {
+        return UpdateInstallLocation {
+            ok: false,
+            reason: "unsupported_location".to_string(),
+            bundle_path: String::new(),
+        };
+    };
+
+    let reason = classify_bundle_path(&bundle_path, &home_directory().unwrap_or_default());
+    UpdateInstallLocation {
+        ok: reason == "ok",
+        reason: reason.to_string(),
+        bundle_path: bundle_path.to_string_lossy().into_owned(),
+    }
+}
+
+/// macOS 只在可原地更新的位置（/Applications 或 ~/Applications、可寫、非 Translocation）
+/// 允許下載安裝；其他平台一律回 ok。
+#[command]
+fn get_update_install_location() -> UpdateInstallLocation {
+    let location = compute_update_install_location();
+    if cfg!(target_os = "macos") {
+        location
+    } else {
+        UpdateInstallLocation {
+            ok: true,
+            reason: "ok".to_string(),
+            bundle_path: String::new(),
+        }
+    }
 }
 
 /// HUD 視窗邏輯寬度（pixels），對應前端 CSS 470px
@@ -477,6 +583,7 @@ pub fn run() {
             update_hotkey_config,
             get_hud_target_position,
             get_os_theme,
+            get_update_install_location,
             set_dock_icon_hidden,
             plugins::audio_control::mute_system_audio,
             plugins::audio_control::restore_system_audio,
@@ -1045,5 +1152,65 @@ mod tests {
         // 置中偏移 = (1920 - 400) / 2 = 760
         let x = calculate_centered_window_x_logical(1920, 1.0, 400.0);
         assert!((x - 760.0).abs() < 0.001);
+    }
+
+    // ============================================================
+    // classify_bundle_path 測試（更新安裝位置）
+    // ============================================================
+
+    fn temp_home(label: &str) -> PathBuf {
+        let path = std::env::temp_dir().join(format!(
+            "typek-update-guard-{}-{label}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&path);
+        std::fs::create_dir_all(&path).expect("create temp home");
+        path
+    }
+
+    #[test]
+    fn test_classify_bundle_path_translocated() {
+        let home = temp_home("translocated");
+        let path = Path::new(
+            "/private/var/folders/ab/T/AppTranslocation/1234/d/TypeK.app",
+        );
+        assert_eq!(classify_bundle_path(path, &home), "translocated");
+        let _ = std::fs::remove_dir_all(&home);
+    }
+
+    #[test]
+    fn test_classify_bundle_path_read_only_volume() {
+        let home = temp_home("volumes");
+        let path = Path::new("/Volumes/TypeK/TypeK.app");
+        assert_eq!(classify_bundle_path(path, &home), "read_only_volume");
+        let _ = std::fs::remove_dir_all(&home);
+    }
+
+    #[test]
+    fn test_classify_bundle_path_unsupported_location() {
+        let home = temp_home("unsupported");
+        let path = home.join("Downloads").join("TypeK.app");
+        assert_eq!(classify_bundle_path(&path, &home), "unsupported_location");
+        let _ = std::fs::remove_dir_all(&home);
+    }
+
+    #[test]
+    fn test_classify_bundle_path_ok() {
+        let home = temp_home("ok");
+        let applications = home.join("Applications");
+        std::fs::create_dir_all(&applications).expect("create Applications");
+        let path = applications.join("TypeK.app");
+        assert_eq!(classify_bundle_path(&path, &home), "ok");
+        let _ = std::fs::remove_dir_all(&home);
+    }
+
+    #[test]
+    fn test_classify_bundle_path_not_writable() {
+        let home = temp_home("not-writable");
+        let applications = home.join("Applications");
+        std::fs::write(&applications, b"not a directory").expect("create blocking file");
+        let path = applications.join("TypeK.app");
+        assert_eq!(classify_bundle_path(&path, &home), "not_writable");
+        let _ = std::fs::remove_dir_all(&home);
     }
 }

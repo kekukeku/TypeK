@@ -357,7 +357,8 @@
     "reinitializing": "偵測到權限已授予，正在啟用快捷鍵...",
     "reinitializeError": "快捷鍵重新初始化失敗，請重新啟動應用程式。",
     "openSettings": "開啟系統設定",
-    "later": "稍後設定"
+    "later": "稍後設定",
+    "updateHint": "剛更新 TypeK 的話，需要重新授權；這是 TypeK 沒有 Apple 簽章的限制。"
   },
   "voiceFlow": {
     "noSpeechDetected": "未偵測到語音",
@@ -465,7 +466,13 @@
       "newVersionTitle": "發現新版本",
       "newVersionDescription": "TypeK v{version} 已可供更新。點擊開始更新將自動下載並重新啟動應用程式。",
       "cancel": "取消",
-      "startUpdate": "開始更新"
+      "startUpdate": "開始更新",
+      "macPermissionHint": "如果更新後快捷鍵沒反應，請到 系統設定 → 隱私權與安全性 → 輔助使用，把 TypeK 移除後重新加入並打開。",
+      "installLocationTitle": "無法自動更新",
+      "installLocationDescription": "TypeK 目前不在「應用程式」資料夾，無法自動更新。請結束 TypeK，把 TypeK 拖到「應用程式」資料夾，再從那裡打開。",
+      "openDownloadPage": "前往下載頁",
+      "installBlockedByVoiceFlow": "錄音或轉錄中，完成後即可安裝",
+      "dismissFailure": "關閉"
     },
     "upgradeNotice": {
       "title": "TypeK 更新摘要",

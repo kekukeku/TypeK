@@ -357,7 +357,8 @@
     "reinitializing": "権限が付与されたことを検出しました。ショートカットキーを有効化中...",
     "reinitializeError": "ショートカットキーの再初期化に失敗しました。アプリを再起動してください。",
     "openSettings": "システム設定を開く",
-    "later": "後で設定"
+    "later": "後で設定",
+    "updateHint": "TypeK を更新した直後は、権限の再許可が必要です。これは TypeK に Apple の署名がないことによる制限です。"
   },
   "voiceFlow": {
     "noSpeechDetected": "音声が検出されませんでした",
@@ -465,7 +466,13 @@
       "newVersionTitle": "新しいバージョンが見つかりました",
       "newVersionDescription": "TypeK v{version} が利用可能です。更新を開始すると、自動的にダウンロードされアプリが再起動します。",
       "cancel": "キャンセル",
-      "startUpdate": "更新を開始"
+      "startUpdate": "更新を開始",
+      "macPermissionHint": "更新後にショートカットキーが反応しない場合は、システム設定 → プライバシーとセキュリティ → アクセシビリティで TypeK を削除してから、もう一度追加してオンにしてください。",
+      "installLocationTitle": "自動更新できません",
+      "installLocationDescription": "TypeK が「アプリケーション」フォルダにないため、自動更新できません。TypeK を終了し、「アプリケーション」フォルダにドラッグしてから、そこから開いてください。",
+      "openDownloadPage": "ダウンロードページへ",
+      "installBlockedByVoiceFlow": "録音または文字起こし中です。完了後にインストールできます",
+      "dismissFailure": "閉じる"
     },
     "upgradeNotice": {
       "title": "TypeK 更新のお知らせ",

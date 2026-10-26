@@ -52,6 +52,12 @@ TypeK 第一次使用時會請求兩項權限，都要允許：
 
 因為沒有簽章，**更新到新版本後，輔助使用權限可能會失效**。如果快捷鍵沒反應，到「輔助使用」清單把 TypeK 移除（−），再重新加入（＋）並打開。
 
+### 更新
+
+1.3.0 起可以直接在 App 內更新：側邊欄的「檢查更新」，或等 App 自動通知。1.2.2 以前的使用者請下載新版覆蓋安裝一次（不用先刪除 App）。
+
+macOS：TypeK 要放在「應用程式」資料夾才能自動更新。更新後如果快捷鍵沒反應，請到「系統設定 → 隱私權與安全性 → 輔助使用」把 TypeK 移除後重新加入並打開。
+
 ### Windows 安裝步驟
 
 執行 `.exe` 時若出現「Windows 已保護您的電腦」，按「其他資訊」→「仍要執行」。
@@ -118,7 +124,7 @@ npx vue-tsc --noEmit
 
 ### 發版
 
-自動更新目前關閉：TypeK 還沒有自己的 updater 簽章金鑰，啟用步驟見 [docs/deployment-guide.md](docs/deployment-guide.md)。
+自動更新已啟用（1.3.0 起）：App 會從 GitHub Releases 檢查更新；金鑰與發版步驟見 [docs/deployment-guide.md](docs/deployment-guide.md)。
 
 ```bash
 ./scripts/release.sh X.Y.Z

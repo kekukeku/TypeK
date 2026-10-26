@@ -357,7 +357,8 @@
     "reinitializing": "Đã phát hiện quyền được cấp, đang kích hoạt phím tắt...",
     "reinitializeError": "Khởi tạo lại phím tắt thất bại, vui lòng khởi động lại ứng dụng.",
     "openSettings": "Mở Cài đặt Hệ thống",
-    "later": "Để sau"
+    "later": "Để sau",
+    "updateHint": "Nếu vừa cập nhật TypeK, bạn cần cấp lại quyền; đây là hạn chế do TypeK không có chữ ký Apple."
   },
   "voiceFlow": {
     "noSpeechDetected": "Không phát hiện giọng nói",
@@ -465,7 +466,13 @@
       "newVersionTitle": "Phát hiện phiên bản mới",
       "newVersionDescription": "TypeK v{version} đã có bản cập nhật. Nhấn Bắt đầu cập nhật để tự động tải và khởi động lại ứng dụng.",
       "cancel": "Hủy",
-      "startUpdate": "Bắt đầu cập nhật"
+      "startUpdate": "Bắt đầu cập nhật",
+      "macPermissionHint": "Nếu phím tắt không phản hồi sau khi cập nhật, hãy vào Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Trợ năng, xóa TypeK rồi thêm lại và bật lên.",
+      "installLocationTitle": "Không thể tự động cập nhật",
+      "installLocationDescription": "TypeK không nằm trong thư mục Ứng dụng nên không thể tự động cập nhật. Hãy thoát TypeK, kéo vào thư mục Ứng dụng rồi mở lại từ đó.",
+      "openDownloadPage": "Đến trang tải xuống",
+      "installBlockedByVoiceFlow": "Đang ghi âm hoặc chuyển văn bản — có thể cài đặt khi hoàn tất",
+      "dismissFailure": "Đóng"
     },
     "upgradeNotice": {
       "title": "Tóm tắt cập nhật TypeK",

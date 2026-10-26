@@ -52,6 +52,12 @@ The first time you use TypeK it asks for two permissions. Allow both:
 
 Because the app is unsigned, **the Accessibility permission may stop working after you update**. If the hotkey does nothing, remove TypeK from the Accessibility list (−), then add it back (+) and switch it on.
 
+### Updating
+
+From 1.3.0 you can update inside the app: use "Check for Updates" in the sidebar, or wait for the automatic notification. If you're on 1.2.2 or earlier, download the new version and install it over the old one once (you don't need to delete the app first).
+
+On macOS, TypeK must be in the Applications folder to update automatically. If the hotkey stops working after an update, go to System Settings → Privacy & Security → Accessibility, remove TypeK, then add it again and switch it on.
+
 ### Installing on Windows
 
 If running the `.exe` shows "Windows protected your PC", click "More info" → "Run anyway".
@@ -119,7 +125,7 @@ npx vue-tsc --noEmit
 
 ### Releasing
 
-Auto-update is currently off: TypeK doesn't have its own updater signing key yet. See [docs/deployment-guide.md](docs/deployment-guide.md) for how to enable it.
+Auto-update is enabled from 1.3.0: the app checks GitHub Releases for updates. See [docs/deployment-guide.md](docs/deployment-guide.md) for the signing key and release steps.
 
 ```bash
 ./scripts/release.sh X.Y.Z

@@ -357,7 +357,8 @@
     "reinitializing": "检测到权限已授予，正在启用快捷键...",
     "reinitializeError": "快捷键重新初始化失败，请重新启动应用程序。",
     "openSettings": "打开系统设置",
-    "later": "稍后设置"
+    "later": "稍后设置",
+    "updateHint": "刚更新 TypeK 的话，需要重新授权；这是 TypeK 没有 Apple 签名的限制。"
   },
   "voiceFlow": {
     "noSpeechDetected": "未检测到语音",
@@ -465,7 +466,13 @@
       "newVersionTitle": "发现新版本",
       "newVersionDescription": "TypeK v{version} 已可供更新。点击开始更新将自动下载并重新启动应用程序。",
       "cancel": "取消",
-      "startUpdate": "开始更新"
+      "startUpdate": "开始更新",
+      "macPermissionHint": "如果更新后快捷键没反应，请到 系统设置 → 隐私与安全性 → 辅助功能，把 TypeK 移除后重新加入并打开。",
+      "installLocationTitle": "无法自动更新",
+      "installLocationDescription": "TypeK 目前不在“应用程序”文件夹，无法自动更新。请退出 TypeK，把 TypeK 拖到“应用程序”文件夹，再从那里打开。",
+      "openDownloadPage": "前往下载页",
+      "installBlockedByVoiceFlow": "录音或转写中，完成后即可安装",
+      "dismissFailure": "关闭"
     },
     "upgradeNotice": {
       "title": "TypeK 更新摘要",

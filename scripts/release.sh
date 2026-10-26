@@ -14,13 +14,17 @@ if [ -z "$VERSION" ]; then
   exit 1
 fi
 
-# 驗證版本號格式
-if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-  echo "錯誤: 版本號格式不正確，需要 X.Y.Z 格式"
+# 驗證版本號格式（SemVer X.Y.Z，不接受前導 0）
+if ! echo "$VERSION" | grep -qE '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'; then
+  echo "錯誤: 版本號格式不正確，需要 X.Y.Z 格式且不可有前導 0"
   exit 1
 fi
 
 CURRENT=$(jq -r .version src-tauri/tauri.conf.json)
+if ! python3 -c 'import sys; a=tuple(map(int, sys.argv[1].split("."))); b=tuple(map(int, sys.argv[2].split("."))); sys.exit(0 if b > a else 1)' "$CURRENT" "$VERSION"; then
+  echo "錯誤: 新版本號 $VERSION 必須大於目前版本 $CURRENT"
+  exit 1
+fi
 echo "版本更新: $CURRENT → $VERSION"
 
 # 確認 CHANGELOG.md 已更新

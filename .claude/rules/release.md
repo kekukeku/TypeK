@@ -26,9 +26,8 @@ paths:
  │ rust-    │         │  macOS Intel    │
  │  check   │         │  Windows x64    │
  │ (mac+win)│         │                 │
- └──────────┘         │ + Apple Signing │
-                      │ + Notarization  │
-                      │ + Updater .sig  │
+ └──────────┘         │ + Updater .sig  │
+                      │ + latest.json   │
                       │ + Sentry upload │
                       └────────┬────────┘
                                │
@@ -36,6 +35,7 @@ paths:
                                │
                                ▼
                        publish-release job
+                         Verify latest.json
                                │
                                ▼
                           Public Release
@@ -50,26 +50,30 @@ paths:
 - 正式版 Sentry release 一律由 `.github/workflows/release.yml` 產生，格式固定為 `typek@<version>`
 - 前端與 Rust 不可各自手動指定不同的 Sentry release 名稱
 - 正式版 telemetry 與 sourcemap upload 只能走 `release.yml`，不得繞過 workflow 手動上傳
-- 發版前必須確認 GitHub Secrets 與 Sentry Secrets 齊全
+- 發版前必須確認 updater 的 2 個 secrets（`TAURI_SIGNING_PRIVATE_KEY`、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`）已設；Sentry secrets 為選配
+- **Release 資產必須有通過驗證的 `latest.json`**：`publish-release` 在 `gh release edit --draft=false` 前檢查版本、三個平台、URL 指向同 tag、Windows 為 `-setup.exe`；驗證失敗就留 draft
 - `git tag`、`git push` 由使用者授權後才執行（全域 git 規約）
 
-## GitHub Secrets（13 個）
+## GitHub Secrets
+
+必要（2 個）：
 
 | Secret | 用途 |
 |--------|------|
-| `TAURI_SIGNING_PRIVATE_KEY` | Updater 簽署私鑰 |
+| `TAURI_SIGNING_PRIVATE_KEY` | Updater 簽署私鑰（minisign 私鑰檔全文） |
 | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | 私鑰密碼 |
-| `APPLE_CERTIFICATE` | Developer ID .p12 (Base64) |
-| `APPLE_CERTIFICATE_PASSWORD` | .p12 密碼 |
-| `APPLE_SIGNING_IDENTITY` | Developer ID signing identity（見 GitHub Secrets） |
-| `APPLE_ID` | Apple ID email |
-| `APPLE_PASSWORD` | App-Specific Password |
-| `APPLE_TEAM_ID` | Apple Developer Team ID（見 GitHub Secrets） |
+
+選配（Sentry；沒有也能發版）：
+
+| Secret | 用途 |
+|--------|------|
 | `SENTRY_DSN` | Rust 正式版 Sentry DSN |
 | `VITE_SENTRY_DSN` | Frontend 正式版 Sentry DSN |
 | `SENTRY_AUTH_TOKEN` | Sentry sourcemap upload token |
 | `SENTRY_ORG` | Sentry organization slug |
 | `SENTRY_PROJECT` | Sentry project slug |
+
+Apple 簽章維持不做：`APPLE_CERTIFICATE`、`APPLE_CERTIFICATE_PASSWORD`、`APPLE_SIGNING_IDENTITY`、`APPLE_ID`、`APPLE_PASSWORD`、`APPLE_TEAM_ID` 不需要，維持空白。
 
 ## 固定下載連結（官網用）
 
@@ -87,11 +91,14 @@ paths:
 - **`@claude` comment 不受 fork 限制** — `claude.yml` 由 issue_comment 事件觸發，可正常用於任何 PR / issue
 - **Fork PR 第一次跑需手動 approve** — GitHub 安全機制；可用 `gh api -X POST /repos/{owner}/{repo}/actions/runs/{id}/approve`
 
-## 自動更新機制
+## 自動更新機制（1.3.0 起已啟用）
 
-- **TypeK 目前關閉**（2026-10-26，fork 後尚無自己的簽章金鑰）：前端未設 `VITE_AUTO_UPDATE_ENABLED=true`、endpoints／pubkey 為空、`createUpdaterArtifacts: false`；啟用步驟見 `docs/deployment-guide.md` §5.4。下列機制在啟用後才生效
-- **定時檢查** — `main-window.ts`：啟動 5 秒後首次檢查，之後每 4 小時（`setInterval`）
+- **已啟用**：`plugins.updater.endpoints` 指向 `https://github.com/kekukeku/TypeK/releases/latest/download/latest.json`、`createUpdaterArtifacts: true`、release.yml 注入 `VITE_AUTO_UPDATE_ENABLED: "true"`；`plugins.updater.pubkey` 由 Kevin 產生金鑰後填入（見 `docs/deployment-guide.md` §5.4）
+- **定時檢查** — `MainApp.vue`：啟動 5 秒後首次檢查，之後每 15 分鐘（`setInterval`）；任何非 `idle` 的更新狀態會跳過該輪
 - **手動檢查** — `MainApp.vue` Sidebar Footer「檢查更新」按鈕，結果用 `useFeedbackMessage` 顯示
 - **回傳型別** — `checkForAppUpdate()` → `Promise<UpdateCheckResult>`（`up-to-date` | `update-available` | `error`）
-- **已知限制** — `autoUpdater.ts` 中 `window.confirm` 在 Tauri WKWebView 會被靜默忽略，未來需改用 in-app UI
+- **交易與逾時** — 同一時間只有一筆 Update；`check` 30 秒、`download` 5 分鐘逾時；替換／失敗／取消會 `close()` 舊 Update
+- **安裝位置** — macOS 只允許 `/Applications`、`~/Applications` 且可寫、非 AppTranslocation；下載前以 `get_update_install_location` 檢查
+- **錄音中不安裝** — 監聽 `VOICE_FLOW_STATE_CHANGED`，非 idle 時不跳安裝對話框、安裝按鈕 disabled
+- **已知限制** — updater 2.10.0 在 macOS 更新失敗時可能移走舊 App 且不還原；本版以安裝位置檢查降低觸發，未升級外掛。修復只能發更高版號，無法自動降版
 - 更新後首次開 Dashboard 會彈「更新摘要」（`upgradeNotice`，七語系），發版時要換內容（見 `.claude/rules/i18n.md`）

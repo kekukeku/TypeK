@@ -357,7 +357,8 @@
     "reinitializing": "Permission detected. Activating hotkey...",
     "reinitializeError": "Failed to reinitialize hotkey. Please restart the application.",
     "openSettings": "Open System Settings",
-    "later": "Later"
+    "later": "Later",
+    "updateHint": "If you just updated TypeK, you need to grant permission again; this is a limitation of TypeK not being signed by Apple."
   },
   "voiceFlow": {
     "noSpeechDetected": "No speech detected",
@@ -465,7 +466,13 @@
       "newVersionTitle": "New Version Available",
       "newVersionDescription": "TypeK v{version} is available. Click Start Update to download and restart the application automatically.",
       "cancel": "Cancel",
-      "startUpdate": "Start Update"
+      "startUpdate": "Start Update",
+      "macPermissionHint": "If the hotkey stops working after an update, go to System Settings → Privacy & Security → Accessibility, remove TypeK, then add it again and switch it on.",
+      "installLocationTitle": "Can't update automatically",
+      "installLocationDescription": "TypeK isn't in the Applications folder, so it can't update automatically. Quit TypeK, drag it into the Applications folder, then open it from there.",
+      "openDownloadPage": "Go to download page",
+      "installBlockedByVoiceFlow": "Recording or transcribing — you can install when it finishes",
+      "dismissFailure": "Dismiss"
     },
     "upgradeNotice": {
       "title": "What's New in TypeK",

@@ -17,6 +17,8 @@ jobs:
   build:
     strategy:
       fail-fast: false
+      # 三個平台會合併同一個 latest.json；序列化避免平行讀寫互踩。
+      max-parallel: 1
       matrix:
         include:
           - platform: macos-latest
@@ -41,10 +43,14 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # workflow_dispatch 時必須建置輸入的 tag，而不是目前分支。
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
       - name: Resolve release metadata
         shell: bash
         run: |
+          set -euo pipefail
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RAW_TAG="${{ inputs.tag }}"
           else
@@ -58,6 +64,38 @@ jobs:
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_ENV"
           echo "SENTRY_RELEASE=typek@$RELEASE_VERSION" >> "$GITHUB_ENV"
           echo "VITE_SENTRY_RELEASE=typek@$RELEASE_VERSION" >> "$GITHUB_ENV"
+
+      - name: Verify version
+        shell: bash
+        run: |
+          set -euo pipefail
+          PACKAGE_VERSION=$(jq -r .version package.json)
+          TAURI_VERSION=$(jq -r .version src-tauri/tauri.conf.json)
+          CARGO_VERSION=$(grep -m1 '^version = ' src-tauri/Cargo.toml | sed -E 's/.*"(.*)".*/\1/')
+
+          if [ "$PACKAGE_VERSION" != "$RELEASE_VERSION" ] \
+            || [ "$TAURI_VERSION" != "$RELEASE_VERSION" ] \
+            || [ "$CARGO_VERSION" != "$RELEASE_VERSION" ]; then
+            echo "::error::Version mismatch: tag=$RELEASE_VERSION package.json=$PACKAGE_VERSION tauri.conf.json=$TAURI_VERSION Cargo.toml=$CARGO_VERSION"
+            exit 1
+          fi
+          echo "Versions match $RELEASE_VERSION"
+
+      - name: Refuse published tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if RELEASE_JSON=$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json isDraft 2>/dev/null); then
+            if [ "$(printf '%s' "$RELEASE_JSON" | jq -r .isDraft)" != "true" ]; then
+              echo "::error::Release $RELEASE_TAG is already published; release a new version instead."
+              exit 1
+            fi
+            echo "Release $RELEASE_TAG already exists as a draft; continuing."
+          else
+            echo "Release $RELEASE_TAG does not exist yet."
+          fi
 
       - uses: actions/setup-node@v4
         with:
@@ -78,9 +116,9 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
 
-      # 簽章／公證／updater 金鑰都是選配：secret 沒設定時完全不傳（不傳空字串），
-      # 否則打包工具會拿空值去匯入憑證或送公證而失敗。TypeK 目前未簽章（ad-hoc，signingIdentity "-"）；
-      # 之後在 GitHub Secrets 補齊 Apple 與 TAURI_SIGNING_* 即自動改為正式簽章。見 docs/deployment-guide.md §5
+      # updater 的兩個 secret 是發版必要（下一步會檢查）；Apple 簽章維持不做，
+      # 對應 secret 空白時完全不傳（不傳空字串），避免打包工具拿空值去匯入憑證或送公證。
+      # TypeK 維持 ad-hoc（signingIdentity "-"）。見 docs/deployment-guide.md §5.4
       - name: Export optional signing secrets
         shell: bash
         env:
@@ -93,6 +131,7 @@ jobs:
           OPT_APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           OPT_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          set -euo pipefail
           for name in TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PASSWORD \
                       APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY \
                       APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
@@ -107,6 +146,17 @@ jobs:
             fi
           done
 
+      - name: Require updater key
+        shell: bash
+        run: |
+          set -euo pipefail
+          PUBKEY=$(jq -r '.plugins.updater.pubkey // ""' src-tauri/tauri.conf.json)
+          if [ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ] || [ -z "$PUBKEY" ]; then
+            echo "::error::Updater signing key is missing. Set TAURI_SIGNING_PRIVATE_KEY / TAURI_SIGNING_PRIVATE_KEY_PASSWORD and plugins.updater.pubkey; see docs/deployment-guide.md §5.4."
+            exit 1
+          fi
+          echo "Updater signing key is configured"
+
       - name: Build and release
         uses: tauri-apps/tauri-action@v0
         env:
@@ -118,12 +168,15 @@ jobs:
           SENTRY_RELEASE: ${{ env.SENTRY_RELEASE }}
           VITE_SENTRY_RELEASE: ${{ env.VITE_SENTRY_RELEASE }}
           VITE_SENTRY_SOURCEMAPS_ENABLED: ${{ matrix.upload_sourcemaps }}
+          VITE_AUTO_UPDATE_ENABLED: "true"
         with:
           tagName: ${{ env.RELEASE_TAG }}
           releaseName: "TypeK v${{ env.RELEASE_VERSION }}"
           releaseBody: "See the assets to download and install this version."
           releaseDraft: true
           prerelease: false
+          updaterJsonPreferNsis: true
+          retryAttempts: 3
           args: ${{ matrix.args }}
 
       - name: Upload frontend sourcemaps to Sentry
@@ -134,6 +187,7 @@ jobs:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         shell: bash
         run: |
+          set -euo pipefail
           if [ -z "${SENTRY_AUTH_TOKEN}" ] || [ -z "${SENTRY_ORG}" ] || [ -z "${SENTRY_PROJECT}" ]; then
             echo "Sentry sourcemap upload skipped: missing Sentry release secrets."
             exit 0
@@ -173,6 +227,7 @@ jobs:
       - name: Resolve release metadata
         shell: bash
         run: |
+          set -euo pipefail
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RAW_TAG="${{ inputs.tag }}"
           else
@@ -181,9 +236,72 @@ jobs:
 
           RAW_TAG="${RAW_TAG#refs/tags/}"
           echo "RELEASE_TAG=$RAW_TAG" >> "$GITHUB_ENV"
+          echo "RELEASE_VERSION=${RAW_TAG#v}" >> "$GITHUB_ENV"
 
-      - name: Publish GitHub Release
+      - name: Verify latest.json
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
+          gh release download "$RELEASE_TAG" -p latest.json --clobber --repo "$GITHUB_REPOSITORY"
+          jq -e . latest.json >/dev/null
+
+          MANIFEST_VERSION=$(jq -r '.version // ""' latest.json)
+          if [ "$MANIFEST_VERSION" != "$RELEASE_VERSION" ]; then
+            echo "::error::latest.json version '$MANIFEST_VERSION' does not match release '$RELEASE_VERSION'."
+            exit 1
+          fi
+
+          for PLATFORM in darwin-aarch64 darwin-x86_64 windows-x86_64; do
+            URL=$(jq -r --arg platform "$PLATFORM" '.platforms[$platform].url // ""' latest.json)
+            SIGNATURE=$(jq -r --arg platform "$PLATFORM" '.platforms[$platform].signature // ""' latest.json)
+            if [ -z "$URL" ] || [ -z "$SIGNATURE" ]; then
+              echo "::error::latest.json platform $PLATFORM is missing url or signature."
+              exit 1
+            fi
+            case "$URL" in
+              *"/download/$RELEASE_TAG/"*) ;;
+              *)
+                echo "::error::latest.json platform $PLATFORM does not point at $RELEASE_TAG: $URL"
+                exit 1
+                ;;
+            esac
+          done
+
+          WINDOWS_URL=$(jq -r '.platforms["windows-x86_64"].url // ""' latest.json)
+          case "$WINDOWS_URL" in
+            *-setup.exe) ;;
+            *)
+              echo "::error::windows-x86_64 url is not an NSIS -setup.exe: $WINDOWS_URL"
+              exit 1
+              ;;
+          esac
+          echo "latest.json verified for $RELEASE_VERSION"
+
+      - name: Publish GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
           gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false
+
+      - name: Check public latest
+        shell: bash
+        run: |
+          set -euo pipefail
+          LATEST_URL="https://github.com/kekukeku/TypeK/releases/latest/download/latest.json"
+          if ! PUBLIC_LATEST=$(curl -fsSL "$LATEST_URL"); then
+            echo "::warning::Could not fetch public latest.json after publishing."
+            exit 0
+          fi
+          if ! PUBLIC_VERSION=$(printf '%s' "$PUBLIC_LATEST" | jq -r '.version // ""' 2>/dev/null); then
+            echo "::warning::Public latest.json is not valid JSON after publishing."
+            exit 0
+          fi
+          if [ "$PUBLIC_VERSION" != "$RELEASE_VERSION" ]; then
+            echo "::warning::Public latest.json reports '$PUBLIC_VERSION', expected '$RELEASE_VERSION'."
+          else
+            echo "Public latest.json reports $PUBLIC_VERSION"
+          fi
