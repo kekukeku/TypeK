@@ -1,11 +1,11 @@
 ---
 name: typek-release
-description: TypeK 發版流程編排 — 起草 CHANGELOG、同步 5 語系升級彈窗、對齊 upgradeNoticeItemCount、最後呼叫 ./scripts/release.sh。當使用者說「準備發新版」「要 release vX.Y.Z」「準備 release v0.10.0」「要發版了」「更新 CHANGELOG」「要更新升級彈窗」「同步多語系升級提示」之類的話時必須觸發；即使對方沒講「typek-release」這幾個字、只說「我們來發 v0.11.0」也要觸發。負責 release.sh 之前的所有準備工作，呼叫 release.sh 前一定要先取得使用者明確同意。
+description: TypeK 發版流程編排 — 起草 CHANGELOG、同步 7 語系升級彈窗、對齊 upgradeNoticeItemCount、最後呼叫 ./scripts/release.sh。當使用者說「準備發新版」「要 release vX.Y.Z」「準備 release v0.10.0」「要發版了」「更新 CHANGELOG」「要更新升級彈窗」「同步多語系升級提示」之類的話時必須觸發；即使對方沒講「typek-release」這幾個字、只說「我們來發 v0.11.0」也要觸發。負責 release.sh 之前的所有準備工作，呼叫 release.sh 前一定要先取得使用者明確同意。
 ---
 
 # TypeK 發版流程
 
-這個 skill 編排 TypeK 從「準備發新版」到「呼叫 release.sh」之間的所有準備工作。release.sh 自身負責 4 點版本號 bump、commit、tag、push；這個 skill 負責把 release.sh 需要的前置條件全部準備好，並產生使用者體感得到的 release notes（CHANGELOG）和升級彈窗（5 語系 upgradeNotice）。
+這個 skill 編排 TypeK 從「準備發新版」到「呼叫 release.sh」之間的所有準備工作。release.sh 自身負責 4 點版本號 bump、commit、tag、push；這個 skill 負責把 release.sh 需要的前置條件全部準備好，並產生使用者體感得到的 release notes（CHANGELOG）和升級彈窗（7 語系 upgradeNotice）。
 
 ## 為什麼分成 skill + release.sh 兩段
 
@@ -26,10 +26,10 @@ release.sh 的 guard 設計（working tree 乾淨、CHANGELOG 含目標版本區
  ③ 起草 CHANGELOG（分類 → 寫入頂部 → 等使用者遷訂）
      │
      ▼
- ④ 起草 upgradeNotice（詢問亮點 → zh-TW → 翻譯 4 語 → 同步 itemCount）
+ ④ 起草 upgradeNotice（詢問亮點 → zh-TW → 翻譯 6 語 → 同步 itemCount）
      │
      ▼
- ⑤ Sanity check（5 語系 key 對齊、itemCount 對得上、CHANGELOG 含目標版本區塊）
+ ⑤ Sanity check（7 語系 key 對齊、itemCount 對得上、CHANGELOG 含目標版本區塊）
      │
      ▼
  ⑥ 詢問使用者「要跑 release.sh 嗎？」
@@ -158,13 +158,15 @@ TypeK 版本更新紀錄。
 
 升級彈窗由 Dashboard 啟動時 `consumeUpgradeNotice()` 觸發，比對 `lastSeenVersion`（存在 tauri-plugin-store）和 `__APP_VERSION__`（build-time 從 package.json 注入）。不相等就顯示。
 
-需要動 7 個檔案：
+需要動 8 個檔案：
 1. `src/MainApp.vue`：`upgradeNoticeItemCount` 常數（控制顯示幾個 item）
-2. `src/i18n/locales/zh-TW.json`：`mainView.upgradeNotice` 區塊
+2. `src/i18n/locales/zh-TW.json`：`mainApp.upgradeNotice` 區塊
 3. `src/i18n/locales/zh-CN.json`：同上
 4. `src/i18n/locales/en.json`：同上
 5. `src/i18n/locales/ja.json`：同上
 6. `src/i18n/locales/ko.json`：同上
+7. `src/i18n/locales/vi.json`：同上
+8. `src/i18n/locales/th.json`：同上
 
 ### 內容策略
 
@@ -183,9 +185,9 @@ TypeK 版本更新紀錄。
 
 ### 翻譯流程
 
-使用者只寫 zh-TW，skill 自動翻 4 種。**不要叫使用者寫 5 種**。
+使用者只寫 zh-TW，skill 自動翻 6 種。**不要叫使用者寫 7 種**。
 
-#### 翻譯時的 5 語系語感
+#### 翻譯時的 7 語系語感
 
 | 語系 | 語感方向 | 注意 |
 |------|---------|------|
@@ -194,10 +196,12 @@ TypeK 版本更新紀錄。
 | en | plain English、技術細節保留，避免 marketing 腔 | 用 em-dash `—` 連接補述 |
 | ja | 丁寧体（です・ます調）、技術文書風 | 全形標點，専門用語保留英文 |
 | ko | `-합니다` 体、技術用語自然 | 半形標點 + 空格 |
+| vi | 自然越南語、技術詞保留英文 | 聲調完整、NFC |
+| th | 自然泰語、技術詞保留英文 | 泰文詞間不加空格 |
 
 #### 翻譯品質檢查清單
 
-- [ ] 5 語系都涵蓋了同一組「主題 + why + how」三要素
+- [ ] 7 語系都涵蓋了同一組「主題 + why + how」三要素
 - [ ] zh-CN 沒有殘留 zh-TW 的繁體字或台灣用語
 - [ ] en 不是 zh-TW 直譯（直譯常見特徵：句末加 the issue / the problem，過度被動語態）
 - [ ] ja 用丁寧体一致
@@ -209,10 +213,10 @@ TypeK 版本更新紀錄。
 ① 詢問使用者本版 1-3 個亮點主題
 ② 使用者用 zh-TW 描述（一兩句話即可）
 ③ skill 把 zh-TW 整理成「主題冒號 + 使用者場景 + why + how」格式
-④ skill 翻譯 4 語系（zh-CN / en / ja / ko）
-⑤ 把整組 upgradeNotice（5 語系 × N 個 item）展示給使用者遷訂
-⑥ 使用者 OK 後實際 Edit 6 個檔案：
-   - 5 個 .json 的 mainView.upgradeNotice 區塊
+④ skill 翻譯 6 語系（zh-CN / en / ja / ko / vi / th）
+⑤ 把整組 upgradeNotice（7 語系 × N 個 item）展示給使用者遷訂
+⑥ 使用者 OK 後實際 Edit 8 個檔案：
+   - 7 個 .json 的 mainApp.upgradeNotice 區塊
    - MainApp.vue 的 upgradeNoticeItemCount
 ```
 
@@ -226,7 +230,7 @@ TypeK 版本更新紀錄。
 
 所以 Edit 時：
 
-- 新版有 N 個 item → 5 個 .json 都只留 `title` + `item1..itemN` + `dismiss`
+- 新版有 N 個 item → 7 個 .json 都只留 `title` + `item1..itemN` + `dismiss`
 - 舊版的 `item3..item10` 整批刪掉
 - `MainApp.vue` 的 `upgradeNoticeItemCount` 改成 N
 
@@ -235,7 +239,7 @@ TypeK 版本更新紀錄。
 實際呼叫 release.sh 之前確認三件事，不對就回頭修：
 
 ```bash
-# 1. 5 個 .json 的 upgradeNotice 區塊都對齊到 N 個 item + title + dismiss
+# 1. 7 個 .json 的 upgradeNotice 區塊都對齊到 N 個 item + title + dismiss
 rg -n '"upgradeNotice"' "$(git rev-parse --show-toplevel)/src/i18n/locales/" -A $((N+2))
 
 # 2. MainApp.vue 的 itemCount 等於 N
@@ -313,8 +317,8 @@ CHANGELOG 標題的日期應該等於今天日期，不是亮點被開發的日�
 
 ### 跨檔案修改後的交叉驗證
 
-修改完 7 個檔案（CHANGELOG + 5 個 .json + MainApp.vue），用步驟 ⑤ 的 sanity check 命令交叉驗證一次。CLAUDE.md 規定「同時修改多個相關文件時必須交叉驗證」，這一步是硬性的。
+修改完 9 個檔案（CHANGELOG + 7 個 .json + MainApp.vue），用步驟 ⑤ 的 sanity check 命令交叉驗證一次。CLAUDE.md 規定「同時修改多個相關文件時必須交叉驗證」，這一步是硬性的。
 
 ### 語音通知
 
-每次觸發此 skill 都遵守 CLAUDE.md 的語音通知規範：開始時 say、執行中 say、完成前 say。內容反映當前任務（「我來起草 CHANGELOG」「翻譯 4 語完成」「等你決定要不要跑 release.sh」），20 字以內。
+每次觸發此 skill 都遵守 CLAUDE.md 的語音通知規範：開始時 say、執行中 say、完成前 say。內容反映當前任務（「我來起草 CHANGELOG」「翻譯 6 語完成」「等你決定要不要跑 release.sh」），20 字以內。

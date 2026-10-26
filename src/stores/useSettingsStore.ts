@@ -43,6 +43,7 @@ import {
   type SupportedLocale,
   type TranscriptionLocale,
   FALLBACK_LOCALE,
+  LANGUAGE_OPTIONS,
   detectSystemLocale,
   getHtmlLangForLocale,
   getWhisperCodeForTranscriptionLocale,
@@ -92,6 +93,25 @@ export function resolveLlmProviderId(
 ): LlmProviderId {
   if (savedLlmProviderId) return savedLlmProviderId;
   return savedGroqApiKey?.trim() ? "groq" : DEFAULT_LLM_PROVIDER_ID;
+}
+
+/** 已存的說話語言若不在支援清單（例如已移除的語言），遷移為 auto 並寫回磁碟。 */
+const TRANSCRIPTION_LOCALE_SET = new Set<string>([
+  "auto",
+  ...LANGUAGE_OPTIONS.map((option) => option.locale),
+]);
+
+function resolveStoredTranscriptionLocale(value: unknown): {
+  locale: TranscriptionLocale | null;
+  shouldPersist: boolean;
+} {
+  if (typeof value !== "string" || value === "") {
+    return { locale: null, shouldPersist: false };
+  }
+  if (TRANSCRIPTION_LOCALE_SET.has(value)) {
+    return { locale: value as TranscriptionLocale, shouldPersist: false };
+  }
+  return { locale: "auto", shouldPersist: true };
 }
 
 function getDefaultTriggerKey(): TriggerKey {
@@ -176,7 +196,7 @@ export const useSettingsStore = defineStore("settings", () => {
   );
   let isLoaded = false;
 
-  /** Resolve which prompt locale to use for prompt default (shared logic); 廣東話直接透傳（gh-74）. */
+  /** Resolve which prompt locale to use for prompt default (shared logic). */
   function getEffectivePromptLocale(): PromptLocale {
     return selectedTranscriptionLocale.value === "auto"
       ? selectedLocale.value
@@ -262,11 +282,21 @@ export const useSettingsStore = defineStore("settings", () => {
       );
 
       // Load transcription locale (migration: default to UI locale if missing)
-      const savedTranscriptionLocale = await store.get<TranscriptionLocale>(
+      const savedTranscriptionLocale = await store.get<unknown>(
         "selectedTranscriptionLocale",
       );
-      if (savedTranscriptionLocale) {
-        selectedTranscriptionLocale.value = savedTranscriptionLocale;
+      const storedTranscriptionLocale = resolveStoredTranscriptionLocale(
+        savedTranscriptionLocale,
+      );
+      if (storedTranscriptionLocale.locale) {
+        selectedTranscriptionLocale.value = storedTranscriptionLocale.locale;
+        if (storedTranscriptionLocale.shouldPersist) {
+          await store.set(
+            "selectedTranscriptionLocale",
+            storedTranscriptionLocale.locale,
+          );
+          await store.save();
+        }
       } else {
         selectedTranscriptionLocale.value = selectedLocale.value;
         await store.set("selectedTranscriptionLocale", selectedLocale.value);
@@ -1365,11 +1395,21 @@ export const useSettingsStore = defineStore("settings", () => {
         selectedLocale.value,
       );
 
-      const savedTranscriptionLocale = await store.get<TranscriptionLocale>(
+      const savedTranscriptionLocale = await store.get<unknown>(
         "selectedTranscriptionLocale",
       );
+      const storedTranscriptionLocale = resolveStoredTranscriptionLocale(
+        savedTranscriptionLocale,
+      );
       selectedTranscriptionLocale.value =
-        savedTranscriptionLocale ?? selectedLocale.value;
+        storedTranscriptionLocale.locale ?? selectedLocale.value;
+      if (storedTranscriptionLocale.shouldPersist) {
+        await store.set(
+          "selectedTranscriptionLocale",
+          storedTranscriptionLocale.locale,
+        );
+        await store.save();
+      }
 
       // Theme: sync persisted value back to reactive + apply (cross-window)
       const savedThemeMode = await store.get<ThemeMode>("themeMode");

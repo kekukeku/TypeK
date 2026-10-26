@@ -13,19 +13,29 @@ export function formatTimestamp(timestamp: number): string {
   if (!Number.isFinite(timestamp) || timestamp <= 0) return "-";
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return "-";
+  const isThai = currentLocale() === "th";
   return date.toLocaleString(currentLocale(), {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    ...(isThai ? { calendar: "gregory", numberingSystem: "latn" } : {}),
   });
 }
 
+const GRAPHEME_SEGMENTER = new Intl.Segmenter(undefined, {
+  granularity: "grapheme",
+});
+
 export function truncateText(text: string, maxLength = 50): string {
   if (!text) return "";
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength) + "...";
+  const graphemeList = Array.from(
+    GRAPHEME_SEGMENTER.segment(text),
+    (entry) => entry.segment,
+  );
+  if (graphemeList.length <= maxLength) return text;
+  return graphemeList.slice(0, maxLength).join("") + "...";
 }
 
 export function getDisplayText(record: TranscriptionRecord): string {

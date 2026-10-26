@@ -1,5 +1,7 @@
 # TypeK
 
+**繁體中文** | [简体中文](README.zh-CN.md) | [English](README.en.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | [Tiếng Việt](README.vi.md) | [ไทย](README.th.md)
+
 > 按住說話，放開貼上 — 語音轉書面語桌面工具
 
 TypeK 是一款桌面語音輸入工具。在任何應用程式中按住快捷鍵說話，放開後語音經 Groq Whisper 轉錄，再由 AI 依你正在輸入的 App 與游標前後文字，整理成通順的書面語，直接貼入游標位置。

@@ -25,7 +25,7 @@ describe("convertSimplifiedToTraditional（#39 簡→繁）", () => {
     expect(convertSimplifiedToTraditional("")).toBe("");
   });
 
-  it("[P1] 粵語專用字不在轉換表、原樣保留（gh-74 廣東話也套簡→繁）", () => {
+  it("[P1] OpenCC 表不碰粵語用字、原樣保留", () => {
     const cantonese = "今日我哋去咗茶餐廳食嘢，你想飲奶茶定係鴛鴦，唔好玩到咁夜，佢哋喺邊度，我嘅嘢冇幾多，早啲走";
     expect(convertSimplifiedToTraditional(cantonese)).toBe(cantonese);
     // 混入簡體時只轉簡體字

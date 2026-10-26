@@ -12,7 +12,7 @@
 | 五種常見改動的食譜、pre-commit 清單 | `docs/development-guide.md` |
 | IPC 契約表、Tauri macOS 注意事項 | `.claude/rules/ipc.md`（碰 `src-tauri/**` 自動載入） |
 | shadcn-vue、拍板 demo | `.claude/rules/ui.md`（碰 `src/views`／`src/components`） |
-| 五語系、更新摘要彈窗 | `.claude/rules/i18n.md` |
+| 七語系、更新摘要彈窗 | `.claude/rules/i18n.md` |
 | CI、發版硬規則、Secrets、自動更新 | `.claude/rules/release.md`（碰 `.github`／`scripts`／版本檔） |
 | Windows 鍵盤 hook、貼上時序 | `.claude/rules/windows.md`（碰四個 Windows 相關 plugin） |
 | UX/UI 規範 | `_bmad-output/planning-artifacts/ux-ui-design-spec.md` |

@@ -12,8 +12,12 @@ import { convertSimplifiedToTraditional } from "./simplifiedToTraditional";
 
 /** Layer 1 錄音時長門檻（ms） */
 export const SPEED_ANOMALY_MAX_DURATION_MS = 1000;
-/** Layer 1 文字長度門檻 */
+/** Layer 1 文字長度門檻（漢字／假名／諺文） */
 export const SPEED_ANOMALY_MIN_CHARS = 10;
+/** Layer 1 泰文字素數門檻 */
+export const SPEED_ANOMALY_MIN_THAI_GRAPHEMES = 18;
+/** Layer 1 其他語言詞數門檻 */
+export const SPEED_ANOMALY_MIN_WORDS = 5;
 /** Layer 2a 靜音峰值能量門檻（0.0 = 完全靜音, 1.0 = 最大音量） */
 export const SILENCE_PEAK_ENERGY_THRESHOLD = 0.01;
 /** Layer 2b 低 RMS 門檻 — 搭配高 NSP 聯合判斷（人聲 RMS ≥ 0.03，背景噪音 RMS ≈ 0.005~0.02） */
@@ -73,8 +77,9 @@ export interface EnhancementAnomalyResult {
 export function detectEnhancementAnomaly(
   params: EnhancementAnomalyParams,
 ): EnhancementAnomalyResult {
-  const rawLength = params.rawText.trim().length;
-  const enhancedLength = params.enhancedText.trim().length;
+  // NFC：避免越南文等組合字被當成不同長度（儲存與輸出的原文不動）
+  const rawLength = params.rawText.normalize("NFC").trim().length;
+  const enhancedLength = params.enhancedText.normalize("NFC").trim().length;
 
   // 避免除以零：rawText 為空時不判定異常
   if (rawLength === 0) {
@@ -109,8 +114,9 @@ export interface SemanticDriftResult {
  */
 function normalizeForOverlap(text: string): string {
   return convertSimplifiedToTraditional(text)
+    .normalize("NFC")
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}]/gu, "");
+    .replace(/[^\p{L}\p{M}\p{N}]/gu, "");
 }
 
 function toBigramSet(text: string): Set<string> {
@@ -164,6 +170,36 @@ export function detectSemanticDrift(
 
 // ── 轉錄幻覺偵測 ──
 
+const CJK_SCRIPT_RE =
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+const THAI_SCRIPT_RE = /\p{Script=Thai}/u;
+const GRAPHEME_SEGMENTER = new Intl.Segmenter(undefined, {
+  granularity: "grapheme",
+});
+
+/** 依整段文字腳本回傳語速異常的單位數與門檻。 */
+function getSpeedAnomalyMeasure(trimmedText: string): {
+  count: number;
+  threshold: number;
+} {
+  if (CJK_SCRIPT_RE.test(trimmedText)) {
+    return {
+      count: trimmedText.length,
+      threshold: SPEED_ANOMALY_MIN_CHARS,
+    };
+  }
+  if (THAI_SCRIPT_RE.test(trimmedText)) {
+    return {
+      count: Array.from(GRAPHEME_SEGMENTER.segment(trimmedText)).length,
+      threshold: SPEED_ANOMALY_MIN_THAI_GRAPHEMES,
+    };
+  }
+  return {
+    count: trimmedText.split(/\s+/).length,
+    threshold: SPEED_ANOMALY_MIN_WORDS,
+  };
+}
+
 export function detectHallucination(
   params: HallucinationDetectionParams,
 ): HallucinationDetectionResult {
@@ -175,12 +211,12 @@ export function detectHallucination(
     noSpeechProbability,
   } = params;
   const trimmedText = rawText.trim();
-  const charCount = trimmedText.length;
+  const speedMeasure = getSpeedAnomalyMeasure(trimmedText);
 
   // Layer 1: 語速異常（物理定律級判斷）
   if (
     recordingDurationMs < SPEED_ANOMALY_MAX_DURATION_MS &&
-    charCount > SPEED_ANOMALY_MIN_CHARS
+    speedMeasure.count > speedMeasure.threshold
   ) {
     return {
       isHallucination: true,

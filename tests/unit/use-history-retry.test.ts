@@ -12,7 +12,8 @@ const h = vi.hoisted(() => {
     getApiKey: () => "whisper-key",
     refreshApiKey: vi.fn(),
     selectedWhisperModelId: "whisper-large-v3-turbo",
-    getWhisperLanguageCode: () => "zh",
+    whisperLanguageCode: "zh" as string | null,
+    getWhisperLanguageCode: () => settingsStub.whisperLanguageCode,
     selectedTranscriptionLocale: "en",
     selectedLocale: "en",
     refreshLlmApiKey: vi.fn(),
@@ -98,6 +99,7 @@ describe("useHistoryStore retry", () => {
     h.mockTransform.mockReset().mockImplementation((text: string) => text);
     h.settingsStub.selectedTranscriptionLocale = "en";
     h.settingsStub.selectedLocale = "en";
+    h.settingsStub.whisperLanguageCode = "zh";
     h.settingsStub.refreshApiKey.mockReset().mockResolvedValue(undefined);
     h.settingsStub.refreshLlmApiKey.mockReset().mockResolvedValue(undefined);
   });
@@ -246,6 +248,36 @@ describe("useHistoryStore retry", () => {
         GOOD_TRANSCRIBE_RESULT.rawText,
         "zh-TW",
       );
+    });
+
+    it("[P1] 越南文說話語言 → language vi、whisperPrompt null、字典詞仍傳、不簡轉繁", async () => {
+      h.mockInvoke.mockResolvedValue({
+        ...GOOD_TRANSCRIBE_RESULT,
+        rawText: "Tôi muốn uống cà phê",
+      });
+      h.settingsStub.selectedTranscriptionLocale = "vi";
+      h.settingsStub.whisperLanguageCode = "vi";
+      h.mockGetTopTerms.mockResolvedValue(["TypeK"]);
+      const store = useHistoryStore();
+      const record = createRecord();
+      store.transcriptionList.push(record);
+
+      const res = await store.retranscribeRecord(record);
+
+      expect(res.ok).toBe(true);
+      expect(h.mockInvoke).toHaveBeenCalledWith(
+        "retranscribe_from_file",
+        expect.objectContaining({
+          language: "vi",
+          whisperPrompt: null,
+          vocabularyTermList: ["TypeK"],
+        }),
+      );
+      expect(h.mockTransform).toHaveBeenCalledWith(
+        "Tôi muốn uống cà phê",
+        "vi",
+      );
+      expect(store.transcriptionList[0].rawText).toBe("Tôi muốn uống cà phê");
     });
 
     it("[P2] 重新辨識 → 重置 was_modified（SQL + 本地皆歸零）", async () => {

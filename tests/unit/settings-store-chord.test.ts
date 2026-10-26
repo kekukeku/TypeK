@@ -26,6 +26,15 @@ vi.mock("../../src/i18n/prompts", () => ({
 }));
 vi.mock("../../src/i18n/languageConfig", () => ({
   FALLBACK_LOCALE: "zh-TW",
+  LANGUAGE_OPTIONS: [
+    { locale: "zh-TW" },
+    { locale: "en" },
+    { locale: "ja" },
+    { locale: "zh-CN" },
+    { locale: "ko" },
+    { locale: "vi" },
+    { locale: "th" },
+  ],
   detectSystemLocale: () => "zh-TW",
   getHtmlLangForLocale: () => "zh-TW",
   getWhisperCodeForTranscriptionLocale: () => null,

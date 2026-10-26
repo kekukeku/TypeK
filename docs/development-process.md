@@ -80,7 +80,7 @@
 1. 承諾表對帳：這版兌現了哪些、留言要回誰
 2. push 後等 CI 三個 job 綠（`check`、`rust-check` macOS 與 Windows）；stable clippy 升級帶進的新 lint 在這裡才看得到
 3. `CHANGELOG.md` 加 `## [X.Y.Z] - 日期` 區塊（Added / Fixed / Changed，附 issue、PR 與貢獻者）
-4. 更新摘要彈窗：五語系 `upgradeNotice.item1`～`item5` 換成本版重點
+4. 更新摘要彈窗：七語系 `upgradeNotice.item1`～`item5` 換成本版重點
 5. 版號：有新功能升 minor，只修 bug 升 patch
 6. commit 上述（純文件與 i18n，不過 codex）→ 使用者授權 → `./scripts/release.sh X.Y.Z`（bump 四處版本、commit、tag、push，需使用者授權）
 7. 盯 release workflow 三平台建置到 Release 公開（`draft=false`）

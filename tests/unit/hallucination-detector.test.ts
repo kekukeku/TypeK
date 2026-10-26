@@ -4,6 +4,8 @@ import {
   detectEnhancementAnomaly,
   SPEED_ANOMALY_MAX_DURATION_MS,
   SPEED_ANOMALY_MIN_CHARS,
+  SPEED_ANOMALY_MIN_THAI_GRAPHEMES,
+  SPEED_ANOMALY_MIN_WORDS,
   SILENCE_PEAK_ENERGY_THRESHOLD,
   SILENCE_RMS_THRESHOLD,
   SILENCE_NSP_THRESHOLD,
@@ -24,6 +26,8 @@ describe("hallucinationDetector.ts", () => {
     it("[P0] 常數應符合設計規格", () => {
       expect(SPEED_ANOMALY_MAX_DURATION_MS).toBe(1000);
       expect(SPEED_ANOMALY_MIN_CHARS).toBe(10);
+      expect(SPEED_ANOMALY_MIN_THAI_GRAPHEMES).toBe(18);
+      expect(SPEED_ANOMALY_MIN_WORDS).toBe(5);
       expect(SILENCE_PEAK_ENERGY_THRESHOLD).toBe(0.01);
       expect(SILENCE_RMS_THRESHOLD).toBe(0.015);
       expect(SILENCE_NSP_THRESHOLD).toBe(0.7);
@@ -66,6 +70,68 @@ describe("hallucinationDetector.ts", () => {
       });
 
       expect(result.isHallucination).toBe(false);
+    });
+
+    it("[P0] 中文含全形句號 11 字 → 幻覺（標點也算字元）", () => {
+      const result = detectHallucination({
+        rawText: "一二三四五六七八九十。",
+        recordingDurationMs: 500,
+        peakEnergyLevel: 0.5,
+        ...NORMAL_DEFAULTS,
+      });
+
+      expect(result.reason).toBe("speed-anomaly");
+    });
+
+    it.each([
+      "สวัสดีครับ",
+      "วันนี้ฉันไปตลาด",
+      "สวัสดีครับวันนี้ฉันไปตลาด",
+    ])("[P0] 泰文 %s 未超過字素門檻 → 放行", (rawText) => {
+      const result = detectHallucination({
+        rawText,
+        recordingDurationMs: 500,
+        peakEnergyLevel: 0.5,
+        ...NORMAL_DEFAULTS,
+      });
+
+      expect(result.isHallucination).toBe(false);
+    });
+
+    it("[P0] 泰文 20 字素 → speed-anomaly", () => {
+      const result = detectHallucination({
+        rawText: "วันนี้อากาศดีมากเลยนะครับ",
+        recordingDurationMs: 500,
+        peakEnergyLevel: 0.5,
+        ...NORMAL_DEFAULTS,
+      });
+
+      expect(result.reason).toBe("speed-anomaly");
+    });
+
+    it.each(["Xin chào", "Tôi muốn uống cà phê"])(
+      "[P0] 越南文 %s 未超過詞數門檻 → 放行",
+      (rawText) => {
+        const result = detectHallucination({
+          rawText,
+          recordingDurationMs: 500,
+          peakEnergyLevel: 0.5,
+          ...NORMAL_DEFAULTS,
+        });
+
+        expect(result.isHallucination).toBe(false);
+      },
+    );
+
+    it("[P0] 越南文 6 詞 → speed-anomaly", () => {
+      const result = detectHallucination({
+        rawText: "Tôi muốn uống một ly cà",
+        recordingDurationMs: 500,
+        peakEnergyLevel: 0.5,
+        ...NORMAL_DEFAULTS,
+      });
+
+      expect(result.reason).toBe("speed-anomaly");
     });
 
     it("[P1] 帶前後空白的文字應 trim 後計算字數", () => {
@@ -451,6 +517,45 @@ describe("hallucinationDetector.ts", () => {
 
     it("[P0] #83 簡體答非所問仍判定 drift", () => {
       const r = detectSemanticDrift(TRADITIONAL_TEXT, "好的请问有什么可以帮您的吗");
+      expect(r.isDrift).toBe(true);
+    });
+
+    it("[P0] 越南文 NFC 與 NFD 同內容 → overlap 為 1、不判定 drift", () => {
+      const nfc = "Tôi muốn uống cà phê";
+      const nfd = nfc.normalize("NFD");
+      expect(nfd).not.toBe(nfc);
+      const r = detectSemanticDrift(nfd, nfc);
+      expect(r.isDrift).toBe(false);
+      expect(r.overlapRatio).toBe(1);
+    });
+
+    it("[P0] 越南文 NFC／NFD 不判 length-explosion", () => {
+      // 「Ấy」NFC 2 碼元、NFD 4 碼元：不先 NFC 會達到 2 倍而誤判
+      const nfc = "Ấy";
+      const nfd = nfc.normalize("NFD");
+      expect(
+        detectEnhancementAnomaly({ rawText: nfc, enhancedText: nfd }).isAnomaly,
+      ).toBe(false);
+      expect(
+        detectEnhancementAnomaly({ rawText: nfd, enhancedText: nfc }).isAnomaly,
+      ).toBe(false);
+    });
+
+    it("[P0] 泰文只改一個聲調 → overlap ≥ 0.2", () => {
+      const r = detectSemanticDrift(
+        "วันนี้อากาศดีมาก",
+        "วันนี้อากาศดืมาก",
+      );
+      expect(r.overlapRatio).toBeGreaterThanOrEqual(SEMANTIC_DRIFT_MIN_OVERLAP);
+      expect(r.isDrift).toBe(false);
+    });
+
+    it("[P0] 泰文整段換成英文 → overlap < 0.2、判定 drift", () => {
+      const r = detectSemanticDrift(
+        "วันนี้อากาศดีมาก",
+        "The weather is really nice today",
+      );
+      expect(r.overlapRatio).toBeLessThan(SEMANTIC_DRIFT_MIN_OVERLAP);
       expect(r.isDrift).toBe(true);
     });
   });

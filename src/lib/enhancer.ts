@@ -48,7 +48,7 @@ export interface EnhanceOptions {
   maxTokens?: number;
   /**
    * 有效辨識語言（auto 已解析為介面語言）。有值時整理結果套用與原文相同的轉換
-   * （zh-TW／yue → 簡轉繁，#83）。連線測試不傳。
+   * （zh-TW → 簡轉繁，#83）。連線測試不傳。
    */
   transcriptLocale?: string;
   /**

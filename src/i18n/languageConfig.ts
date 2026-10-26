@@ -1,4 +1,11 @@
-export type SupportedLocale = "zh-TW" | "en" | "ja" | "zh-CN" | "ko";
+export type SupportedLocale =
+  | "zh-TW"
+  | "en"
+  | "ja"
+  | "zh-CN"
+  | "ko"
+  | "vi"
+  | "th";
 
 export const FALLBACK_LOCALE: SupportedLocale = "zh-TW";
 
@@ -45,6 +52,20 @@ export const LANGUAGE_OPTIONS: LanguageOption[] = [
     whisperCode: "ko",
     htmlLang: "ko",
     navigatorPatternList: ["ko"],
+  },
+  {
+    locale: "vi",
+    displayName: "Tiếng Việt",
+    whisperCode: "vi",
+    htmlLang: "vi",
+    navigatorPatternList: ["vi"],
+  },
+  {
+    locale: "th",
+    displayName: "ไทย",
+    whisperCode: "th",
+    htmlLang: "th",
+    navigatorPatternList: ["th"],
   },
 ];
 
@@ -103,13 +124,7 @@ export function getWhisperCodeForLocale(locale: SupportedLocale): string {
   return option?.whisperCode ?? "zh";
 }
 
-/** 只作轉錄語言、不是介面語言：gh-74 廣東話（Whisper `yue`） */
-export type TranscriptionOnlyLocale = "yue";
-
-export type TranscriptionLocale =
-  | SupportedLocale
-  | TranscriptionOnlyLocale
-  | "auto";
+export type TranscriptionLocale = SupportedLocale | "auto";
 
 export interface TranscriptionLanguageOption {
   locale: TranscriptionLocale;
@@ -128,17 +143,11 @@ export const TRANSCRIPTION_LANGUAGE_OPTIONS: TranscriptionLanguageOption[] = [
     displayName: opt.displayName,
     whisperCode: opt.whisperCode,
   })),
-  {
-    locale: "yue",
-    displayName: "\u5EE3\u6771\u8A71",
-    whisperCode: "yue",
-  },
 ];
 
 export function getWhisperCodeForTranscriptionLocale(
   locale: TranscriptionLocale,
 ): string | null {
   if (locale === "auto") return null;
-  if (locale === "yue") return "yue";
   return getWhisperCodeForLocale(locale);
 }

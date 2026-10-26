@@ -88,6 +88,8 @@ describe("i18n 設定功能", () => {
       ["ja", "ja"],
       ["zh-CN", "zh"],
       ["ko", "ko"],
+      ["vi", "vi"],
+      ["th", "th"],
     ];
 
     it.each(testCaseList)(
@@ -127,20 +129,15 @@ describe("i18n 設定功能", () => {
       expect(getWhisperCodeForTranscriptionLocale("ja")).toBe("ja");
       expect(getWhisperCodeForTranscriptionLocale("zh-CN")).toBe("zh");
       expect(getWhisperCodeForTranscriptionLocale("ko")).toBe("ko");
-      // gh-74：廣東話只作轉錄語言，Whisper 代碼 yue
-      expect(getWhisperCodeForTranscriptionLocale("yue")).toBe("yue");
+      expect(getWhisperCodeForTranscriptionLocale("vi")).toBe("vi");
+      expect(getWhisperCodeForTranscriptionLocale("th")).toBe("th");
     });
 
-    it("[P0] TRANSCRIPTION_LANGUAGE_OPTIONS 應包含 auto + 5 個語言 + 廣東話", async () => {
+    it("[P0] TRANSCRIPTION_LANGUAGE_OPTIONS 應包含 auto + 7 個介面語言", async () => {
       const { TRANSCRIPTION_LANGUAGE_OPTIONS } = await import(
         "../../src/i18n/languageConfig"
       );
-      expect(TRANSCRIPTION_LANGUAGE_OPTIONS).toHaveLength(7);
-      expect(TRANSCRIPTION_LANGUAGE_OPTIONS.at(-1)).toEqual({
-        locale: "yue",
-        displayName: "廣東話",
-        whisperCode: "yue",
-      });
+      expect(TRANSCRIPTION_LANGUAGE_OPTIONS).toHaveLength(8);
       expect(TRANSCRIPTION_LANGUAGE_OPTIONS[0].locale).toBe("auto");
       expect(TRANSCRIPTION_LANGUAGE_OPTIONS[0].whisperCode).toBeNull();
 
@@ -153,6 +150,8 @@ describe("i18n 設定功能", () => {
       expect(localeList).toContain("ja");
       expect(localeList).toContain("zh-CN");
       expect(localeList).toContain("ko");
+      expect(localeList).toContain("vi");
+      expect(localeList).toContain("th");
     });
   });
 
@@ -260,8 +259,24 @@ describe("i18n 設定功能", () => {
       vi.unstubAllGlobals();
     });
 
-    it("[P0] 無匹配時 fallback 為 'zh-TW'：navigator.languages=['th']", async () => {
-      vi.stubGlobal("navigator", { languages: ["th"] });
+    it.each([
+      ["vi", "vi"],
+      ["vi-VN", "vi"],
+      ["th", "th"],
+      ["th-TH", "th"],
+    ])("[P0] 越南文／泰文：navigator.languages=['%s'] → '%s'", async (lang, expected) => {
+      vi.stubGlobal("navigator", { languages: [lang] });
+
+      const { detectSystemLocale } = await import(
+        "../../src/i18n/languageConfig"
+      );
+      expect(detectSystemLocale()).toBe(expected);
+
+      vi.unstubAllGlobals();
+    });
+
+    it("[P0] 無匹配時 fallback 為 'zh-TW'：navigator.languages=['fr']", async () => {
+      vi.stubGlobal("navigator", { languages: ["fr"] });
 
       const { detectSystemLocale } = await import(
         "../../src/i18n/languageConfig"
@@ -330,25 +345,6 @@ describe("i18n 設定功能", () => {
       expect(store.getAiPrompt()).toBe(getMinimalPromptForLocale("en"));
     });
 
-    it("[P0] 轉錄語言切到廣東話（gh-74）：Whisper 送 yue、內建 prompt 換成粵語版", async () => {
-      mockStoreData.set("selectedLocale", "zh-TW");
-
-      const { useSettingsStore } = await import(
-        "../../src/stores/useSettingsStore"
-      );
-      const store = useSettingsStore();
-      await store.loadSettings();
-
-      await store.saveTranscriptionLocale("yue");
-
-      expect(store.getWhisperLanguageCode()).toBe("yue");
-      const { getMinimalPromptForLocale } = await import(
-        "../../src/i18n/prompts"
-      );
-      expect(store.getAiPrompt()).toBe(getMinimalPromptForLocale("yue"));
-      expect(store.getAiPrompt()).not.toBe(getMinimalPromptForLocale("zh-TW"));
-    });
-
     it("[P0] 轉錄語言為特定語言時，切換 UI 語言不應改變 prompt", async () => {
       mockStoreData.set("selectedLocale", "zh-TW");
 
@@ -407,27 +403,43 @@ describe("i18n 設定功能", () => {
   // ==========================================================================
 
   describe("翻譯檔 key 一致性", () => {
-    it("[P0] 所有 5 個 locale JSON 檔的 key 集合應完全一致", async () => {
+    type JsonObject = Record<string, unknown>;
+
+    function getKeyList(obj: JsonObject, prefix = ""): string[] {
+      const keyList: string[] = [];
+      for (const k of Object.keys(obj).sort()) {
+        const full = prefix ? `${prefix}.${k}` : k;
+        if (typeof obj[k] === "object" && obj[k] !== null) {
+          keyList.push(...getKeyList(obj[k] as JsonObject, full));
+        } else {
+          keyList.push(full);
+        }
+      }
+      return keyList;
+    }
+
+    function getValue(obj: JsonObject, key: string): string {
+      const value = key
+        .split(".")
+        .reduce<unknown>(
+          (node, part) => (node as JsonObject)[part],
+          obj,
+        );
+      return value as string;
+    }
+
+    function getPlaceholderSet(value: string): string[] {
+      return Array.from(value.matchAll(/\{(\w+)\}/g), (m) => m[1]).sort();
+    }
+
+    it("[P0] 七個 locale JSON 檔的 key 集合應完全一致", async () => {
       const zhTW = await import("../../src/i18n/locales/zh-TW.json");
       const en = await import("../../src/i18n/locales/en.json");
       const ja = await import("../../src/i18n/locales/ja.json");
       const zhCN = await import("../../src/i18n/locales/zh-CN.json");
       const ko = await import("../../src/i18n/locales/ko.json");
-
-      function getKeyList(obj: Record<string, unknown>, prefix = ""): string[] {
-        const keyList: string[] = [];
-        for (const k of Object.keys(obj).sort()) {
-          const full = prefix ? `${prefix}.${k}` : k;
-          if (typeof obj[k] === "object" && obj[k] !== null) {
-            keyList.push(
-              ...getKeyList(obj[k] as Record<string, unknown>, full),
-            );
-          } else {
-            keyList.push(full);
-          }
-        }
-        return keyList;
-      }
+      const vi = await import("../../src/i18n/locales/vi.json");
+      const th = await import("../../src/i18n/locales/th.json");
 
       const baseKeyList = getKeyList(zhTW.default);
       const localeMap: Record<string, string[]> = {
@@ -435,6 +447,8 @@ describe("i18n 設定功能", () => {
         ja: getKeyList(ja.default),
         "zh-CN": getKeyList(zhCN.default),
         ko: getKeyList(ko.default),
+        vi: getKeyList(vi.default),
+        th: getKeyList(th.default),
       };
 
       for (const [locale, keyList] of Object.entries(localeMap)) {
@@ -449,6 +463,72 @@ describe("i18n 設定功能", () => {
           extraKeyList,
           `${locale} 多出以下 key: ${extraKeyList.join(", ")}`,
         ).toHaveLength(0);
+      }
+    });
+
+    it("[P0] 所有字串葉節點 trim 後非空、{name} 集合與 zh-TW 相同", async () => {
+      const zhTW = await import("../../src/i18n/locales/zh-TW.json");
+      const vi = await import("../../src/i18n/locales/vi.json");
+      const th = await import("../../src/i18n/locales/th.json");
+
+      const baseKeyList = getKeyList(zhTW.default);
+      for (const [locale, message] of Object.entries({
+        vi: vi.default,
+        th: th.default,
+      })) {
+        for (const key of baseKeyList) {
+          const value = getValue(message, key);
+          expect(value.trim(), `${locale} ${key} 不可為空`).not.toBe("");
+          expect(
+            getPlaceholderSet(value),
+            `${locale} ${key} 的 {name} 集合不符`,
+          ).toEqual(getPlaceholderSet(getValue(zhTW.default, key)));
+        }
+      }
+    });
+
+    it("[P0] vi 為 NFC 且不含漢字", async () => {
+      const vi = await import("../../src/i18n/locales/vi.json");
+      for (const key of getKeyList(vi.default)) {
+        const value = getValue(vi.default, key);
+        expect(value, `vi ${key} 應為 NFC`).toBe(value.normalize("NFC"));
+        expect(value, `vi ${key} 不應含漢字`).not.toMatch(/\p{Script=Han}/u);
+      }
+    });
+
+    it("[P0] th 含泰文，或與 en 逐字相同（產品名、技術名）", async () => {
+      const th = await import("../../src/i18n/locales/th.json");
+      const en = await import("../../src/i18n/locales/en.json");
+      for (const key of getKeyList(th.default)) {
+        const value = getValue(th.default, key);
+        expect(
+          /\p{Script=Thai}/u.test(value) || value === getValue(en.default, key),
+          `th ${key} 既無泰文也與 en 不同`,
+        ).toBe(true);
+      }
+    });
+  });
+
+  describe("正式 i18n 實例", () => {
+    it("[P0] 已註冊 vi、th，切過去拿得到該語系字串而不是 en fallback", async () => {
+      const { default: i18n } = await import("../../src/i18n");
+      const en = await import("../../src/i18n/locales/en.json");
+      const vi = await import("../../src/i18n/locales/vi.json");
+      const th = await import("../../src/i18n/locales/th.json");
+      const availableLocaleList = i18n.global.availableLocales;
+      expect(availableLocaleList).toContain("vi");
+      expect(availableLocaleList).toContain("th");
+
+      const originalLocale = i18n.global.locale.value;
+      try {
+        i18n.global.locale.value = "vi";
+        expect(i18n.global.t("common.save")).toBe(vi.default.common.save);
+        expect(i18n.global.t("common.save")).not.toBe(en.default.common.save);
+        i18n.global.locale.value = "th";
+        expect(i18n.global.t("common.save")).toBe(th.default.common.save);
+        expect(i18n.global.t("common.save")).not.toBe(en.default.common.save);
+      } finally {
+        i18n.global.locale.value = originalLocale;
       }
     });
   });

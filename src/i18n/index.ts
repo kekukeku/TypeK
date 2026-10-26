@@ -5,6 +5,8 @@ import en from "./locales/en.json";
 import ja from "./locales/ja.json";
 import zhCN from "./locales/zh-CN.json";
 import ko from "./locales/ko.json";
+import vi from "./locales/vi.json";
+import th from "./locales/th.json";
 
 const i18n = createI18n({
   legacy: false,
@@ -16,6 +18,8 @@ const i18n = createI18n({
     ja,
     "zh-CN": zhCN,
     ko,
+    vi,
+    th,
   },
 });
 

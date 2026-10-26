@@ -172,7 +172,7 @@ pnpm tauri build --debug      # debug 模式（保留 symbols，產出較大但�
 ### 4.5 加一個自訂 i18n 字串
 
 ```
-1. src/i18n/locales/{zh-TW,zh-CN,en,ja,ko}.json ── 五個語系都要加
+1. src/i18n/locales/{zh-TW,zh-CN,en,ja,ko,vi,th}.json ── 七個語系都要加
 2. 元件內：const { t } = useI18n(); t('your.key')
 3. 全域場景（如 prompt）：i18n.global.t('your.key')
 ```

@@ -2128,6 +2128,49 @@ describe("useVoiceFlowStore", () => {
     });
   });
 
+  describe("越南文／泰文即時轉錄", () => {
+    it("[P1] vi → language vi、whisperPrompt null、字典詞仍傳、原文不簡轉繁", async () => {
+      mockSettingsState.selectedTranscriptionLocale = "vi";
+      mockSettingsState.whisperLanguageCode = "vi";
+      mockSettingsState.isEnhancementThresholdEnabled = false;
+      mockVocabularyState.getTopTermListByWeight.mockResolvedValue(["TypeK"]);
+      const rawText = "Tôi muốn uống cà phê";
+      mockInvoke.mockImplementation(
+        createMockInvokeHandler({
+          transcribeResult: {
+            rawText,
+            transcriptionDurationMs: 300,
+            noSpeechProbability: 0.01,
+          },
+        }),
+      );
+
+      const store = useVoiceFlowStore();
+      await store.initialize();
+      triggerHotkeyEvent("hotkey:pressed");
+      await vi.waitFor(() => {
+        expect(mockInvoke).toHaveBeenCalledWith("start_recording", {
+          deviceName: "",
+        });
+      });
+      triggerHotkeyEvent("hotkey:released");
+
+      await vi.waitFor(() => {
+        expect(mockInvoke).toHaveBeenCalledWith("paste_text", {
+          text: rawText,
+          restoreClipboard: false,
+        });
+      });
+      expect(mockInvoke).toHaveBeenCalledWith("transcribe_audio", {
+        apiKey: "test-api-key-123",
+        vocabularyTermList: ["TypeK"],
+        whisperPrompt: null,
+        modelId: "whisper-large-v3",
+        language: "vi",
+      });
+    });
+  });
+
   // ==========================================================================
   // 重送轉錄 (Story 4.5)
   // ==========================================================================
@@ -2243,6 +2286,44 @@ describe("useVoiceFlowStore", () => {
           "test-api-key-123",
           expect.objectContaining({ transcriptLocale: "en" }),
         );
+      });
+    });
+
+    it("[P1] 泰文重送 → language th、whisperPrompt null、字典詞仍傳、原文不簡轉繁", async () => {
+      mockSettingsState.selectedTranscriptionLocale = "th";
+      mockSettingsState.whisperLanguageCode = "th";
+      mockVocabularyState.getTopTermListByWeight.mockResolvedValue(["TypeK"]);
+      const store = useVoiceFlowStore();
+      await store.initialize();
+
+      await setupFailedTranscription(store);
+
+      const thaiText = "สวัสดีครับ";
+      mockInvoke.mockImplementation(
+        createMockInvokeHandler({
+          retranscribeResult: {
+            rawText: thaiText,
+            transcriptionDurationMs: 350,
+            noSpeechProbability: 0.02,
+          },
+        }),
+      );
+
+      await store.handleRetryTranscription();
+
+      expect(mockInvoke).toHaveBeenCalledWith(
+        "retranscribe_from_file",
+        expect.objectContaining({
+          language: "th",
+          whisperPrompt: null,
+          vocabularyTermList: ["TypeK"],
+        }),
+      );
+      await vi.waitFor(() => {
+        expect(mockInvoke).toHaveBeenCalledWith("paste_text", {
+          text: thaiText,
+          restoreClipboard: false,
+        });
       });
     });
 

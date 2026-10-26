@@ -1,0 +1,452 @@
+{
+  "common": {
+    "save": "Lưu",
+    "delete": "Xóa",
+    "cancel": "Hủy"
+  },
+  "settings": {
+    "about": {
+      "title": "Giới thiệu TypeK",
+      "description": "Giữ để nói, thả để dán. TypeK là công cụ chuyển giọng nói thành văn bản trên máy tính, được phát triển từ dự án mã nguồn mở SayIt và phát hành theo giấy phép MIT.",
+      "author": "Tác giả:",
+      "sourceCode": "Xem mã nguồn",
+      "reportIssue": "Báo lỗi"
+    },
+    "hotkey": {
+      "title": "Cài đặt phím tắt",
+      "triggerKeyMode": "Chế độ phím kích hoạt",
+      "preset": "Có sẵn",
+      "custom": "Tùy chỉnh",
+      "triggerKey": "Phím kích hoạt",
+      "customTriggerKey": "Phím kích hoạt tùy chỉnh",
+      "releaseAllHint": "Hãy thả hết các phím trước, rồi nhấn tổ hợp bạn muốn đặt",
+      "notSet": "Chưa đặt",
+      "pressKey": "Hãy nhấn một phím...",
+      "record": "Ghi lại",
+      "systemKeyHint": "Với Fn, phím media và các phím hệ thống khác, hãy dùng chế độ Có sẵn",
+      "triggerMode": "Chế độ kích hoạt",
+      "holdDescription": "Giữ để ghi âm, thả để dừng",
+      "toggleDescription": "Nhấn một lần để bắt đầu, nhấn lại để dừng",
+      "updated": "Đã cập nhật phím kích hoạt",
+      "modeUpdated": "Đã cập nhật chế độ kích hoạt",
+      "keySet": "Đã đặt phím kích hoạt thành {key}",
+      "customKeyDisplay": "Phím tùy chỉnh ({keycode})",
+      "comboKey": "Tổ hợp phím",
+      "keys": {
+        "fn": "Fn",
+        "leftOption": "Option trái (⌥)",
+        "rightOption": "Option phải (⌥)",
+        "leftControl": "Control trái (⌃)",
+        "rightControl": "Control phải (⌃)",
+        "command": "Command (⌘)",
+        "shift": "Shift (⇧)",
+        "rightAlt": "Alt phải",
+        "leftAlt": "Alt trái",
+        "control": "Control"
+      },
+      "report": {
+        "prompt": "Ghi âm không phản hồi? Hãy gửi thông tin chẩn đoán cho nhà phát triển:",
+        "github": "Báo lỗi trên GitHub",
+        "copy": "Sao chép thông tin chẩn đoán",
+        "copied": "Đã sao chép, chỉ cần dán cho nhà phát triển",
+        "note": "Nội dung chỉ gồm mã phím trong lúc ghi âm, cài đặt phím tắt và nhật ký các giai đoạn của ứng dụng, không chứa bất kỳ nội dung phiên âm nào"
+      }
+    },
+    "apiKey": {
+      "title": "Groq API Key",
+      "set": "Đã đặt",
+      "notSet": "Chưa đặt",
+      "goToConsole": "Đến Groq Console",
+      "instruction": "Dùng để phiên âm giọng nói. Khóa này cũng được dùng chung khi chọn Groq cho phần tinh chỉnh văn bản.",
+      "onboarding": "Chào mừng bạn đến với TypeK! Hãy đặt Groq API Key trước để bật tính năng nhập bằng giọng nói.",
+      "show": "Hiện",
+      "hide": "Ẩn",
+      "saved": "Đã lưu API Key",
+      "deleted": "Đã xóa API Key",
+      "confirmDelete": "Xác nhận xóa?",
+      "delete": "Xóa API Key"
+    },
+    "provider": {
+      "title": "Dịch vụ mô hình LLM",
+      "description": "Chọn dịch vụ AI dùng cho tinh chỉnh văn bản và phân tích từ điển. Groq và Gemini có hạn mức miễn phí, OpenAI và Anthropic là dịch vụ trả phí.",
+      "groq": "Groq (Miễn phí)",
+      "openai": "OpenAI (Khuyến nghị)",
+      "anthropic": "Anthropic",
+      "gemini": "Google Gemini (Hạn mức miễn phí)",
+      "groqNote": "Dùng Groq API Key của phần phiên âm giọng nói (đã đặt)",
+      "groqNoteNotSet": "Dùng Groq API Key của phần phiên âm giọng nói (chưa đặt, hãy điền vào mục \"Phiên âm giọng nói\" ở trên)"
+    },
+    "providerApiKey": {
+      "openaiTitle": "OpenAI API Key",
+      "anthropicTitle": "Anthropic API Key",
+      "openaiInstruction": "Truy cập OpenAI Platform để lấy API Key",
+      "anthropicInstruction": "Truy cập Anthropic Console để lấy API Key",
+      "goToOpenai": "Đến OpenAI Platform",
+      "goToAnthropic": "Đến Anthropic Console",
+      "geminiTitle": "Gemini API Key",
+      "geminiInstruction": "Truy cập Google AI Studio để lấy API Key (có hạn mức miễn phí)",
+      "goToGemini": "Đến Google AI Studio"
+    },
+    "connectionTest": {
+      "button": "Kiểm tra kết nối",
+      "testing": "Đang kiểm tra...",
+      "success": "Kiểm tra thành công ({ms}ms)"
+    },
+    "model": {
+      "whisperLabel": "Mô hình phiên âm giọng nói (Whisper)",
+      "llmLabel": "Mô hình tinh chỉnh văn bản (LLM)",
+      "whisperUpdated": "Đã cập nhật mô hình phiên âm giọng nói",
+      "llmUpdated": "Đã cập nhật mô hình tinh chỉnh văn bản",
+      "default": "Mặc định",
+      "costPerHour": "${cost}/giờ",
+      "paidOnlyHint": "Mô hình này không có gói miễn phí, cần bật thanh toán trên nền tảng tương ứng",
+      "limitedFreeHint": "Hạn mức miễn phí rất ít hoặc tùy dự án; dự án miễn phí thường trả về \"quá nhiều yêu cầu\""
+    },
+    "modelBadge": {
+      "balanced": "Cân bằng · Mặc định",
+      "stableCostly": "Ổn định · Bản chính thức",
+      "fastCheap": "Nhanh nhất · Rẻ nhất",
+      "smartestSlow": "Thông minh nhất · Chậm hơn",
+      "premium": "Chất lượng cao",
+      "paidOnly": "Cần trả phí",
+      "limitedFree": "Ít hạn mức miễn phí"
+    },
+    "threshold": {
+      "title": "Ngưỡng văn bản ngắn",
+      "description": "Khi bật, văn bản phiên âm ngắn hơn số ký tự đã đặt sẽ bỏ qua bước tinh chỉnh bằng AI và dán nguyên văn. Khi tắt, lần nào cũng sẽ tinh chỉnh bằng AI.",
+      "enabled": "Đã bật",
+      "disabled": "Đã tắt",
+      "charCount": "Số ký tự ngưỡng",
+      "enabledFeedback": "Đã bật ngưỡng văn bản ngắn",
+      "disabledFeedback": "Đã tắt ngưỡng văn bản ngắn",
+      "charCountSaved": "Đã lưu số ký tự ngưỡng"
+    },
+    "app": {
+      "title": "Ứng dụng",
+      "language": "Ngôn ngữ giao diện",
+      "languageUpdated": "Đã cập nhật ngôn ngữ giao diện",
+      "theme": "Chủ đề",
+      "theme_light": "Sáng",
+      "theme_dark": "Tối",
+      "theme_system": "Theo hệ thống",
+      "themeUpdated": "Đã cập nhật chủ đề",
+      "muteOnRecording": "Tự động tắt tiếng khi ghi âm",
+      "muteDescription": "Tự động tắt tiếng loa hệ thống khi bắt đầu ghi âm và khôi phục khi kết thúc",
+      "muteEnabled": "Đã bật tự động tắt tiếng khi ghi âm",
+      "muteDisabled": "Đã tắt tự động tắt tiếng khi ghi âm",
+      "copyTranscriptionToClipboard": {
+        "label": "Sao chép văn bản phiên âm vào bộ nhớ tạm",
+        "descriptionOn": "Sau khi tự động dán, văn bản phiên âm vẫn nằm trong bộ nhớ tạm để bạn dán lại bằng Cmd+V, nhưng sẽ ghi đè nội dung bạn đã sao chép trước đó.",
+        "descriptionOff": "Sau khi tự động dán, bộ nhớ tạm giữ nguyên nội dung bạn đã sao chép trước đó để tiện dùng tiếp.",
+        "enabled": "Đã bật: văn bản phiên âm sẽ nằm trong bộ nhớ tạm",
+        "disabled": "Đã tắt: bộ nhớ tạm giữ nguyên nội dung cũ"
+      },
+      "soundFeedback": "Phản hồi âm thanh",
+      "soundFeedbackDescription": "Phát âm thanh thông báo khi bắt đầu, kết thúc ghi âm và khi có lỗi",
+      "soundFeedbackEnabled": "Đã bật phản hồi âm thanh",
+      "soundFeedbackDisabled": "Đã tắt phản hồi âm thanh",
+      "hideDockIcon": "Ẩn biểu tượng trên Dock",
+      "hideDockIconDescription": "Gỡ biểu tượng TypeK khỏi Dock, chỉ thao tác qua biểu tượng trên thanh menu",
+      "hideDockIconEnabled": "Đã ẩn biểu tượng trên Dock",
+      "hideDockIconDisabled": "Đã hiện biểu tượng trên Dock",
+      "autoStart": "Tự khởi động khi đăng nhập",
+      "autoStartDescription": "Tự động khởi động TypeK sau khi đăng nhập hệ thống",
+      "autoStartEnabled": "Đã bật tự khởi động khi đăng nhập",
+      "autoStartDisabled": "Đã tắt tự khởi động khi đăng nhập",
+      "transcriptionLanguage": "Ngôn ngữ phiên âm",
+      "transcriptionLanguageDescription": "Ngôn ngữ nhận dạng dùng khi chuyển giọng nói thành văn bản",
+      "transcriptionLanguageUpdated": "Đã cập nhật ngôn ngữ phiên âm",
+      "autoDetect": "Tự động nhận diện",
+      "startHidden": "Ẩn cửa sổ chính khi khởi động",
+      "startHiddenDescription": "Không hiện cửa sổ chính sau khi khởi động thủ công hoặc khi đăng nhập, chỉ giữ biểu tượng trên thanh menu (khay hệ thống); mở lại từ menu biểu tượng hoặc mở TypeK thêm một lần nữa",
+      "startHiddenEnabled": "Đã bật ẩn cửa sổ chính khi khởi động",
+      "startHiddenDisabled": "Đã tắt ẩn cửa sổ chính khi khởi động"
+    },
+    "audioInput": {
+      "title": "Thiết bị đầu vào",
+      "description": "Chọn micrô dùng để ghi âm",
+      "deviceLabel": "Micrô",
+      "systemDefault": "Mặc định của hệ thống",
+      "systemDefaultWithDevice": "Mặc định của hệ thống ({device})",
+      "volumePreview": "Xem trước âm lượng micrô",
+      "refresh": "Làm mới",
+      "refreshed": "Đã phát hiện {count} thiết bị",
+      "updated": "Đã cập nhật thiết bị đầu vào"
+    },
+    "recording": {
+      "title": "Quản lý lưu trữ bản ghi âm",
+      "description": "Tệp ghi âm được lưu vào đĩa sau khi phiên âm; bạn có thể phát lại trong lịch sử hoặc dùng để phiên âm lại.",
+      "autoCleanup": "Tự động dọn dẹp",
+      "autoCleanupDescription": "Tự động xóa các tệp ghi âm cũ hơn số ngày đã đặt",
+      "autoCleanupEnabled": "Đã bật tự động dọn dẹp",
+      "autoCleanupDisabled": "Đã tắt tự động dọn dẹp",
+      "retentionDays": "Số ngày lưu",
+      "daysUnit": "ngày",
+      "daysSaved": "Đã lưu số ngày lưu giữ",
+      "deleteAll": "Xóa tất cả tệp ghi âm",
+      "deleteConfirmTitle": "Xác nhận xóa tất cả bản ghi âm",
+      "deleteConfirmDescription": "Thao tác này sẽ xóa vĩnh viễn mọi tệp ghi âm đã lưu, không thể hoàn tác. Lịch sử vẫn được giữ lại nhưng sẽ không phát lại được.",
+      "deleteSuccess": "Đã xóa {count} tệp ghi âm"
+    },
+    "debugLog": {
+      "title": "Nhật ký gỡ lỗi (Nâng cao)",
+      "description": "Khi bật, ứng dụng sẽ ghi nhật ký hoạt động (giao diện và phần nền) ra tệp để tiện cung cấp thông tin chẩn đoán khi báo lỗi. Tệp nhật ký có chứa văn bản phiên âm và kết quả tinh chỉnh bằng AI của bạn. Bình thường nên để tắt; khi tắt sẽ xóa các tệp nhật ký hiện có.",
+      "enable": "Bật ghi nhật ký",
+      "enableDescription": "Ghi nhật ký hoạt động ra tệp",
+      "openFolder": "Mở thư mục nhật ký",
+      "enabledMessage": "Đã bật nhật ký gỡ lỗi",
+      "disabledMessage": "Đã tắt nhật ký gỡ lỗi"
+    },
+    "smartDictionary": {
+      "title": "Học từ điển thông minh",
+      "description": "Tự động phát hiện và sửa sau khi dán, học thuật ngữ mới qua phân tích AI",
+      "privacyNote": "Khi bật, hệ thống sẽ đọc văn bản quanh con trỏ để AI phân tích, không lưu văn bản gốc",
+      "analysisModelUpdated": "Đã cập nhật mô hình phân tích từ điển"
+    },
+    "inputContext": {
+      "title": "Nhận biết ngữ cảnh",
+      "description": "Khi tinh chỉnh, AI tham khảo ứng dụng bạn đang dùng, tiêu đề cửa sổ và văn bản quanh con trỏ để xác định chính xác hơn từ đồng âm và danh từ riêng",
+      "privacyNote": "Khi bật, mỗi lần tinh chỉnh sẽ gửi tên ứng dụng, tiêu đề cửa sổ và tối đa 400 ký tự quanh con trỏ đến dịch vụ AI bạn chọn; ô mật khẩu không bị đọc và văn bản gốc không được lưu"
+    },
+    "stt": {
+      "title": "Phiên âm giọng nói"
+    },
+    "llm": {
+      "title": "Tinh chỉnh văn bản"
+    }
+  },
+  "dashboard": {
+    "totalRecordingTime": "Tổng thời gian nói",
+    "totalCharacters": "Số ký tự đã nói",
+    "characterUnit": "ký tự",
+    "timeSaved": "Thời gian tiết kiệm",
+    "totalTranscriptions": "Tổng số lần dùng",
+    "transcriptionUnit": "lần",
+    "avgCharacters": "Số ký tự trung bình mỗi lần",
+    "dailyQuota": "Hạn mức miễn phí còn lại hôm nay",
+    "dailyQuotaDetail": "Chi tiết hạn mức miễn phí còn lại hôm nay",
+    "usageTrend": "Xu hướng sử dụng hằng ngày",
+    "lastNDays": "{days} ngày gần đây",
+    "recentTranscriptions": "Phiên âm gần đây",
+    "viewAll": "Xem tất cả",
+    "emptyState": "Hãy bắt đầu dùng nhập bằng giọng nói, số liệu thống kê sẽ hiển thị ở đây",
+    "aiEnhanced": "Tinh chỉnh AI",
+    "usageCount": "Số lần sử dụng",
+    "noRecords": "Chưa có lịch sử sử dụng",
+    "quotaWhisperRequests": "Whisper {used}/{limit} lần",
+    "quotaAudio": "Âm thanh {used}/{limit}",
+    "quotaLlmRequests": "LLM {used}/{limit} lần",
+    "quotaLlmTokens": "LLM {used}/{limit} tokens",
+    "vocabularyAnalysis": "Phân tích từ điển",
+    "vocabularyAnalysisUsage": "Phân tích từ điển: {requests} lần / {tokens} tokens",
+    "geminiQuotaHint": "Hạn mức miễn phí của Gemini tùy tài khoản, hãy xem giới hạn thực tế của bạn tại Google AI Studio",
+    "dailyUsage": "Mức dùng hôm nay",
+    "billedPlan": "Tính phí",
+    "billedNoFreeQuota": "Gói trả phí — không giới hạn hạn mức miễn phí",
+    "usageWhisper": "Whisper: {requests} lần · {audio}",
+    "usageLlm": "LLM: {requests} lần · {tokens} tokens"
+  },
+  "history": {
+    "searchPlaceholder": "Tìm kiếm bản phiên âm...",
+    "loading": "Đang tải...",
+    "noResults": "Không tìm thấy bản ghi nào khớp với \"{query}\"",
+    "emptyState": "Chưa có bản phiên âm nào, hãy bắt đầu dùng nhập bằng giọng nói!",
+    "enhancedText": "Văn bản sau tinh chỉnh",
+    "rawText": "Văn bản gốc",
+    "recordingLabel": "Ghi âm:",
+    "transcriptionLabel": "Phiên âm:",
+    "aiLabel": "AI:",
+    "charCountLabel": "Số ký tự:",
+    "modeLabel": "Chế độ:",
+    "holdMode": "Hold",
+    "toggleMode": "Toggle",
+    "copied": "Đã sao chép",
+    "copy": "Sao chép",
+    "delete": "Xóa",
+    "loadingMore": "Đang tải thêm...",
+    "playRecording": "Phát bản ghi âm",
+    "noRecordingFile": "Tệp ghi âm không tồn tại",
+    "failedBadge": "Nhận dạng thất bại",
+    "retranscribe": "Phiên âm lại",
+    "reEnhance": "Tinh chỉnh lại",
+    "retranscribing": "Đang phiên âm lại…",
+    "reEnhancing": "Đang tinh chỉnh lại…",
+    "retranscribeFailed": "Phiên âm lại thất bại, vui lòng thử lại sau",
+    "reEnhanceFailed": "Tinh chỉnh lại thất bại, vui lòng thử lại sau",
+    "reEnhanceDrift": "Kết quả tinh chỉnh khác quá xa bản gốc, đã giữ kết quả cũ"
+  },
+  "dictionary": {
+    "termCount": "{count} thuật ngữ",
+    "inputPlaceholder": "Nhập thuật ngữ mới...",
+    "duplicateEntry": "Thuật ngữ này đã tồn tại",
+    "add": "Thêm",
+    "added": "Đã thêm \"{term}\"",
+    "removed": "Đã xóa \"{term}\"",
+    "loading": "Đang tải...",
+    "emptyState": "Chưa có thuật ngữ tùy chỉnh, hãy thêm các thuật ngữ thường dùng để nâng cao độ chính xác nhận dạng",
+    "termHeader": "Thuật ngữ",
+    "dateHeader": "Thời gian thêm",
+    "actionHeader": "Thao tác",
+    "loadFailed": "Tải danh sách thuật ngữ thất bại",
+    "aiRecommended": "AI đề xuất",
+    "manualAdded": "Thêm thủ công",
+    "weight": "Trọng số",
+    "description": "Thuật ngữ trong từ điển sẽ được cung cấp cho AI khi nhận dạng giọng nói, giúp nhận dạng danh từ riêng và thuật ngữ chuyên môn chính xác hơn.",
+    "weightDescription": "Mỗi lần nhận dạng giọng nói, hệ thống đưa {limit} thuật ngữ có trọng số cao nhất vào gợi ý cho AI. Khi AI phát hiện bạn sửa đi sửa lại cùng một từ, trọng số của từ đó sẽ tự động tăng.",
+    "noAiSuggestions": "Chưa có thuật ngữ nào do AI đề xuất, bật Học từ điển thông minh để hệ thống tự học",
+    "noAiSuggestionsEnabled": "Học từ điển thông minh đã bật, hệ thống sẽ tự học từ mới khi bạn sửa văn bản phiên âm",
+    "aiTermCount": "{count} từ",
+    "export": "Xuất",
+    "import": "Nhập",
+    "exportSuccess": "Đã xuất {count} từ, {filename} đã được lưu vào thư mục \"Tải về\"",
+    "exportEmpty": "Không có từ nào để xuất",
+    "importSuccess": "Nhập hoàn tất: thêm {added}, gộp {merged}, bỏ qua {skipped}",
+    "importEmpty": "Tệp không có từ nào có thể nhập",
+    "importTooLarge": "Tệp quá lớn, không thể nhập",
+    "importTooManyEntries": "Số mục vượt quá giới hạn {limit}, hãy chia tệp thành nhiều phần rồi nhập",
+    "importInvalidFile": "Không nhận dạng được định dạng tệp",
+    "importFailed": "Nhập thất bại: {error}",
+    "transferHint": "Bạn có thể xuất từ điển thành một tệp duy nhất và nhập trên thiết bị khác. Nhập cũng hỗ trợ tệp văn bản thuần .txt (mỗi dòng một từ) và .csv (chỉ lấy nội dung trước dấu phẩy đầu tiên của mỗi dòng, không hỗ trợ dấu phẩy trong ngoặc kép; từ có chứa dấu phẩy thì dùng .txt), thuận tiện khi chuyển từ các công cụ như Typeless."
+  },
+  "accessibility": {
+    "title": "Cần quyền Trợ năng",
+    "description": "TypeK cần quyền \"Trợ năng\" để lắng nghe phím tắt toàn cục. Nếu chưa cấp quyền, tính năng phím tắt sẽ không dùng được.",
+    "step1": "Nhấn nút bên dưới để mở Cài đặt Hệ thống.",
+    "step2": "Tìm TypeK trong danh sách và đánh dấu chọn.",
+    "step3": "Quay lại ứng dụng, hệ thống sẽ tự phát hiện và kích hoạt.",
+    "reinitializing": "Đã phát hiện quyền được cấp, đang kích hoạt phím tắt...",
+    "reinitializeError": "Khởi tạo lại phím tắt thất bại, vui lòng khởi động lại ứng dụng.",
+    "openSettings": "Mở Cài đặt Hệ thống",
+    "later": "Để sau"
+  },
+  "voiceFlow": {
+    "noSpeechDetected": "Không phát hiện giọng nói",
+    "recording": "Đang ghi âm...",
+    "transcribing": "Đang phiên âm...",
+    "pasteSuccess": "Đã dán ✓",
+    "pasteSuccessUnenhanced": "Đã dán (chưa tinh chỉnh)",
+    "enhancing": "Đang tinh chỉnh...",
+    "pasteFailed": "Dán thất bại",
+    "recordingTooShort": "Thời gian ghi âm quá ngắn",
+    "vocabularyLearnedLabel": "Thêm vào từ điển",
+    "vocabularyLearned": "{terms}",
+    "vocabularyLearnedTruncated": "{terms} và {count} mục khác",
+    "retryFailed": "Nhận dạng thất bại, vui lòng ghi âm lại",
+    "cancelled": "Đã hủy"
+  },
+  "errors": {
+    "databaseInitFailed": "Khởi tạo cơ sở dữ liệu thất bại, lịch sử tạm thời không dùng được. Vui lòng khởi động lại ứng dụng.",
+    "apiKeyEmpty": "API Key không được để trống",
+    "apiKeyNotSet": "Chưa đặt API Key",
+    "openaiApiKeyNotSet": "Chưa đặt OpenAI API Key",
+    "anthropicApiKeyNotSet": "Chưa đặt Anthropic API Key",
+    "providerAuthFailed": "Xác thực API Key thất bại ({provider})",
+    "enhancementTimeout": "Tinh chỉnh AI quá thời gian chờ",
+    "apiKeyMissing": "Vui lòng đặt API Key",
+    "mic": {
+      "default": "Khởi tạo micrô thất bại",
+      "permission": "Cần quyền micrô mới có thể ghi âm",
+      "notFound": "Không phát hiện thiết bị micrô",
+      "busy": "Micrô đang bị ứng dụng khác chiếm dụng",
+      "configFailed": "Đọc cấu hình micrô thất bại"
+    },
+    "network": "Mất kết nối mạng",
+    "transcription": {
+      "fileTooLarge": "Tệp ghi âm quá lớn, hãy rút ngắn thời gian ghi âm",
+      "invalidAudio": "Định dạng âm thanh không hợp lệ hoặc dữ liệu ghi âm không đầy đủ",
+      "invalidApiKey": "API Key không hợp lệ hoặc đã hết hạn",
+      "rateLimited": "Yêu cầu quá nhiều, vui lòng thử lại sau",
+      "serviceUnavailable": "Dịch vụ phiên âm tạm thời không khả dụng",
+      "failed": "Phiên âm giọng nói thất bại",
+      "recorderError": "Thiết bị ghi âm gặp lỗi",
+      "operationFailed": "Thao tác thất bại"
+    },
+    "enhancement": {
+      "timeout": "Tinh chỉnh AI quá thời gian chờ, đã dán văn bản gốc",
+      "modelDecommissioned": "Mô hình này đã ngừng cung cấp, vui lòng đổi mô hình trong Cài đặt",
+      "invalidApiKey": "API Key không hợp lệ hoặc đã hết hạn",
+      "rateLimited": "Yêu cầu quá nhiều, vui lòng thử lại sau",
+      "badRequest": "Yêu cầu đến mô hình bị lỗi, vui lòng kiểm tra cài đặt",
+      "serviceUnavailable": "Dịch vụ tinh chỉnh AI tạm thời không khả dụng",
+      "failed": "Tinh chỉnh AI thất bại"
+    },
+    "hotkey": {
+      "accessibilityPermission": "Cần quyền Trợ năng",
+      "hookInstallFailed": "Khởi tạo phím tắt thất bại",
+      "default": "Phím tắt gặp lỗi",
+      "conflictWarning": "Phím này ({displayName}) có thể xung đột với phím tắt hệ thống, nên chọn phím khác",
+      "capslockWarning": "CapsLock có thể không ổn định ở chế độ Hold trên macOS, nên dùng chế độ Toggle hoặc chọn phím khác",
+      "presetHint": "Phím này đã dùng được ở chế độ Có sẵn, nên chuyển sang chế độ Có sẵn",
+      "recordingTimeout": "Không phát hiện phím. Một số phím hệ thống (Fn, phím media) không ghi lại được, vui lòng dùng chế độ Có sẵn.",
+      "unsupportedKey": "Không hỗ trợ phím này",
+      "keycodeCollision": "Phím này dùng chung mã với {target} trên macOS, cả hai sẽ kích hoạt cùng lúc",
+      "escReserved": "Phím ESC được giữ làm phím ngắt toàn cục, không thể dùng làm phím kích hoạt"
+    }
+  },
+  "format": {
+    "minutes": "{count} phút",
+    "hours": "{count} giờ",
+    "hoursMinutes": "{hours} giờ {minutes} phút",
+    "seconds": "{count} giây",
+    "milliseconds": "{count} ms"
+  },
+  "mainApp": {
+    "nav": {
+      "dashboard": "Bảng điều khiển",
+      "history": "Lịch sử",
+      "dictionary": "Từ điển tùy chỉnh",
+      "settings": "Cài đặt",
+      "guide": "Giới thiệu tính năng"
+    },
+    "update": {
+      "installFailed": "Cài đặt thất bại, vui lòng tải bản cập nhật thủ công",
+      "checking": "Đang kiểm tra...",
+      "downloading": "Đang tải...",
+      "installing": "Đang cài đặt...",
+      "checkUpdate": "Kiểm tra cập nhật",
+      "ready": "Đã sẵn sàng",
+      "installNow": "Cài ngay",
+      "upToDate": "Đã là phiên bản mới nhất",
+      "checkFailed": "Kiểm tra thất bại, vui lòng xác nhận kết nối mạng",
+      "checkError": "Có lỗi khi kiểm tra cập nhật",
+      "updateFailed": "Cập nhật thất bại, vui lòng tải thủ công",
+      "autoInstallTitle": "Bản cập nhật đã sẵn sàng",
+      "autoInstallDescription": "TypeK v{version} đã tải xong. Sau khi cài đặt cần khởi động lại ứng dụng.",
+      "later": "Để sau",
+      "installRestart": "Cài đặt và khởi động lại",
+      "newVersionTitle": "Phát hiện phiên bản mới",
+      "newVersionDescription": "TypeK v{version} đã có bản cập nhật. Nhấn Bắt đầu cập nhật để tự động tải và khởi động lại ứng dụng.",
+      "cancel": "Hủy",
+      "startUpdate": "Bắt đầu cập nhật"
+    },
+    "upgradeNotice": {
+      "title": "Tóm tắt cập nhật TypeK",
+      "item1": "Ghi lại phím kích hoạt tùy chỉnh trên Windows không cần nhấn sang cửa sổ khác trước: trước đây khi cửa sổ cài đặt ở phía trước thì nhấn gì cũng không ghi được, giờ có thể nhấn ngay trong cửa sổ TypeK",
+      "dismiss": "Đã hiểu"
+    }
+  },
+  "featureGuide": {
+    "subtitle": "Dưới đây là toàn bộ tính năng hiện có của TypeK, giúp bạn nhanh chóng làm quen.",
+    "voiceInput": {
+      "title": "Nhập bằng giọng nói",
+      "description": "Muốn gõ chữ? Không cần gõ, cứ nói. Giữ phím tắt và nói, khi thả ra AI sẽ tự tinh chỉnh văn bản và dán ngay vào vị trí con trỏ. Dùng để nhắn tin, ghi chú, trả lời email đều được.",
+      "steps": "Thao tác: giữ phím tắt → nói → thả ra → văn bản được dán tự động"
+    },
+    "hotkey": {
+      "title": "Cài đặt phím tắt",
+      "description": "Sợ nhấn nhầm phím mà vô tình kích hoạt? Bạn có thể đặt tổ hợp phím như ⌘+J để phải nhấn hai phím cùng lúc mới khởi động. Cũng có thể dùng một phím duy nhất, tùy thói quen. Vào Cài đặt là đổi được."
+    },
+    "triggerMode": {
+      "title": "Chế độ kích hoạt",
+      "description": "Hai cách dùng: \"Giữ để nói\" giống bộ đàm, giữ mới ghi, thả là dừng. \"Nhấn để bắt đầu\" phù hợp khi nói dài, nhấn một lần để bắt đầu ghi, nhấn lần nữa mới dừng."
+    },
+    "dictionary": {
+      "title": "Từ điển tùy chỉnh",
+      "description": "Thêm thủ công danh từ riêng, tên thương hiệu, v.v., AI sẽ ưu tiên dùng cách viết đúng khi tinh chỉnh. Bật \"Học thông minh\" thì AI sẽ tự thu thập từ mới từ những lần bạn sửa."
+    },
+    "history": {
+      "title": "Lịch sử",
+      "description": "Mọi kết quả phiên âm đều được lưu lại, có thể tìm kiếm, sao chép văn bản, xóa bản ghi và phát lại tệp ghi âm."
+    }
+  }
+}

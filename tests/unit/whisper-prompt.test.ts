@@ -24,6 +24,13 @@ describe("buildWhisperPrompt", () => {
     expect(buildWhisperPrompt([], "auto")).toBeNull();
   });
 
+  it("[P0] vi／th 無前置句：有無字典都回傳 null", () => {
+    expect(buildWhisperPrompt([], "vi")).toBeNull();
+    expect(buildWhisperPrompt(["TypeK"], "vi")).toBeNull();
+    expect(buildWhisperPrompt([], "th")).toBeNull();
+    expect(buildWhisperPrompt(["TypeK"], "th")).toBeNull();
+  });
+
   it("[P0] zh-TW 有詞時接上剛才提到，最高優先詞落在尾端", () => {
     expect(buildWhisperPrompt(["TypeK", "Tauri", "Vue"], "zh-TW")).toBe(
       `${ZH_TW_BASE}剛才提到Vue、Tauri、TypeK。`,

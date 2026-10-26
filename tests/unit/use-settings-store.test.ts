@@ -638,6 +638,88 @@ describe("useSettingsStore", () => {
       expect(store.getWhisperLanguageCode()).toBeNull();
     });
 
+    it("[P0] 已存 yue → 遷移為 auto 並寫回磁碟（不走 saveTranscriptionLocale）", async () => {
+      mockStoreData.set("selectedLocale", "en");
+      mockStoreData.set("selectedTranscriptionLocale", "yue");
+
+      const { useSettingsStore } = await import(
+        "../../src/stores/useSettingsStore"
+      );
+      const store = useSettingsStore();
+      await store.loadSettings();
+
+      expect(store.selectedTranscriptionLocale).toBe("auto");
+      expect(mockStoreSet).toHaveBeenCalledWith(
+        "selectedTranscriptionLocale",
+        "auto",
+      );
+      expect(mockStoreSave).toHaveBeenCalled();
+      expect(mockEmit).not.toHaveBeenCalledWith(
+        "settings:updated",
+        expect.objectContaining({ key: "transcriptionLocale" }),
+      );
+      expect(store.getWhisperLanguageCode()).toBeNull();
+
+      const { getAutoLanguagePrompt } = await import("../../src/i18n/prompts");
+      expect(store.getAiPrompt()).toBe(getAutoLanguagePrompt("en"));
+    });
+
+    it("[P0] 遷移後第二次載入不再寫回磁碟", async () => {
+      mockStoreData.set("selectedLocale", "en");
+      mockStoreData.set("selectedTranscriptionLocale", "yue");
+
+      const { useSettingsStore } = await import(
+        "../../src/stores/useSettingsStore"
+      );
+      const store = useSettingsStore();
+      await store.loadSettings();
+
+      mockStoreSet.mockClear();
+      await store.refreshCrossWindowSettings();
+
+      expect(
+        mockStoreSet.mock.calls.filter(
+          ([key]: [string, unknown]) => key === "selectedTranscriptionLocale",
+        ),
+      ).toHaveLength(0);
+    });
+
+    it("[P0] 已存 ja 不遷移、不寫回", async () => {
+      mockStoreData.set("selectedLocale", "en");
+      mockStoreData.set("selectedTranscriptionLocale", "ja");
+
+      const { useSettingsStore } = await import(
+        "../../src/stores/useSettingsStore"
+      );
+      const store = useSettingsStore();
+      await store.loadSettings();
+
+      expect(store.selectedTranscriptionLocale).toBe("ja");
+      expect(
+        mockStoreSet.mock.calls.filter(
+          ([key]: [string, unknown]) => key === "selectedTranscriptionLocale",
+        ),
+      ).toHaveLength(0);
+    });
+
+    it("[P0] 跨視窗刷新讀到 yue 也遷移為 auto 並寫回", async () => {
+      mockStoreData.set("selectedLocale", "en");
+      mockStoreData.set("selectedTranscriptionLocale", "yue");
+
+      const { useSettingsStore } = await import(
+        "../../src/stores/useSettingsStore"
+      );
+      const store = useSettingsStore();
+      await store.refreshCrossWindowSettings();
+
+      expect(store.selectedTranscriptionLocale).toBe("auto");
+      expect(mockStoreSet).toHaveBeenCalledWith(
+        "selectedTranscriptionLocale",
+        "auto",
+      );
+      expect(mockStoreSave).toHaveBeenCalled();
+    });
+
     it("[P0] refreshCrossWindowSettings 應同步 selectedTranscriptionLocale", async () => {
       mockStoreData.set("selectedLocale", "en");
       mockStoreData.set("selectedTranscriptionLocale", "ja");

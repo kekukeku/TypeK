@@ -536,7 +536,7 @@ describe("enhancer.ts", () => {
     const SIMPLIFIED = "请帮我把这份报告寄给张经理，然后提醒他礼拜五之前要回信。";
     const TRADITIONAL = "請幫我把這份報告寄給張經理，然後提醒他禮拜五之前要回信。";
 
-    it.each(["zh-TW", "yue"])(
+    it.each(["zh-TW"])(
       "[P0] transcriptLocale=%s 時簡體輸出轉成繁體",
       async (locale) => {
         mockFetch.mockResolvedValue(createSuccessResponse(SIMPLIFIED));

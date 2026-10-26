@@ -94,4 +94,4 @@ paths:
 - **手動檢查** — `MainApp.vue` Sidebar Footer「檢查更新」按鈕，結果用 `useFeedbackMessage` 顯示
 - **回傳型別** — `checkForAppUpdate()` → `Promise<UpdateCheckResult>`（`up-to-date` | `update-available` | `error`）
 - **已知限制** — `autoUpdater.ts` 中 `window.confirm` 在 Tauri WKWebView 會被靜默忽略，未來需改用 in-app UI
-- 更新後首次開 Dashboard 會彈「更新摘要」（`upgradeNotice`，五語系），發版時要換內容（見 `.claude/rules/i18n.md`）
+- 更新後首次開 Dashboard 會彈「更新摘要」（`upgradeNotice`，七語系），發版時要換內容（見 `.claude/rules/i18n.md`）

@@ -63,6 +63,23 @@ describe("formatUtils.ts", () => {
     it("恰好等於 maxLength 不應截斷", () => {
       expect(truncateText("12345", 5)).toBe("12345");
     });
+
+    it("泰文字素：ก้ 視為一個字素、不截斷", () => {
+      expect(truncateText("ก้", 1)).toBe("ก้");
+    });
+
+    it("泰文字素：ก้ข 超過 1 個字素 → 保留完整字素再加省略號", () => {
+      expect(truncateText("ก้ข", 1)).toBe("ก้...");
+    });
+
+    it("越南文 NFD 組合字以字素計算", () => {
+      const nfd = "Tôi muốn uống cà phê".normalize("NFD");
+      expect(truncateText(nfd, 5)).toBe("Tôi m...".normalize("NFD"));
+    });
+
+    it("emoji（含 ZWJ 家族）以字素計算", () => {
+      expect(truncateText("👨‍👩‍👧‍👦abc", 1)).toBe("👨‍👩‍👧‍👦...");
+    });
   });
 
   describe("getDisplayText", () => {

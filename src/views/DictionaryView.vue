@@ -174,10 +174,12 @@ function formatDate(dateString: string): string {
   try {
     // SQLite created_at 儲存為 UTC 且不帶時區後綴，附加 "Z" 確保以 UTC 解析
     const date = new Date(dateString + "Z");
+    const isThai = locale.value === "th";
     return date.toLocaleDateString(locale.value, {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
+      ...(isThai ? { calendar: "gregory", numberingSystem: "latn" } : {}),
     });
   } catch {
     return dateString;
