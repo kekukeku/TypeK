@@ -1,12 +1,14 @@
 use arboard::Clipboard;
+use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 use tauri::{AppHandle, Runtime, State};
 
-/// 貼上指令觸發後等多久才把剪貼簿還原成原內容（毫秒）。
-/// 太短：目標 app 還沒消費完 paste，會貼到舊內容；太長：使用者感受得到延遲。
-/// 200ms 在實測下對絕大部分 app 足夠。
-const RESTORE_DELAY_MS: u64 = 200;
+/// 貼上指令送出按鍵後，等多久才把剪貼簿還原成原內容（毫秒）。
+/// 太短：目標 app（冷的 webview／Chromium 非同步讀取）還沒消費完 paste，會貼到舊內容或空的；
+/// 太長：使用者多等一點才拿回原剪貼簿。1000ms 是下限，實測不夠就直接調大，不必重審。
+/// 這個下限存在的理由就是 1.3.3 的競態（200ms 還原蓋掉晚讀的目標 app），不要再調回去。
+const RESTORE_DELAY_MS: u64 = 1000;
 
 // ========== Focus State ==========
 
@@ -596,6 +598,180 @@ fn restore_clipboard_snapshot(_clipboard: &mut Clipboard, snapshot: &[Pasteboard
     restore_pasteboard_items(snapshot);
 }
 
+// ========== 延遲還原狀態（貼完約 1 秒後在主執行緒檢查） ==========
+//
+// 還原不能留在 command 裡同步 sleep：目標 app 可能晚於延遲才讀 pasteboard。
+// 也不能讓舊的計時器蓋掉下一筆轉錄：generation 單調遞增、永不隨 pending 清空而重設，
+// 到期時再核對剪貼簿序號，兩者都相符才寫回快照。此守衛是盡力保護，不是跨 process 的絕對保證。
+
+#[cfg(target_os = "macos")]
+type ClipboardSnapshot = Vec<PasteboardItemSnapshot>;
+#[cfg(target_os = "windows")]
+type ClipboardSnapshot = WindowsClipboardSnapshot;
+
+/// 剪貼簿序號：macOS `changeCount`／Windows `GetClipboardSequenceNumber()`。
+type ClipboardSeq = i64;
+
+struct RestoreState<T> {
+    /// 單調遞增，永不重設（連 pending 清空也不歸零，否則舊計時器會撞到新一筆）。
+    next_generation: u64,
+    pending: Option<PendingRestore<T>>,
+}
+
+struct PendingRestore<T> {
+    generation: u64,
+    snapshot: T,
+    /// 寫入轉錄文字後立即讀到的序號（非 0）；只有它仍等於目前序號才可還原。
+    written_seq: ClipboardSeq,
+}
+
+static RESTORE_STATE: Mutex<RestoreState<ClipboardSnapshot>> = Mutex::new(RestoreState {
+    next_generation: 0,
+    pending: None,
+});
+
+/// 這一筆貼上要用的原始快照：沿用上一筆的，或重新抓。
+#[derive(Debug, PartialEq, Eq)]
+enum OriginalSnapshot<T> {
+    Reuse(T),
+    Fresh,
+}
+
+/// 到期時要對剪貼簿做的事。
+#[derive(Debug, PartialEq, Eq)]
+enum RestoreAction<T> {
+    /// generation 不符或已無 pending：不碰較新的 pending。
+    Noop,
+    /// 序號已被改寫：清掉 pending，不還原。
+    Skip,
+    /// 仍是我們寫入的那一版：帶著快照去還原。
+    Restore(T),
+}
+
+fn lock_restore_state() -> std::sync::MutexGuard<'static, RestoreState<ClipboardSnapshot>> {
+    RESTORE_STATE
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+/// 決定原始快照：剪貼簿仍是上一筆轉錄（序號等於 pending.written_seq）就沿用，
+/// 否則重新快照。只讀 state、不動 pending——set_text 失敗時上一筆的還原照常。
+fn begin_paste<T: Clone>(
+    state: &RestoreState<T>,
+    current_seq: Option<ClipboardSeq>,
+) -> OriginalSnapshot<T> {
+    match state.pending.as_ref() {
+        Some(pending) if current_seq == Some(pending.written_seq) => {
+            OriginalSnapshot::Reuse(pending.snapshot.clone())
+        }
+        _ => OriginalSnapshot::Fresh,
+    }
+}
+
+/// set_text 成功後才接手 pending：登記新 generation 與寫入後序號。
+/// 序號未知（Windows 回 0）就不登記，轉錄留在剪貼簿。
+fn commit_written<T>(
+    state: &mut RestoreState<T>,
+    snapshot: T,
+    written_seq: Option<ClipboardSeq>,
+) -> Option<u64> {
+    let generation = state.next_generation;
+    state.next_generation += 1;
+    match written_seq {
+        Some(written_seq) => {
+            state.pending = Some(PendingRestore {
+                generation,
+                snapshot,
+                written_seq,
+            });
+            Some(generation)
+        }
+        None => {
+            state.pending = None;
+            None
+        }
+    }
+}
+
+/// 到期時決定還原／跳過／不動。Restore 與 Skip 都清掉 pending；
+/// Noop 代表這筆已被較新的 pending 接手或取消，什麼都不能碰。
+fn decide_restore<T>(
+    state: &mut RestoreState<T>,
+    generation: u64,
+    current_seq: Option<ClipboardSeq>,
+) -> RestoreAction<T> {
+    let generation_matches = state
+        .pending
+        .as_ref()
+        .is_some_and(|pending| pending.generation == generation);
+    if !generation_matches {
+        return RestoreAction::Noop;
+    }
+
+    let seq_unchanged = state
+        .pending
+        .as_ref()
+        .is_some_and(|pending| current_seq == Some(pending.written_seq));
+    let pending = state
+        .pending
+        .take()
+        .expect("generation 剛確認 pending 存在");
+    if seq_unchanged {
+        RestoreAction::Restore(pending.snapshot)
+    } else {
+        RestoreAction::Skip
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn current_clipboard_seq() -> Option<ClipboardSeq> {
+    use objc::runtime::{Class, Object};
+    use objc::{msg_send, sel, sel_impl};
+
+    unsafe {
+        let pasteboard_class = Class::get("NSPasteboard")?;
+        let pasteboard: *mut Object = msg_send![pasteboard_class, generalPasteboard];
+        if pasteboard.is_null() {
+            return None;
+        }
+        let change_count: isize = msg_send![pasteboard, changeCount];
+        Some(change_count as ClipboardSeq)
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn current_clipboard_seq() -> Option<ClipboardSeq> {
+    use windows::Win32::System::DataExchange::GetClipboardSequenceNumber;
+
+    let sequence = unsafe { GetClipboardSequenceNumber() };
+    (sequence != 0).then_some(sequence as ClipboardSeq)
+}
+
+/// 在主執行緒閉包內一次做完：檢查 generation、檢查序號、還原、清 pending。
+/// 檢查與還原之間不 pump 事件迴圈；其他 process 仍可能在幾毫秒內寫入，屬盡力保護。
+fn try_restore(generation: u64) {
+    let mut state = lock_restore_state();
+    match decide_restore(&mut state, generation, current_clipboard_seq()) {
+        RestoreAction::Noop => {
+            log::info!(
+                "[clipboard-paste] Restore timer {generation} superseded; newer pending untouched"
+            );
+        }
+        RestoreAction::Skip => {
+            log::info!("[clipboard-paste] Clipboard changed since paste; skipping restore");
+        }
+        RestoreAction::Restore(snapshot) => match Clipboard::new() {
+            Ok(mut clipboard) => {
+                restore_clipboard_snapshot(&mut clipboard, &snapshot);
+                log::info!("[clipboard-paste] Restored original clipboard");
+            }
+            Err(e) => {
+                log::error!("[clipboard-paste] Failed to open clipboard for restore: {e}");
+            }
+        },
+    }
+}
+
 #[tauri::command]
 pub fn copy_to_clipboard(text: String) -> Result<(), ClipboardError> {
     let mut clipboard =
@@ -608,7 +784,7 @@ pub fn copy_to_clipboard(text: String) -> Result<(), ClipboardError> {
 
 #[tauri::command]
 pub fn paste_text<R: Runtime>(
-    _app: AppHandle<R>,
+    app: AppHandle<R>,
     focus_state: State<'_, FocusState>,
     text: String,
     restore_clipboard: bool,
@@ -635,23 +811,48 @@ pub fn paste_text<R: Runtime>(
     let mut clipboard =
         Clipboard::new().map_err(|e| ClipboardError::ClipboardAccess(e.to_string()))?;
 
-    // 若使用者要求還原，先抓完整快照（文字、圖片、檔案、富文字）。
-    let clipboard_snapshot = if restore_clipboard {
-        let snapshot = capture_clipboard_snapshot(&mut clipboard);
-        log::info!("[clipboard-paste] Snapshot original clipboard captured");
-        Some(snapshot)
-    } else {
-        None
-    };
+    // 這一筆成功登記的還原 generation；None 代表不排還原。
+    let mut registered_generation: Option<u64> = None;
 
-    clipboard
-        .set_text(&text)
-        .map_err(|e| ClipboardError::ClipboardAccess(e.to_string()))?;
-    log::info!("[clipboard-paste] Text copied to clipboard");
+    if restore_clipboard {
+        // 鎖只涵蓋「決定快照 → set_text → 登記 pending」，不跨 sleep、不跨送鍵。
+        let mut state = lock_restore_state();
+        let current_seq = current_clipboard_seq();
+        let snapshot = match begin_paste(&state, current_seq) {
+            OriginalSnapshot::Reuse(snapshot) => {
+                log::info!("[clipboard-paste] Reusing pending clipboard snapshot");
+                snapshot
+            }
+            OriginalSnapshot::Fresh => {
+                let snapshot = capture_clipboard_snapshot(&mut clipboard);
+                log::info!("[clipboard-paste] Snapshot original clipboard captured");
+                snapshot
+            }
+        };
+
+        // set_text 失敗：pending 原封不動（上一筆的還原照常），解鎖再回錯。
+        if let Err(e) = clipboard.set_text(&text) {
+            drop(state);
+            drop(clipboard);
+            return Err(ClipboardError::ClipboardAccess(e.to_string()));
+        }
+        registered_generation = commit_written(&mut state, snapshot, current_clipboard_seq());
+        log::info!("[clipboard-paste] Text copied to clipboard");
+        drop(state);
+    } else {
+        clipboard
+            .set_text(&text)
+            .map_err(|e| ClipboardError::ClipboardAccess(e.to_string()))?;
+        // 使用者要保留轉錄：取消任何等待中的還原。
+        let mut state = lock_restore_state();
+        state.pending = None;
+        drop(state);
+        log::info!("[clipboard-paste] Text copied to clipboard");
+    }
 
     thread::sleep(Duration::from_millis(50));
 
-    // 捕獲錯誤而非 ?-propagate：要先跑完還原才回報錯誤，避免轉錄文字遺留在剪貼簿
+    // 捕獲錯誤而非 ?-propagate：送鍵失敗也要照常排程還原，最後才回報錯誤。
     let mut paste_err: Option<String> = None;
 
     #[cfg(target_os = "macos")]
@@ -689,11 +890,21 @@ pub fn paste_text<R: Runtime>(
         compile_error!("paste_text keyboard simulation is not implemented for this platform");
     }
 
-    // 即使 paste 失敗也要還原，避免轉錄文字遺留在剪貼簿
-    if let Some(snapshot) = clipboard_snapshot.as_ref() {
-        thread::sleep(Duration::from_millis(RESTORE_DELAY_MS));
-        restore_clipboard_snapshot(&mut clipboard, snapshot);
+    // 背景執行緒只 sleep；檢查序號、還原、清 pending 全在主執行緒閉包內一次做完。
+    // 送鍵失敗也照樣排程：失敗前使用者可能已複製別的、Windows 也可能已送出一半按鍵，
+    // 一律交給延遲＋序號守衛決定，不在失敗路徑提早還原。
+    if let Some(generation) = registered_generation {
+        let app = app.clone();
+        thread::spawn(move || {
+            thread::sleep(Duration::from_millis(RESTORE_DELAY_MS));
+            if let Err(e) = app.run_on_main_thread(move || try_restore(generation)) {
+                log::error!("[clipboard-paste] Failed to schedule clipboard restore: {e}");
+            }
+        });
     }
+
+    // 還原閉包會另開新的 Clipboard；這裡先放掉，避免佔住剪貼簿。
+    drop(clipboard);
 
     if let Some(e) = paste_err {
         return Err(ClipboardError::KeyboardSimulation(e));
@@ -829,14 +1040,147 @@ mod tests {
         assert_eq!(restored.bytes.as_ref(), &[1_u8, 2, 3, 4, 5, 6, 7, 8][..]);
     }
 
-    /// 還原延遲區間守門：避免改成 0（還沒貼完就還原）或數秒（使用者感受到延遲）。
+    /// 還原延遲下限守門：200ms 會重演 1.3.3「目標 app 晚讀，還原蓋掉 paste」的競態。
     /// 改動延遲值前須做手動實測，僅靠單元測試無法保證真實 paste 已消費完。
     #[test]
-    fn test_restore_delay_ms_within_sane_range() {
+    #[allow(clippy::assertions_on_constants)] // 這個測試就是要釘住常數下限
+    fn test_restore_delay_ms_is_at_least_one_second() {
         assert!(
-            (50..=1000).contains(&RESTORE_DELAY_MS),
-            "RESTORE_DELAY_MS={RESTORE_DELAY_MS} 應落在 50ms..=1000ms 之間"
+            RESTORE_DELAY_MS >= 1000,
+            "RESTORE_DELAY_MS={RESTORE_DELAY_MS} 不可小於 1000ms（1.3.3 競態下限）"
         );
+    }
+
+    // ============================================================
+    // 延遲還原狀態轉移（純邏輯，不碰 OS 剪貼簿）
+    // ============================================================
+
+    fn test_state() -> RestoreState<String> {
+        RestoreState {
+            next_generation: 0,
+            pending: None,
+        }
+    }
+
+    /// 一般：到期時 generation 與序號都相符 → 還原並清空 pending。
+    #[test]
+    fn test_normal_restore_when_generation_and_seq_match() {
+        let mut state = test_state();
+        let generation = commit_written(&mut state, "original".to_string(), Some(42)).unwrap();
+
+        assert_eq!(
+            decide_restore(&mut state, generation, Some(42)),
+            RestoreAction::Restore("original".to_string())
+        );
+        assert!(state.pending.is_none());
+    }
+
+    /// 舊計時器遇到較新的 pending：generation 不符 → Noop，較新的 pending 原封不動。
+    #[test]
+    fn test_stale_timer_leaves_newer_pending_untouched() {
+        let mut state = test_state();
+        let first = commit_written(&mut state, "first".to_string(), Some(1)).unwrap();
+        let second = commit_written(&mut state, "second".to_string(), Some(2)).unwrap();
+        assert_ne!(first, second);
+
+        assert_eq!(
+            decide_restore(&mut state, first, Some(2)),
+            RestoreAction::Noop
+        );
+        let pending = state.pending.as_ref().expect("較新的 pending 應保留");
+        assert_eq!(pending.generation, second);
+        assert_eq!(pending.snapshot, "second");
+        assert_eq!(pending.written_seq, 2);
+    }
+
+    /// ABA：A 登記 → restore=false 清 pending → C 登記 → A 的計時器到 → Noop。
+    /// generation 必須單調遞增、不隨清空歸零，否則 A 會誤認自己是 C。
+    #[test]
+    fn test_aba_old_timer_does_not_restore_newer_paste() {
+        let mut state = test_state();
+        let a = commit_written(&mut state, "A".to_string(), Some(10)).unwrap();
+        // 模擬 restore=false：取消等待中的還原，但不重設 generation。
+        state.pending = None;
+        let c = commit_written(&mut state, "C".to_string(), Some(20)).unwrap();
+
+        assert!(c > a, "generation 必須單調遞增（A={a}, C={c}）");
+        assert_eq!(decide_restore(&mut state, a, Some(20)), RestoreAction::Noop);
+        let pending = state.pending.as_ref().expect("C 的 pending 應原封不動");
+        assert_eq!(pending.generation, c);
+        assert_eq!(
+            decide_restore(&mut state, c, Some(20)),
+            RestoreAction::Restore("C".to_string())
+        );
+    }
+
+    /// 序號被外部改寫（即使複製的是相同文字，序號也會變）→ Skip 並清 pending。
+    #[test]
+    fn test_external_write_skips_restore_even_for_same_text() {
+        let mut state = test_state();
+        let generation = commit_written(&mut state, "transcript".to_string(), Some(7)).unwrap();
+        assert_eq!(
+            decide_restore(&mut state, generation, Some(8)),
+            RestoreAction::Skip
+        );
+        assert!(state.pending.is_none());
+    }
+
+    /// 序號未知（Windows 回 0）→ 也不得還原，清 pending。
+    #[test]
+    fn test_unknown_seq_skips_restore() {
+        let mut state = test_state();
+        let generation = commit_written(&mut state, "original".to_string(), Some(7)).unwrap();
+        assert_eq!(
+            decide_restore(&mut state, generation, None),
+            RestoreAction::Skip
+        );
+        assert!(state.pending.is_none());
+    }
+
+    /// 連續貼上：序號仍等於 pending.written_seq → 沿用舊快照；不等 → 重新快照。
+    /// begin_paste 只讀狀態，不能偷動 pending（set_text 都還沒開始）。
+    #[test]
+    fn test_back_to_back_paste_reuses_only_when_seq_matches() {
+        let mut state = test_state();
+        commit_written(&mut state, "original".to_string(), Some(5)).unwrap();
+
+        assert_eq!(
+            begin_paste(&state, Some(5)),
+            OriginalSnapshot::Reuse("original".to_string())
+        );
+        assert_eq!(begin_paste(&state, Some(6)), OriginalSnapshot::Fresh);
+        assert_eq!(begin_paste(&state, None), OriginalSnapshot::Fresh);
+
+        let pending = state.pending.as_ref().expect("begin_paste 不得清 pending");
+        assert_eq!(pending.snapshot, "original");
+        assert_eq!(pending.written_seq, 5);
+    }
+
+    /// set_text 失敗：只決定快照、不 commit → 上一筆 pending 與 generation 都不變。
+    #[test]
+    fn test_set_text_failure_leaves_pending_untouched() {
+        let mut state = test_state();
+        let generation = commit_written(&mut state, "original".to_string(), Some(3)).unwrap();
+        let generation_before = state.next_generation;
+
+        // 模擬 set_text 失敗後直接 return：begin_paste 已跑，commit_written 沒跑。
+        let _ = begin_paste(&state, Some(3));
+
+        let pending = state.pending.as_ref().expect("上一筆 pending 應保留");
+        assert_eq!(pending.generation, generation);
+        assert_eq!(pending.snapshot, "original");
+        assert_eq!(pending.written_seq, 3);
+        assert_eq!(state.next_generation, generation_before);
+    }
+
+    /// 寫入後序號未知 → 不登記 pending（轉錄留在剪貼簿）。
+    #[test]
+    fn test_unknown_written_seq_registers_nothing() {
+        let mut state = test_state();
+        commit_written(&mut state, "previous".to_string(), Some(4)).unwrap();
+
+        assert_eq!(commit_written(&mut state, "new".to_string(), None), None);
+        assert!(state.pending.is_none());
     }
 
     /// #70 遮罩鍵：恰好一次按下、一次放開，同一顆 0xE8，兩次都帶自家記號

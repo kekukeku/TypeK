@@ -22,7 +22,7 @@ paths:
 | `get_os_theme` | `lib.rs` | lib/theme.ts | — | `Option<String>`（`"dark"` \| `"light"`，非 Windows 回 `null`） |
 | `get_update_install_location` | `lib.rs` | lib/updateGuard.ts（MainApp.vue） | — | `UpdateInstallLocation { ok: bool, reason: "ok" \| "translocated" \| "read_only_volume" \| "unsupported_location" \| "not_writable", bundlePath: String }`（非 macOS 一律 `ok: true`） |
 | `set_dock_icon_hidden` | `lib.rs` | useSettingsStore | `hidden: bool` | `Result<(), String>`（macOS 切換啟用策略 Accessory／Regular，其他平台不做事；gh-82） |
-| `paste_text` | `plugins/clipboard_paste.rs` | useVoiceFlowStore | `text: String` | `Result<(), ClipboardError>` |
+| `paste_text` | `plugins/clipboard_paste.rs` | useVoiceFlowStore | `text: String, restoreClipboard: bool` | `Result<(), ClipboardError>`（Ok＝已嘗試送鍵；還原在背景約 1 秒後） |
 | `copy_to_clipboard` | `plugins/clipboard_paste.rs` | HistoryView | `text: String` | `Result<(), ClipboardError>` |
 | `capture_target_window` | `plugins/clipboard_paste.rs` | useVoiceFlowStore | — | `()` |
 | `check_accessibility_permission_command` | `plugins/hotkey_listener.rs` | AccessibilityGuide.vue | — | `bool` |
