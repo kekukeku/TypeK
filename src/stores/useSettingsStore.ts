@@ -400,7 +400,7 @@ export const useSettingsStore = defineStore("settings", () => {
       const savedGeminiApiKey = await store.get<string>("geminiApiKey");
       geminiApiKey.value = savedGeminiApiKey?.trim() ?? "";
 
-      // LLM Model ID（含 Kimi K2 遷移）
+      // LLM Model ID（含 Kimi K2、已下架 Gemini 模型遷移）
       const savedLlmModelId = await store.get<string>("llmModelId");
       const llmMigratedFromKimiK2 = await store.get<boolean>(
         "llmMigratedFromKimiK2",
@@ -421,6 +421,10 @@ export const useSettingsStore = defineStore("settings", () => {
           savedLlmModelId ?? null,
         );
         selectedLlmModelId.value = effectiveLlmModelId;
+        if (savedLlmModelId && savedLlmModelId !== effectiveLlmModelId) {
+          await store.set("llmModelId", effectiveLlmModelId);
+          await store.save();
+        }
       }
 
       // model-provider 交叉驗證：防止 key 洩漏到錯誤 provider
@@ -1606,6 +1610,10 @@ export const useSettingsStore = defineStore("settings", () => {
         crossWindowModelConfig?.providerId === selectedLlmProviderId.value
           ? effectiveCrossWindowModelId
           : getDefaultModelIdForProvider(selectedLlmProviderId.value);
+      if (savedLlmModelId && savedLlmModelId !== selectedLlmModelId.value) {
+        await store.set("llmModelId", selectedLlmModelId.value);
+        await store.save();
+      }
       openaiApiKey.value = savedOpenaiKey?.trim() ?? "";
       anthropicApiKey.value = savedAnthropicKey?.trim() ?? "";
       geminiApiKey.value = savedGeminiKey?.trim() ?? "";

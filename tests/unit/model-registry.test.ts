@@ -20,6 +20,11 @@ describe("modelRegistry — 預設模型（docs/plan-input-context.md）", () =>
     expect(getDefaultModelIdForProvider(DEFAULT_LLM_PROVIDER_ID)).toBe(
       DEFAULT_LLM_MODEL_ID,
     );
+    expect(
+      LLM_MODEL_LIST.filter((model) => model.providerId === "gemini").map(
+        (model) => model.id,
+      ),
+    ).toEqual(["gemini-3.5-flash-lite"]);
   });
 
   it("[P0] 預設模型必須是免費專案可日常使用的（freeTier full）", () => {
@@ -43,9 +48,7 @@ describe("modelRegistry — 免費專案可用性標示（gh-71）", () => {
     "qwen/qwen3.8-27b": "full",
     "openai/gpt-oss-120b": "full",
     "openai/gpt-oss-20b": "full",
-    "gemini-3.5-flash": "limited",
     "gemini-3.5-flash-lite": "full",
-    "gemini-3.1-flash-lite": "full",
     "gpt-5.6-luna": "none",
     "gpt-5.4-nano": "none",
     "claude-haiku-4-5-20251001": "none",
@@ -101,12 +104,25 @@ describe("modelRegistry — 下架遷移", () => {
       "qwen/qwen3-32b": "groq",
       "gemini-2.5-flash": "gemini",
       "gemini-2.5-flash-lite": "gemini",
+      "gemini-3.5-flash": "gemini",
+      "gemini-3.1-flash-lite": "gemini",
       "gpt-5.4-mini": "openai",
       "claude-3-5-haiku-20241022": "anthropic",
     };
     for (const [oldId, provider] of Object.entries(legacyProvider)) {
       const resolved = getEffectiveLlmModelId(oldId);
       expect(findLlmModelConfig(resolved)?.providerId, oldId).toBe(provider);
+    }
+  });
+
+  it("[P0] 舊 Gemini 模型一律落到 3.5 Flash-Lite", () => {
+    for (const oldId of [
+      "gemini-2.5-flash",
+      "gemini-2.5-flash-lite",
+      "gemini-3.5-flash",
+      "gemini-3.1-flash-lite",
+    ]) {
+      expect(getEffectiveLlmModelId(oldId)).toBe("gemini-3.5-flash-lite");
     }
   });
 

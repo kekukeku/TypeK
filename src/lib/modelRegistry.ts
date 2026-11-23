@@ -15,9 +15,7 @@ export type LlmModelId =
   | "gpt-5.6-luna"
   | "gpt-5.4-nano"
   | "claude-haiku-4-5-20251001"
-  | "gemini-3.5-flash"
-  | "gemini-3.5-flash-lite"
-  | "gemini-3.1-flash-lite";
+  | "gemini-3.5-flash-lite";
 
 // ── Whisper 模型（語音轉錄用）─────────────────────────────
 
@@ -108,9 +106,11 @@ export const DECOMMISSIONED_MODEL_MAP: Record<string, string> = {
   // 2026-10 下架：前一版 Qwen 27B 已被 3.8 取代（Kevin 實測同參數可用）。
   // 舊 id 拆開寫，避免舊版號字面值繼續出現在存活程式碼。
   ["qwen/qwen3." + "6-27b"]: "qwen/qwen3.8-27b",
-  // Gemini — 2.5 世代汰換
-  "gemini-2.5-flash": "gemini-3.5-flash",
+  // Gemini — 只留 3.5 Flash-Lite。舊 id 一律指過來，選單不再提供其他 Gemini 模型。
+  "gemini-2.5-flash": "gemini-3.5-flash-lite",
   "gemini-2.5-flash-lite": "gemini-3.5-flash-lite",
+  "gemini-3.5-flash": "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite": "gemini-3.5-flash-lite",
   // OpenAI
   "gpt-5.4-mini": "gpt-5.6-luna",
   // Anthropic — 3.5 Haiku 已於 2026-02-19 退役
@@ -176,33 +176,6 @@ export const LLM_MODEL_LIST: LlmModelConfig[] = [
     freeQuotaRpd: 0,
     freeQuotaTpd: 0,
     isDefault: true,
-  },
-  {
-    id: "gemini-3.5-flash",
-    providerId: "gemini",
-    freeTier: "limited",
-    displayName: "Gemini 3.5 Flash",
-    badgeKey: "settings.modelBadge.premium",
-    speedTps: 0,
-    inputCostPerMillion: 1.5,
-    outputCostPerMillion: 9.0,
-    freeQuotaRpd: 0,
-    freeQuotaTpd: 0,
-    isDefault: false,
-  },
-  {
-    id: "gemini-3.1-flash-lite",
-    providerId: "gemini",
-    freeTier: "full",
-    displayName: "Gemini 3.1 Flash-Lite",
-    badgeKey: "settings.modelBadge.fastCheap",
-    speedTps: 0,
-    inputCostPerMillion: 0.25,
-    outputCostPerMillion: 1.5,
-    freeQuotaRpd: 0,
-    freeQuotaTpd: 0,
-    // 仍可選。免費專案可日常使用；3.5 Flash 免費專案常 429
-    isDefault: false,
   },
   // ── OpenAI（付費）──
   {

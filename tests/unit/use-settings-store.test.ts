@@ -83,6 +83,55 @@ describe("useSettingsStore", () => {
       expect(store.hotkeyConfig?.triggerMode).toBe("hold");
     });
 
+    it("[P0] 已存的 Gemini 3.1／3.5 Flash 會改寫成 3.5 Flash-Lite", async () => {
+      const { useSettingsStore } = await import(
+        "../../src/stores/useSettingsStore"
+      );
+
+      for (const oldId of ["gemini-3.1-flash-lite", "gemini-3.5-flash"]) {
+        mockStoreData.clear();
+        mockStoreData.set("llmProviderId", "gemini");
+        mockStoreData.set("llmModelId", oldId);
+        setActivePinia(createPinia());
+
+        const store = useSettingsStore();
+        await store.loadSettings();
+
+        expect(store.selectedLlmProviderId).toBe("gemini");
+        expect(store.selectedLlmModelId).toBe("gemini-3.5-flash-lite");
+        expect(mockStoreData.get("llmModelId")).toBe("gemini-3.5-flash-lite");
+      }
+    });
+
+    it("[P0] Groq／OpenAI／Anthropic 已存模型不會被改掉", async () => {
+      mockStoreData.set("llmProviderId", "groq");
+      mockStoreData.set("llmModelId", "openai/gpt-oss-120b");
+
+      const { useSettingsStore } = await import(
+        "../../src/stores/useSettingsStore"
+      );
+      const store = useSettingsStore();
+      await store.loadSettings();
+
+      expect(store.selectedLlmProviderId).toBe("groq");
+      expect(store.selectedLlmModelId).toBe("openai/gpt-oss-120b");
+      expect(mockStoreData.get("llmModelId")).toBe("openai/gpt-oss-120b");
+    });
+
+    it("[P0] 跨視窗刷新也會把已存的舊 Gemini 模型改成 3.5 Flash-Lite", async () => {
+      mockStoreData.set("llmProviderId", "gemini");
+      mockStoreData.set("llmModelId", "gemini-3.1-flash-lite");
+
+      const { useSettingsStore } = await import(
+        "../../src/stores/useSettingsStore"
+      );
+      const store = useSettingsStore();
+      await store.refreshCrossWindowSettings();
+
+      expect(store.selectedLlmModelId).toBe("gemini-3.5-flash-lite");
+      expect(mockStoreData.get("llmModelId")).toBe("gemini-3.5-flash-lite");
+    });
+
     it("[P0] 首次載入會把剪貼簿開關遷移成關閉（不保留轉錄文字）", async () => {
       mockStoreData.set("copyTranscriptionToClipboard", true);
 

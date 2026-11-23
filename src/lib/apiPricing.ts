@@ -39,8 +39,8 @@ export function calculateChatCostCeiling(
   modelId: string = DEFAULT_LLM_MODEL_ID,
 ): number {
   const config = findLlmModelConfig(modelId);
-  // fallback 取全 registry 最貴的 outputCostPerMillion（gemini-3.5-flash $9/M），
-  // 維持「保證是上限」的不變量——查不到 config 時（如遺留的死 model id）不會低估
+  // fallback 維持已下架 gemini-3.5-flash 的 $9/M（高於目前任一存活模型），
+  // 查不到 config 時（如遺留的死 model id）不會低估
   const maxCostPerToken = config
     ? Math.max(config.inputCostPerMillion, config.outputCostPerMillion) /
       1_000_000
