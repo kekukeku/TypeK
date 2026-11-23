@@ -483,7 +483,7 @@
     },
     "upgradeNotice": {
       "title": "Tóm tắt cập nhật TypeK",
-      "item1": "Sửa lỗi câu đầu tiên thường không được gõ ra: trước đây đôi khi hiện dấu tích xanh nhưng không có chữ, văn bản chỉ nằm trong lịch sử bảng nhớ tạm. Nguyên nhân là bảng nhớ tạm được khôi phục quá sớm, nên các ứng dụng đọc bảng nhớ tạm chậm sẽ đọc phải nội dung cũ. Giờ TypeK đợi khoảng 1 giây sau khi dán mới khôi phục nội dung bạn đã sao chép; tốc độ dán không đổi",
+      "item1": "Phần chỉnh văn bản chuyển sang Gemini 3.5 Flash-Lite. Trước đây mặc định là 3.1 Flash-Lite. Từ bản này, bản cài mới và ai đang dùng Gemini sẽ chuyển sang 3.5 Flash-Lite ở lần mở tiếp theo, và các model Gemini cũ không còn trong phần cài đặt. Lựa chọn Groq, OpenAI và Anthropic giữ nguyên.",
       "dismiss": "Đã hiểu"
     }
   },

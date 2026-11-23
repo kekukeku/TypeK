@@ -483,7 +483,7 @@
     },
     "upgradeNotice": {
       "title": "What's New in TypeK",
-      "item1": "Fixed the first sentence often not being typed — you'd see the green check but no text, and the transcript only showed up in clipboard history. TypeK restored your clipboard too quickly, so apps that read the clipboard late got the old contents. It now waits about 1 second after pasting before restoring what you had copied; pasting itself is just as fast",
+      "item1": "Text tidying now uses Gemini 3.5 Flash-Lite. The previous default was 3.1 Flash-Lite. From this version, new installs and anyone already on Gemini switch to 3.5 Flash-Lite the next time the app opens, and the older Gemini models leave the list. Groq, OpenAI, and Anthropic choices stay as they are.",
       "dismiss": "Got it"
     }
   },

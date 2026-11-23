@@ -483,7 +483,7 @@
     },
     "upgradeNotice": {
       "title": "TypeK 更新摘要",
-      "item1": "修好第一句常打不出字：之前偶爾出現綠色打勾卻沒打出字、文字只在剪貼簿歷史裡，原因是剪貼簿還原得太快，比較晚讀取剪貼簿的 App 會讀到舊內容。現在貼上後約 1 秒才還原你原本複製的內容，貼上速度不變",
+      "item1": "文字整理改用 Gemini 3.5 Flash-Lite：之前預設是 3.1 Flash-Lite。這版起新安裝、以及已經在用 Gemini 的人，開啟後都會改用 3.5 Flash-Lite；設定裡不再列出舊的 Gemini 模型。Groq、OpenAI、Anthropic 的選擇不變",
       "dismiss": "了解"
     }
   },

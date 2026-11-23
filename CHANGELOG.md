@@ -4,6 +4,12 @@ TypeK 版本更新紀錄。
 
 > TypeK 是 SayIt 的 fork。0.14.1 以前（含）的條目是 SayIt 時期的紀錄，保留原文。
 
+## [1.3.5] - 2026-11-24
+
+### Added
+
+- AI 文字整理的 Gemini 預設改為 Gemini 3.5 Flash-Lite（`gemini-3.5-flash-lite`）：上一版預設是 3.1 Flash-Lite。這版起，新安裝以及在設定裡改選 Gemini 的人會用 3.5 Flash-Lite。已經存著 Gemini 3.1 Flash-Lite 或 Gemini 3.5 Flash 的，下次開啟會自動改成 3.5 Flash-Lite，設定裡也不再列出那兩個模型。Groq、OpenAI、Anthropic 的模型選項與已存選擇不變
+
 ## [1.3.4] - 2026-10-28
 
 ### Fixed
