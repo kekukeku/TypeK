@@ -11,9 +11,9 @@ import {
 } from "../../src/lib/modelRegistry";
 
 describe("modelRegistry — 預設模型（docs/plan-input-context.md）", () => {
-  it("[P0] 預設為 Gemini 3.1 Flash-Lite，且與預設 provider 一致", () => {
+  it("[P0] 預設為 Gemini 3.5 Flash-Lite，且與預設 provider 一致", () => {
     expect(DEFAULT_LLM_PROVIDER_ID).toBe("gemini");
-    expect(DEFAULT_LLM_MODEL_ID).toBe("gemini-3.1-flash-lite");
+    expect(DEFAULT_LLM_MODEL_ID).toBe("gemini-3.5-flash-lite");
     expect(findLlmModelConfig(DEFAULT_LLM_MODEL_ID)?.providerId).toBe(
       DEFAULT_LLM_PROVIDER_ID,
     );
@@ -44,6 +44,7 @@ describe("modelRegistry — 免費專案可用性標示（gh-71）", () => {
     "openai/gpt-oss-120b": "full",
     "openai/gpt-oss-20b": "full",
     "gemini-3.5-flash": "limited",
+    "gemini-3.5-flash-lite": "full",
     "gemini-3.1-flash-lite": "full",
     "gpt-5.6-luna": "none",
     "gpt-5.4-nano": "none",

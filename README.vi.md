@@ -70,7 +70,7 @@ Khi chạy tệp `.exe` nếu xuất hiện「Windows đã bảo vệ PC của b
 ### Yêu cầu trước khi dùng
 
 - [Groq API Key](https://console.groq.com/keys) — phiên âm giọng nói (hạn mức miễn phí)
-- [Gemini API Key](https://aistudio.google.com/apikey) — tinh chỉnh văn bản mặc định dùng Gemini 3.1 Flash-Lite (hạn mức miễn phí); cũng có thể đổi sang Groq, OpenAI hoặc Anthropic trong Cài đặt
+- [Gemini API Key](https://aistudio.google.com/apikey) — tinh chỉnh văn bản mặc định dùng Gemini 3.5 Flash-Lite (hạn mức miễn phí); cũng có thể đổi sang Groq, OpenAI hoặc Anthropic trong Cài đặt
 
 ### Bắt đầu nhanh
 

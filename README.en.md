@@ -70,7 +70,7 @@ If running the `.exe` shows "Windows protected your PC", click "More info" → "
 ### Requirements
 
 - [Groq API Key](https://console.groq.com/keys) — speech transcription (free tier)
-- [Gemini API Key](https://aistudio.google.com/apikey) — text tidying uses Gemini 3.1 Flash-Lite by default (free tier); you can switch to Groq, OpenAI or Anthropic in Settings
+- [Gemini API Key](https://aistudio.google.com/apikey) — text tidying uses Gemini 3.5 Flash-Lite by default (free tier); you can switch to Groq, OpenAI or Anthropic in Settings
 
 ### Quick start
 

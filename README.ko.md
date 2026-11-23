@@ -70,7 +70,7 @@ macOS에서는 자동 업데이트를 하려면 TypeK가 '응용 프로그램' �
 ### 준비물
 
 - [Groq API Key](https://console.groq.com/keys) — 음성 받아쓰기(무료 사용량 제공)
-- [Gemini API Key](https://aistudio.google.com/apikey) — 텍스트 다듬기는 기본으로 Gemini 3.1 Flash-Lite를 사용합니다(무료 사용량 제공). 설정에서 Groq, OpenAI, Anthropic으로 바꿀 수도 있습니다
+- [Gemini API Key](https://aistudio.google.com/apikey) — 텍스트 다듬기는 기본으로 Gemini 3.5 Flash-Lite를 사용합니다(무료 사용량 제공). 설정에서 Groq, OpenAI, Anthropic으로 바꿀 수도 있습니다
 
 ### 빠른 시작
 

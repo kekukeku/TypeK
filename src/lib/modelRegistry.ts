@@ -16,6 +16,7 @@ export type LlmModelId =
   | "gpt-5.4-nano"
   | "claude-haiku-4-5-20251001"
   | "gemini-3.5-flash"
+  | "gemini-3.5-flash-lite"
   | "gemini-3.1-flash-lite";
 
 // ── Whisper 模型（語音轉錄用）─────────────────────────────
@@ -84,7 +85,7 @@ export interface WhisperModelConfig {
 
 // ── 預設值 ────────────────────────────────────────────────
 
-export const DEFAULT_LLM_MODEL_ID: LlmModelId = "gemini-3.1-flash-lite";
+export const DEFAULT_LLM_MODEL_ID: LlmModelId = "gemini-3.5-flash-lite";
 export const DEFAULT_WHISPER_MODEL_ID: WhisperModelId = "whisper-large-v3";
 
 // ── 已下架模型 ID 映射（舊 → 新，用於自動遷移）──────────
@@ -109,7 +110,7 @@ export const DECOMMISSIONED_MODEL_MAP: Record<string, string> = {
   ["qwen/qwen3." + "6-27b"]: "qwen/qwen3.8-27b",
   // Gemini — 2.5 世代汰換
   "gemini-2.5-flash": "gemini-3.5-flash",
-  "gemini-2.5-flash-lite": "gemini-3.1-flash-lite",
+  "gemini-2.5-flash-lite": "gemini-3.5-flash-lite",
   // OpenAI
   "gpt-5.4-mini": "gpt-5.6-luna",
   // Anthropic — 3.5 Haiku 已於 2026-02-19 退役
@@ -163,6 +164,20 @@ export const LLM_MODEL_LIST: LlmModelConfig[] = [
   },
   // ── Google Gemini（免費額度依帳號而異，不在此顯示）──
   {
+    id: "gemini-3.5-flash-lite",
+    providerId: "gemini",
+    freeTier: "full",
+    displayName: "Gemini 3.5 Flash-Lite",
+    badgeKey: "settings.modelBadge.fastCheap",
+    speedTps: 0,
+    // Google AI Studio 標準價（2026-11）：$0.30 / $2.50 per 1M；免費層可用
+    inputCostPerMillion: 0.3,
+    outputCostPerMillion: 2.5,
+    freeQuotaRpd: 0,
+    freeQuotaTpd: 0,
+    isDefault: true,
+  },
+  {
     id: "gemini-3.5-flash",
     providerId: "gemini",
     freeTier: "limited",
@@ -186,8 +201,8 @@ export const LLM_MODEL_LIST: LlmModelConfig[] = [
     outputCostPerMillion: 1.5,
     freeQuotaRpd: 0,
     freeQuotaTpd: 0,
-    // 免費專案可日常使用（freeTier full），3.5 Flash 免費專案常 429
-    isDefault: true,
+    // 仍可選。免費專案可日常使用；3.5 Flash 免費專案常 429
+    isDefault: false,
   },
   // ── OpenAI（付費）──
   {

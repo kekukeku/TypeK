@@ -76,10 +76,10 @@ describe("apiPricing.ts", () => {
       expect(cost).toBeCloseTo(0.00045, 6);
     });
 
-    it("[P1] 未指定 model 時用預設模型（Gemini 3.1 Flash-Lite）的價格", () => {
-      // max(input=0.25, output=1.50) = 1.50/M
+    it("[P1] 未指定 model 時用預設模型（Gemini 3.5 Flash-Lite）的價格", () => {
+      // max(input=0.30, output=2.50) = 2.50/M
       const cost = calculateChatCostCeiling(1_000_000);
-      expect(cost).toBeCloseTo(1.5, 4);
+      expect(cost).toBeCloseTo(2.5, 4);
     });
 
     it("[P1] 未知 model id 應以全 registry 最貴 output 價當上限", () => {

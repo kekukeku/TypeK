@@ -70,7 +70,7 @@ macOS：TypeK 要放在「應用程式」資料夾才能自動更新。更新後
 ### 前置需求
 
 - [Groq API Key](https://console.groq.com/keys) — 語音轉錄（免費額度）
-- [Gemini API Key](https://aistudio.google.com/apikey) — 文字整理預設使用 Gemini 3.1 Flash-Lite（免費額度）；也可在設定中改用 Groq、OpenAI 或 Anthropic
+- [Gemini API Key](https://aistudio.google.com/apikey) — 文字整理預設使用 Gemini 3.5 Flash-Lite（免費額度）；也可在設定中改用 Groq、OpenAI 或 Anthropic
 
 ### 快速開始
 

@@ -70,7 +70,7 @@ tccutil reset Accessibility com.kekukeku.typek && open "x-apple.systempreference
 ### สิ่งที่ต้องมีก่อนเริ่ม
 
 - [Groq API Key](https://console.groq.com/keys) — ถอดเสียง (โควตาฟรี)
-- [Gemini API Key](https://aistudio.google.com/apikey) — การปรับข้อความใช้ Gemini 3.1 Flash-Lite เป็นค่าเริ่มต้น (โควตาฟรี) หรือจะเปลี่ยนไปใช้ Groq, OpenAI หรือ Anthropic ในการตั้งค่าก็ได้
+- [Gemini API Key](https://aistudio.google.com/apikey) — การปรับข้อความใช้ Gemini 3.5 Flash-Lite เป็นค่าเริ่มต้น (โควตาฟรี) หรือจะเปลี่ยนไปใช้ Groq, OpenAI หรือ Anthropic ในการตั้งค่าก็ได้
 
 ### เริ่มต้นอย่างรวดเร็ว
 

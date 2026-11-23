@@ -70,7 +70,7 @@ macOS では、自動更新には TypeK が「アプリケーション」フォ�
 ### 必要なもの
 
 - [Groq API Key](https://console.groq.com/keys) — 音声の文字起こし（無料枠あり）
-- [Gemini API Key](https://aistudio.google.com/apikey) — テキストの整形は既定で Gemini 3.1 Flash-Lite を使用（無料枠あり）。設定で Groq、OpenAI、Anthropic に切り替えることもできます
+- [Gemini API Key](https://aistudio.google.com/apikey) — テキストの整形は既定で Gemini 3.5 Flash-Lite を使用（無料枠あり）。設定で Groq、OpenAI、Anthropic に切り替えることもできます
 
 ### クイックスタート
 
